@@ -98,7 +98,9 @@ docker compose exec backend ./create-admin -login admin
 
 Пароль можно передать флагом `-password`, иначе команда спросит его в stdin.
 
-Логин выдаёт JWT в httpOnly-куке (`POST /api/v1/admin/login` → `{"login": "...", "password": "..."}`), `POST /api/v1/admin/logout` куку сбрасывает. Кука привязана к origin из `FRONTEND_ORIGIN` (CORS с `credentials`). Защищены только мутирующие запросы (`POST`/`PUT`/`PATCH`/`DELETE`) — чтение (`GET`) и публичная форма `POST /api/v1/leads` остаются открытыми.
+Логин выдаёт JWT в httpOnly-куке (`POST /api/v1/admin/login` → `{"login": "...", "password": "..."}`), `POST /api/v1/admin/logout` куку сбрасывает, `GET /api/v1/admin/me` возвращает текущего пользователя (используется фронтендом для проверки сессии). Кука привязана к origin из `FRONTEND_ORIGIN` (CORS с `credentials`). Защищены только мутирующие запросы (`POST`/`PUT`/`PATCH`/`DELETE`) — чтение (`GET`) и публичная форма `POST /api/v1/leads` остаются открытыми.
+
+UI-админка живёт на `/admin` (Nuxt, client-side): `/admin/login` — форма входа, `admin-auth` route middleware проверяет сессию через `/me` и редиректит на логин, если её нет.
 
 ## Тесты
 
@@ -114,13 +116,14 @@ cd frontend && npm run test
 - Полный CRUD (repository + service + handler + unit-тесты на моках) для всех контентных сущностей: `faq_item`, `teachers`, `blog_posts`, `masterclasses`, `courses`, `course_blocks` (вложено под `/api/v1/courses/{courseId}/blocks`), `lessons` (вложено под `/api/v1/course-blocks/{blockId}/lessons`).
 - `leads`: публичный `POST /api/v1/leads` (форма с сайта) + `GET/PATCH .../status/DELETE` для админки. Статус не редактируется целиком — только через отдельный `PATCH /{id}/status`.
 - `admin_users`: repository + service с bcrypt-хэшированием пароля, HTTP CRUD по-прежнему сознательно не выставлен (создание — только через CLI `cmd/create-admin`).
-- **Auth**: JWT в httpOnly-куке (`internal/auth.TokenManager`), `POST /api/v1/admin/login`/`logout`, chi-мидлвара `requireAdmin` защищает все мутирующие запросы (`POST`/`PUT`/`PATCH`/`DELETE`) во всех сущностях + `list`/`status`/`delete` у `leads`. Чтение и публичный `POST /api/v1/leads` остаются открытыми. CORS с `credentials` под `FRONTEND_ORIGIN`.
+- **Auth**: JWT в httpOnly-куке (`internal/auth.TokenManager`), `POST /api/v1/admin/login`/`logout`, `GET /api/v1/admin/me`, chi-мидлвара `requireAdmin` защищает все мутирующие запросы (`POST`/`PUT`/`PATCH`/`DELETE`) во всех сущностях + `list`/`status`/`delete` у `leads`. Чтение и публичный `POST /api/v1/leads` остаются открытыми. CORS с `credentials` под `FRONTEND_ORIGIN`.
+- **Админ-панель (UI)**: `/admin/login`, guard-middleware `admin-auth`, layout с навигацией/logout. CRUD-страница `teachers` (`/admin/teachers`) — рабочий шаблон (`useApi`, `useAdminAuth`, `useAdminResource`) для остальных сущностей.
 - Nuxt-приложение: маршруты-заглушки под карту сайта, `routeRules` (SSR для публичных страниц, SPA для `/admin`), Tailwind, composable `usePhoneMask` (маска `+7 (000) 000 00 00`) с тестами на vitest.
 
 ## Что дальше
 
 - **Header/Footer и вёрстка страниц по дизайну** — заблокировано: нет доступа к Figma MCP (нужна авторизация через `/mcp` в интерактивной сессии). Пока используются нейтральные заглушки и плейсхолдер-токены в `frontend/app/assets/css/main.css`.
 - Email/Telegram-уведомления при создании лида (`SMTP_*`/`TELEGRAM_*` в `.env.example` уже заведены, интеграции ещё нет).
-- Админ-панель (UI поверх backend CRUD + auth-логин).
-- Frontend пока не обращается к backend API вообще — интеграция страниц с реальными данными ещё впереди.
+- Админ-панель: CRUD-экраны для остальных сущностей по образцу `teachers` — `blog-posts`, `masterclasses`, `courses` (+ вложенные `course_blocks`/`lessons`), `faq`, `leads` (list + смена статуса, без create — это публичная форма).
+- Публичный frontend пока не обращается к backend API вообще (кроме админки) — интеграция страниц с реальными данными ещё впереди.
 - Блок отзывов на главной — дизайн не предоставлен, оставлен как TODO.

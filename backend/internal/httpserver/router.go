@@ -47,7 +47,7 @@ func NewRouter(services Services) http.Handler {
 	admin := requireAdminMiddleware(services.Tokens)
 
 	r.Route("/api/v1", func(r chi.Router) {
-		r.Route("/admin", newAuthHandler(services.AdminUser, services.Tokens, services.SecureCookies).routes)
+		r.Route("/admin", newAuthHandler(services.AdminUser, services.Tokens, services.SecureCookies, admin).routes)
 		r.Route("/faq", newFAQHandler(services.FAQ, admin).routes)
 		r.Route("/teachers", newTeacherHandler(services.Teacher, admin).routes)
 		r.Route("/blog-posts", newBlogPostHandler(services.BlogPost, admin).routes)
