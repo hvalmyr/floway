@@ -1,0 +1,5 @@
+floway-backend
+api
+*.log
+.git
+.idea

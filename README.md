@@ -17,11 +17,13 @@
 floway/
 ├── docker-compose.yml
 ├── .env.example
-├── frontend/   # Nuxt-приложение
-└── backend/    # Go-приложение
+├── frontend/   # Nuxt-приложение (Dockerfile внутри)
+└── backend/    # Go-приложение (Dockerfile внутри)
 ```
 
-## Быстрый старт
+## Быстрый старт (docker compose)
+
+Поднимает всё одной командой: Postgres, Mailhog, миграции (одноразовый сервис `migrate`), backend и frontend — каждый в своём Dockerfile.
 
 1. Скопировать переменные окружения:
 
@@ -29,20 +31,44 @@ floway/
    cp .env.example .env
    ```
 
-2. Поднять Postgres и Mailhog:
+2. Собрать и поднять весь стек:
 
    ```bash
-   docker compose up -d
+   docker compose up -d --build
    ```
 
-3. Применить миграции backend (goose, без установки — через `go run`):
+   - `migrate` применяет миграции goose и завершается; `backend` стартует только после его успешного завершения (`depends_on: condition: service_completed_successfully`).
+   - Backend: http://localhost:8080/healthz
+   - Frontend: http://localhost:3000
+   - Mailhog UI: http://localhost:8025
+
+3. Логи / остановка:
+
+   ```bash
+   docker compose logs -f backend frontend
+   docker compose down
+   ```
+
+Порты (`HTTP_PORT`, `FRONTEND_PORT`, `POSTGRES_PORT`, `MAILHOG_*`) настраиваются в `.env`, если дефолтные заняты другими проектами.
+
+## Локальная разработка без Docker (backend/frontend отдельно)
+
+Полезно для быстрого перезапуска с hot-reload; Postgres и Mailhog всё равно берутся из docker-compose.
+
+1. Поднять только инфраструктуру:
+
+   ```bash
+   docker compose up -d postgres mailhog
+   ```
+
+2. Применить миграции backend (goose, без установки — через `go run`):
 
    ```bash
    cd backend
    go run github.com/pressly/goose/v3/cmd/goose@v3.24.1 -dir migrations postgres "$DATABASE_URL" up
    ```
 
-4. Запустить backend:
+3. Запустить backend:
 
    ```bash
    cd backend
@@ -50,7 +76,7 @@ floway/
    # curl http://localhost:8080/healthz
    ```
 
-5. Запустить frontend:
+4. Запустить frontend:
 
    ```bash
    cd frontend
@@ -68,7 +94,7 @@ cd frontend && npm run test
 
 ## Что уже сделано (фаза 1)
 
-- Monorepo, docker-compose (Postgres + Mailhog), `.env.example`.
+- Monorepo, docker-compose (Postgres + Mailhog + backend + frontend + одноразовый `migrate`), Dockerfile для backend и frontend (multi-stage), `.env.example`.
 - Go-бэкенд: слоистый каркас (`config`, `httpserver`, `model`, `repository`, `service`), health-check `/healthz`, goose-миграции под все 9 сущностей ТЗ.
 - Полный вертикальный срез на примере `faq_item` (repository + service + unit-тесты на моках) — шаблон для остальных сущностей.
 - Nuxt-приложение: маршруты-заглушки под карту сайта, `routeRules` (SSR для публичных страниц, SPA для `/admin`), Tailwind, composable `usePhoneMask` (маска `+7 (000) 000 00 00`) с тестами на vitest.

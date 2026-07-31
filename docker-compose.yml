@@ -23,5 +23,48 @@ services:
       - "${MAILHOG_SMTP_PORT:-1025}:1025"
       - "${MAILHOG_UI_PORT:-8025}:8025"
 
+  migrate:
+    build:
+      context: ./backend
+    entrypoint: ["./goose"]
+    command:
+      - "-dir"
+      - "migrations"
+      - "postgres"
+      - "postgres://${POSTGRES_USER:-floway}:${POSTGRES_PASSWORD:-floway}@postgres:5432/${POSTGRES_DB:-floway}?sslmode=disable"
+      - "up"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-floway}:${POSTGRES_PASSWORD:-floway}@postgres:5432/${POSTGRES_DB:-floway}?sslmode=disable
+      SMTP_HOST: mailhog
+    ports:
+      - "${HTTP_PORT:-8080}:${HTTP_PORT:-8080}"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NUXT_PUBLIC_API_BASE: http://localhost:${HTTP_PORT:-8080}
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+
 volumes:
   postgres_data:
