@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // TODO: Hero, инфоблок (длительность/цена), описание, форма записи.
 // Вёрстка ждёт данных из Figma (desktop-mc, node-id 0:306).
-const route = useRoute()
+const route = useRoute();
 </script>
 
 <template>

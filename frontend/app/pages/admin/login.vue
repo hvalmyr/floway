@@ -1,30 +1,30 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'admin' })
+definePageMeta({ layout: "admin" });
 
-const { adminUser, authChecked, fetchMe, login } = useAdminAuth()
+const { adminUser, authChecked, fetchMe, login } = useAdminAuth();
 
 if (!authChecked.value) {
-  await fetchMe()
+  await fetchMe();
 }
 if (adminUser.value) {
-  await navigateTo('/admin')
+  await navigateTo("/admin");
 }
 
-const loginValue = ref('')
-const password = ref('')
-const error = ref('')
-const loading = ref(false)
+const loginValue = ref("");
+const password = ref("");
+const error = ref("");
+const loading = ref(false);
 
 async function onSubmit() {
-  error.value = ''
-  loading.value = true
+  error.value = "";
+  loading.value = true;
   try {
-    await login(loginValue.value, password.value)
-    await navigateTo('/admin')
+    await login(loginValue.value, password.value);
+    await navigateTo("/admin");
   } catch {
-    error.value = 'Неверный логин или пароль'
+    error.value = "Неверный логин или пароль";
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 </script>
@@ -40,7 +40,7 @@ async function onSubmit() {
         autocomplete="username"
         required
         class="rounded border border-gray-300 px-3 py-2"
-      >
+      />
       <input
         v-model="password"
         type="password"
@@ -48,14 +48,14 @@ async function onSubmit() {
         autocomplete="current-password"
         required
         class="rounded border border-gray-300 px-3 py-2"
-      >
+      />
       <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
       <button
         type="submit"
         :disabled="loading"
         class="rounded bg-[var(--color-primary)] px-4 py-2 text-white disabled:opacity-50"
       >
-        {{ loading ? 'Входим…' : 'Войти' }}
+        {{ loading ? "Входим…" : "Войти" }}
       </button>
     </form>
   </div>

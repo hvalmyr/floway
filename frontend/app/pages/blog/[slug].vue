@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // TODO: обложка, заголовок, метаданные, текст статьи.
-const route = useRoute()
+const route = useRoute();
 </script>
 
 <template>

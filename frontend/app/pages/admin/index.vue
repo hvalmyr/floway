@@ -1,14 +1,14 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'admin', middleware: 'admin-auth' })
+definePageMeta({ layout: "admin", middleware: "admin-auth" });
 
 const sections = [
-  { to: '/admin/teachers', title: 'Преподаватели' },
-  { to: '/admin/blog-posts', title: 'Блог' },
-  { to: '/admin/masterclasses', title: 'Мастер-классы' },
-  { to: '/admin/courses', title: 'Курсы' },
-  { to: '/admin/faq', title: 'FAQ' },
-  { to: '/admin/leads', title: 'Заявки' },
-]
+  { to: "/admin/teachers", title: "Преподаватели" },
+  { to: "/admin/blog-posts", title: "Блог" },
+  { to: "/admin/masterclasses", title: "Мастер-классы" },
+  { to: "/admin/courses", title: "Курсы" },
+  { to: "/admin/faq", title: "FAQ" },
+  { to: "/admin/leads", title: "Заявки" },
+];
 </script>
 
 <template>

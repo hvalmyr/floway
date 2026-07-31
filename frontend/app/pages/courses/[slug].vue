@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // TODO: Hero, таблица блоков курса, учебный план (аккордеон), форма записи.
 // Вёрстка ждёт данных из Figma (desktop-course, node-id 0:203).
-const route = useRoute()
+const route = useRoute();
 </script>
 
 <template>

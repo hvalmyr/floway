@@ -105,12 +105,20 @@ docker compose exec backend ./create-admin -login admin
 
 UI-админка живёт на `/admin` (Nuxt, client-side): `/admin/login` — форма входа, `admin-auth` route middleware проверяет сессию через `/me` и редиректит на логин, если её нет.
 
-## Тесты
+## Тесты, линт, форматирование
 
 ```bash
-cd backend && go test ./...
-cd frontend && npm run test
+cd backend && go build ./... && go vet ./... && gofmt -l . && go test ./...
+cd frontend && bun install && bun run lint && bun run format:check && bun run test && bun run build
 ```
+
+Frontend-линт/форматтер — [oxlint](https://oxc.rs/docs/guide/usage/linter)/[oxfmt](https://oxc.rs/docs/guide/usage/formatter) (Rust-стек oxc, быстрее ESLint/Prettier на порядок). `bun run format` — исправить форматирование на месте. Backend — `gofmt` + `go vet` + [golangci-lint](https://golangci-lint.run/) (см. CI).
+
+Локальная разработка фронтенда по-прежнему через `npm` (см. выше) — `bun`/`bun.lock` используются в CI и опционально локально, если он у тебя есть.
+
+## CI
+
+`.github/workflows/ci.yml` (GitHub Actions) на каждый push в `main` и pull request: lint + build + test backend (Go: `gofmt`, `go vet`, `golangci-lint`, `go test -race`) и frontend (Bun: `oxlint`, `oxfmt --check`, `vitest`, `nuxt build`), плюс сборка обоих Docker-образов (без пуша — деплой пока не в CI, см. `ansible/`).
 
 ## Прод-деплой
 
@@ -132,6 +140,8 @@ cd frontend && npm run test
   - `courses` → `courses/[courseId]/blocks` → `course-blocks/[blockId]/lessons` — трёхуровневая вложенная навигация (ссылки в таблицах, без пунктов меню)
   - `leads` — только список, смена статуса (`select` → `PATCH .../status`) и удаление; создания нет — это публичная форма с сайта
 - Nuxt-приложение: маршруты-заглушки под карту сайта, `routeRules` (SSR для публичных страниц, SPA для `/admin`), Tailwind, composable `usePhoneMask` (маска `+7 (000) 000 00 00`) с тестами на vitest.
+- **CI**: GitHub Actions — lint/build/test для backend (Go) и frontend (Bun + oxlint/oxfmt), плюс сборка обоих Docker-образов. Деплой в пайплайн пока не подключён.
+- **Инфраструктура**: Ansible-плейбуки для бутстрапа VPS и деплоя, `docker-compose.prod.yml` с Caddy (авто-HTTPS) — см. `ansible/`.
 
 ## Что дальше
 
@@ -139,6 +149,7 @@ cd frontend && npm run test
 - Email/Telegram-уведомления при создании лида (`SMTP_*`/`TELEGRAM_*` в `.env.example` уже заведены, интеграции ещё нет).
 - Публичный frontend пока не обращается к backend API вообще (кроме админки) — интеграция страниц с реальными данными ещё впереди.
 - Блок отзывов на главной — дизайн не предоставлен, оставлен как TODO.
+- Деплой в CI: сборка+пуш образов в GHCR по мерджу в `main`, затем `ansible-playbook playbooks/deploy.yml` (или упрощённый `ssh` + `docker compose pull && up -d`) — см. план в `ansible/README.md`.
 
 ## Известные технические заметки
 

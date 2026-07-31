@@ -4,10 +4,10 @@
  * cross-origin requests (frontend and backend run on different ports).
  */
 export function useApi() {
-  const config = useRuntimeConfig()
+  const config = useRuntimeConfig();
 
   return $fetch.create({
     baseURL: config.public.apiBase,
-    credentials: 'include',
-  })
+    credentials: "include",
+  });
 }

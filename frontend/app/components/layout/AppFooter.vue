@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // TODO(design): содержимое и вёрстка footer уточняются через Figma при вёрстке страниц.
-const year = new Date().getFullYear()
+const year = new Date().getFullYear();
 </script>
 
 <template>

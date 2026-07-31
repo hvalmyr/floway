@@ -15,8 +15,8 @@
   --color-text: #2b2b2b;
   --color-text-muted: #6b6b6b;
 
-  --font-family-base: 'Inter', system-ui, sans-serif;
-  --font-family-heading: 'Playfair Display', serif;
+  --font-family-base: "Inter", system-ui, sans-serif;
+  --font-family-heading: "Playfair Display", serif;
 
   --spacing-section: 6rem;
 }

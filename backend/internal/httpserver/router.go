@@ -31,7 +31,11 @@ func NewRouter(services Services) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
+	// Exactly one trusted reverse proxy in front of this service in every
+	// deployment (Caddy in prod; the backend port is never published
+	// directly). middleware.RealIP is deprecated/spoofable — this variant
+	// trusts exactly one XFF hop and never mutates r.RemoteAddr.
+	r.Use(middleware.ClientIPFromXFFTrustedProxies(1))
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(cors.Handler(cors.Options{

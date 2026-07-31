@@ -1,9 +1,9 @@
 <script setup lang="ts">
-const { adminUser, logout } = useAdminAuth()
+const { adminUser, logout } = useAdminAuth();
 
 async function onLogout() {
-  await logout()
-  await navigateTo('/admin/login')
+  await logout();
+  await navigateTo("/admin/login");
 }
 </script>
 
@@ -22,7 +22,9 @@ async function onLogout() {
         </nav>
         <div class="flex items-center gap-3 text-sm">
           <span class="text-[var(--color-text-muted)]">{{ adminUser.login }}</span>
-          <button class="text-[var(--color-primary)] hover:underline" @click="onLogout">Выйти</button>
+          <button class="text-[var(--color-primary)] hover:underline" @click="onLogout">
+            Выйти
+          </button>
         </div>
       </div>
     </header>

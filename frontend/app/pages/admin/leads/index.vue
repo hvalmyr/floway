@@ -1,79 +1,79 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'admin', middleware: 'admin-auth' })
+definePageMeta({ layout: "admin", middleware: "admin-auth" });
 
 interface Lead {
-  id: number
-  name: string
-  phone: string
-  email: string
-  contactMethod: string
-  source: string
-  requestType: string
-  relatedId: number | null
-  status: 'new' | 'in_progress' | 'closed'
-  createdAt: string
+  id: number;
+  name: string;
+  phone: string;
+  email: string;
+  contactMethod: string;
+  source: string;
+  requestType: string;
+  relatedId: number | null;
+  status: "new" | "in_progress" | "closed";
+  createdAt: string;
 }
 
 const contactMethodLabels: Record<string, string> = {
-  call: 'Звонок',
-  telegram: 'Telegram',
-  whatsapp: 'WhatsApp',
-  max: 'MAX',
-}
+  call: "Звонок",
+  telegram: "Telegram",
+  whatsapp: "WhatsApp",
+  max: "MAX",
+};
 
 const sourceLabels: Record<string, string> = {
-  referral: 'Рекомендация',
-  ads: 'Реклама',
-  internet: 'Интернет',
-  social: 'Соцсети',
-  maps: 'Карты',
-}
+  referral: "Рекомендация",
+  ads: "Реклама",
+  internet: "Интернет",
+  social: "Соцсети",
+  maps: "Карты",
+};
 
 const requestTypeLabels: Record<string, string> = {
-  course: 'Курс',
-  masterclass: 'Мастер-класс',
-  trial_lesson: 'Пробный урок',
-}
+  course: "Курс",
+  masterclass: "Мастер-класс",
+  trial_lesson: "Пробный урок",
+};
 
 const statusLabels: Record<string, string> = {
-  new: 'Новая',
-  in_progress: 'В работе',
-  closed: 'Закрыта',
-}
+  new: "Новая",
+  in_progress: "В работе",
+  closed: "Закрыта",
+};
 
-const api = useApi()
-const items = ref<Lead[]>([])
-const loading = ref(false)
-const error = ref('')
+const api = useApi();
+const items = ref<Lead[]>([]);
+const loading = ref(false);
+const error = ref("");
 
 async function fetchAll() {
-  loading.value = true
-  error.value = ''
+  loading.value = true;
+  error.value = "";
   try {
-    items.value = (await api<Lead[]>('/api/v1/leads')) ?? []
+    items.value = (await api<Lead[]>("/api/v1/leads")) ?? [];
   } catch {
-    error.value = 'Не удалось загрузить заявки'
+    error.value = "Не удалось загрузить заявки";
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 async function onStatusChange(lead: Lead, status: string) {
   const updated = await api<Lead>(`/api/v1/leads/${lead.id}/status`, {
-    method: 'PATCH',
+    method: "PATCH",
     body: { status },
-  })
-  const idx = items.value.findIndex((i) => i.id === lead.id)
-  if (idx !== -1) items.value[idx] = updated
+  });
+  const idx = items.value.findIndex((i) => i.id === lead.id);
+  if (idx !== -1) items.value[idx] = updated;
 }
 
 async function onDelete(id: number) {
-  if (!confirm('Удалить заявку?')) return
-  await api(`/api/v1/leads/${id}`, { method: 'DELETE' })
-  items.value = items.value.filter((i) => i.id !== id)
+  if (!confirm("Удалить заявку?")) return;
+  await api(`/api/v1/leads/${id}`, { method: "DELETE" });
+  items.value = items.value.filter((i) => i.id !== id);
 }
 
-await fetchAll()
+await fetchAll();
 </script>
 
 <template>
@@ -102,7 +102,9 @@ await fetchAll()
             <td class="px-4 py-2">{{ lead.name }}</td>
             <td class="px-4 py-2">{{ lead.phone }}</td>
             <td class="px-4 py-2">{{ lead.email }}</td>
-            <td class="px-4 py-2">{{ contactMethodLabels[lead.contactMethod] ?? lead.contactMethod }}</td>
+            <td class="px-4 py-2">
+              {{ contactMethodLabels[lead.contactMethod] ?? lead.contactMethod }}
+            </td>
             <td class="px-4 py-2">{{ sourceLabels[lead.source] ?? lead.source }}</td>
             <td class="px-4 py-2">{{ requestTypeLabels[lead.requestType] ?? lead.requestType }}</td>
             <td class="px-4 py-2">
@@ -116,13 +118,17 @@ await fetchAll()
                 <option value="closed">{{ statusLabels.closed }}</option>
               </select>
             </td>
-            <td class="px-4 py-2">{{ new Date(lead.createdAt).toLocaleString('ru-RU') }}</td>
+            <td class="px-4 py-2">{{ new Date(lead.createdAt).toLocaleString("ru-RU") }}</td>
             <td class="px-4 py-2 text-right">
-              <button class="text-red-600 hover:underline" @click="onDelete(lead.id)">Удалить</button>
+              <button class="text-red-600 hover:underline" @click="onDelete(lead.id)">
+                Удалить
+              </button>
             </td>
           </tr>
           <tr v-if="items.length === 0">
-            <td colspan="9" class="px-4 py-6 text-center text-[var(--color-text-muted)]">Пока пусто</td>
+            <td colspan="9" class="px-4 py-6 text-center text-[var(--color-text-muted)]">
+              Пока пусто
+            </td>
           </tr>
         </tbody>
       </table>
