@@ -1,0 +1,60 @@
+/**
+ * Design tokens for «ФлоВей», as CSS custom properties.
+ * Source of truth: docs/floway-design.md. Mirrored into tailwind.config.ts
+ * (colors, radii, spacing, screens) so both Tailwind utilities and raw
+ * `var(--...)` usage stay in sync — update both files together.
+ */
+:root {
+  /* Color */
+  --color-primary-50: #eaf2f7;
+  --color-primary-300: #a9c9dd;
+  --color-primary-500: #82b1cc;
+  --color-primary-600: #5f93b3;
+  --color-primary-700: #42708f;
+  --color-ink-900: #41342a;
+  --color-ink-700: #6b5d51;
+  --color-ink-400: #a79a8e;
+  --color-surface: #f7f5f3;
+  --color-surface-100: #fbfaf9;
+  --color-line: #e4dfda;
+  --color-white: #ffffff;
+  --color-success: #5b9a6f;
+  --color-error: #c15b4a;
+
+  /* Typography */
+  --font-display: "Nunito", sans-serif;
+  --font-body: "Onest", sans-serif;
+
+  --text-h1: clamp(2.25rem, 1.6rem + 2.6vw, 4rem);
+  --text-h2: clamp(1.75rem, 1.4rem + 1.6vw, 2.75rem);
+  --text-h3: clamp(1.25rem, 1.1rem + 0.6vw, 1.625rem);
+  --text-h4: clamp(1.125rem, 1.05rem + 0.3vw, 1.25rem);
+  --text-body-l: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+  --text-body: clamp(1rem, 0.97rem + 0.15vw, 1.0625rem);
+  --text-small: clamp(0.8125rem, 0.8rem + 0.05vw, 0.875rem);
+  --text-button: clamp(1rem, 0.95rem + 0.2vw, 1.125rem);
+
+  /* Radii */
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --radius-pill: 999px;
+
+  /* Spacing (8pt-ish scale used site-wide, see tailwind.config.ts) */
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-24: 24px;
+  --space-32: 32px;
+  --space-40: 40px;
+  --space-48: 48px;
+  --space-64: 64px;
+  --space-80: 80px;
+  --space-96: 96px;
+  --space-120: 120px;
+  --space-160: 160px;
+
+  /* Layout */
+  --container-max: 1280px;
+}
