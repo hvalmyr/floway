@@ -1,12 +1,42 @@
 <script setup lang="ts">
-// TODO: Hero, инфоблок (длительность/цена), описание, форма записи.
-// Вёрстка ждёт данных из Figma (desktop-mc, node-id 0:306).
+definePageMeta({
+  validate: async (route) => {
+    const api = useApi();
+    const mc = await api.getMasterClass(route.params.slug as string);
+    return !!mc;
+  },
+});
+
 const route = useRoute();
+const slug = route.params.slug as string;
+
+const api = useApi();
+const { data: masterclass } = await useAsyncData(`masterclass-${slug}`, () => api.getMasterClass(slug));
+
+if (!masterclass.value) {
+  throw createError({ statusCode: 404, statusMessage: "Мастер-класс не найден", fatal: true });
+}
+
+useSeoMeta({
+  title: () => `${masterclass.value?.title} — мастер-класс ФлоВей`,
+  description: () => masterclass.value?.shortDescription,
+});
 </script>
 
 <template>
-  <div class="mx-auto max-w-6xl px-4 py-16">
-    <h1 class="text-3xl font-semibold">Мастер-класс: {{ route.params.slug }}</h1>
-    <p class="mt-2 text-[var(--color-text-muted)]">Страница мастер-класса — в разработке.</p>
+  <div v-if="masterclass">
+    <section class="py-64 sm:py-96 lg:py-120">
+      <div class="container">
+        <MasterclassCard :masterclass="masterclass" />
+      </div>
+    </section>
+
+    <section id="apply" class="scroll-mt-64 bg-surface py-64 sm:py-96 lg:scroll-mt-96 lg:py-120">
+      <div class="container">
+        <div class="mx-auto max-w-[720px]">
+          <ApplyForm context="masterclass" :related-id="masterclass.id" :title="`Записаться на «${masterclass.title}»`" />
+        </div>
+      </div>
+    </section>
   </div>
 </template>

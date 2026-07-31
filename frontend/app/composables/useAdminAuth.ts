@@ -7,7 +7,7 @@ const adminUser = () => useState<AdminUser | null>("admin-user", () => null);
 const authChecked = () => useState<boolean>("admin-auth-checked", () => false);
 
 export function useAdminAuth() {
-  const api = useApi();
+  const api = useApiClient();
   const user = adminUser();
   const checked = authChecked();
 

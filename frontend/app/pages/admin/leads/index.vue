@@ -41,7 +41,7 @@ const statusLabels: Record<string, string> = {
   closed: "Закрыта",
 };
 
-const api = useApi();
+const api = useApiClient();
 const items = ref<Lead[]>([]);
 const loading = ref(false);
 const error = ref("");

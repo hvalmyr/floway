@@ -8,7 +8,7 @@ import type { Ref } from "vue";
  * via useApi() directly instead of this composable.
  */
 export function useAdminResource<T extends { id: number }>(basePath: string) {
-  const api = useApi();
+  const api = useApiClient();
   const items = ref<T[]>([]) as Ref<T[]>;
   const loading = ref(false);
   const error = ref("");
