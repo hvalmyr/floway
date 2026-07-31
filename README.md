@@ -96,13 +96,16 @@ cd frontend && npm run test
 
 - Monorepo, docker-compose (Postgres + Mailhog + backend + frontend + одноразовый `migrate`), Dockerfile для backend и frontend (multi-stage), `.env.example`.
 - Go-бэкенд: слоистый каркас (`config`, `httpserver`, `model`, `repository`, `service`), health-check `/healthz`, goose-миграции под все 9 сущностей ТЗ.
-- Полный вертикальный срез на примере `faq_item` (repository + service + unit-тесты на моках) — шаблон для остальных сущностей.
+- Полный CRUD (repository + service + handler + unit-тесты на моках) для всех контентных сущностей: `faq_item`, `teachers`, `blog_posts`, `masterclasses`, `courses`, `course_blocks` (вложено под `/api/v1/courses/{courseId}/blocks`), `lessons` (вложено под `/api/v1/course-blocks/{blockId}/lessons`).
+- `leads`: публичный `POST /api/v1/leads` (форма с сайта) + `GET/PATCH .../status/DELETE` для админки. Статус не редактируется целиком — только через отдельный `PATCH /{id}/status`.
+- `admin_users`: только repository + service с bcrypt-хэшированием пароля (задел под будущий логин) — сознательно без HTTP CRUD, т.к. auth-мидлвары в проекте ещё нет.
 - Nuxt-приложение: маршруты-заглушки под карту сайта, `routeRules` (SSR для публичных страниц, SPA для `/admin`), Tailwind, composable `usePhoneMask` (маска `+7 (000) 000 00 00`) с тестами на vitest.
 
 ## Что дальше
 
 - **Header/Footer и вёрстка страниц по дизайну** — заблокировано: нет доступа к Figma MCP (нужна авторизация через `/mcp` в интерактивной сессии). Пока используются нейтральные заглушки и плейсхолдер-токены в `frontend/app/assets/css/main.css`.
-- CRUD для остальных сущностей (courses, course_blocks, lessons, masterclasses, teachers, blog_posts, leads, admin_users) — по шаблону `faq_item`.
-- Форма заявки (lead) + email/Telegram-уведомления.
+- Auth-мидлвара для админки (JWT-сессия поверх `admin_users.Authenticate`) — после неё: логин-эндпоинт, защита list/update/delete у `leads` и остальных сущностей, HTTP CRUD для `admin_users`.
+- Email/Telegram-уведомления при создании лида (`SMTP_*`/`TELEGRAM_*` в `.env.example` уже заведены, интеграции ещё нет).
 - Админ-панель (UI поверх backend CRUD).
+- Frontend пока не обращается к backend API вообще — интеграция страниц с реальными данными ещё впереди.
 - Блок отзывов на главной — дизайн не предоставлен, оставлен как TODO.

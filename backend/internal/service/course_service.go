@@ -1,0 +1,72 @@
+package service
+
+import (
+	"context"
+	"errors"
+	"strings"
+
+	"floway-backend/internal/model"
+)
+
+type CourseRepository interface {
+	List(ctx context.Context) ([]model.Course, error)
+	Create(ctx context.Context, item model.Course) (model.Course, error)
+	Update(ctx context.Context, item model.Course) (model.Course, error)
+	Delete(ctx context.Context, id int64) error
+}
+
+type CourseService struct {
+	repo CourseRepository
+}
+
+func NewCourseService(repo CourseRepository) *CourseService {
+	return &CourseService{repo: repo}
+}
+
+func (s *CourseService) List(ctx context.Context) ([]model.Course, error) {
+	return s.repo.List(ctx)
+}
+
+func (s *CourseService) Create(ctx context.Context, item model.Course) (model.Course, error) {
+	item.Slug = strings.TrimSpace(item.Slug)
+	item.Title = strings.TrimSpace(item.Title)
+	if item.Slug == "" || item.Title == "" {
+		return model.Course{}, errors.Join(ErrValidation, errors.New("slug and title are required"))
+	}
+
+	if item.Status == "" {
+		item.Status = model.CourseStatusActive
+	}
+	if item.Status != model.CourseStatusActive && item.Status != model.CourseStatusArchived {
+		return model.Course{}, errors.Join(ErrValidation, errors.New("status must be active or archived"))
+	}
+
+	return s.repo.Create(ctx, item)
+}
+
+func (s *CourseService) Update(ctx context.Context, item model.Course) (model.Course, error) {
+	item.Slug = strings.TrimSpace(item.Slug)
+	item.Title = strings.TrimSpace(item.Title)
+	if item.ID == 0 {
+		return model.Course{}, errors.Join(ErrValidation, errors.New("id is required"))
+	}
+	if item.Slug == "" || item.Title == "" {
+		return model.Course{}, errors.Join(ErrValidation, errors.New("slug and title are required"))
+	}
+
+	if item.Status == "" {
+		item.Status = model.CourseStatusActive
+	}
+	if item.Status != model.CourseStatusActive && item.Status != model.CourseStatusArchived {
+		return model.Course{}, errors.Join(ErrValidation, errors.New("status must be active or archived"))
+	}
+
+	return s.repo.Update(ctx, item)
+}
+
+func (s *CourseService) Delete(ctx context.Context, id int64) error {
+	if id == 0 {
+		return errors.Join(ErrValidation, errors.New("id is required"))
+	}
+	return s.repo.Delete(ctx, id)
+}

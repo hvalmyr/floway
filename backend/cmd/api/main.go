@@ -38,7 +38,14 @@ func run() error {
 	defer pool.Close()
 
 	services := httpserver.Services{
-		FAQ: service.NewFAQService(repository.NewFAQRepository(pool)),
+		FAQ:         service.NewFAQService(repository.NewFAQRepository(pool)),
+		Teacher:     service.NewTeacherService(repository.NewTeacherRepository(pool)),
+		BlogPost:    service.NewBlogPostService(repository.NewBlogPostRepository(pool)),
+		Masterclass: service.NewMasterclassService(repository.NewMasterclassRepository(pool)),
+		Course:      service.NewCourseService(repository.NewCourseRepository(pool)),
+		CourseBlock: service.NewCourseBlockService(repository.NewCourseBlockRepository(pool)),
+		Lesson:      service.NewLessonService(repository.NewLessonRepository(pool)),
+		Lead:        service.NewLeadService(repository.NewLeadRepository(pool)),
 	}
 
 	srv := &http.Server{

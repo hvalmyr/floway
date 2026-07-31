@@ -1,0 +1,72 @@
+package service
+
+import (
+	"context"
+	"errors"
+	"strings"
+
+	"floway-backend/internal/model"
+)
+
+var validBlogPostStatuses = map[model.BlogPostStatus]bool{
+	model.BlogPostStatusDraft:     true,
+	model.BlogPostStatusPublished: true,
+}
+
+type BlogPostRepository interface {
+	List(ctx context.Context) ([]model.BlogPost, error)
+	Create(ctx context.Context, item model.BlogPost) (model.BlogPost, error)
+	Update(ctx context.Context, item model.BlogPost) (model.BlogPost, error)
+	Delete(ctx context.Context, id int64) error
+}
+
+type BlogPostService struct {
+	repo BlogPostRepository
+}
+
+func NewBlogPostService(repo BlogPostRepository) *BlogPostService {
+	return &BlogPostService{repo: repo}
+}
+
+func (s *BlogPostService) List(ctx context.Context) ([]model.BlogPost, error) {
+	return s.repo.List(ctx)
+}
+
+func (s *BlogPostService) validate(item *model.BlogPost) error {
+	item.Slug = strings.TrimSpace(item.Slug)
+	item.Title = strings.TrimSpace(item.Title)
+	if item.Slug == "" || item.Title == "" {
+		return errors.Join(ErrValidation, errors.New("slug and title are required"))
+	}
+	if item.Status == "" {
+		item.Status = model.BlogPostStatusDraft
+	}
+	if !validBlogPostStatuses[item.Status] {
+		return errors.Join(ErrValidation, errors.New("invalid status"))
+	}
+	return nil
+}
+
+func (s *BlogPostService) Create(ctx context.Context, item model.BlogPost) (model.BlogPost, error) {
+	if err := s.validate(&item); err != nil {
+		return model.BlogPost{}, err
+	}
+	return s.repo.Create(ctx, item)
+}
+
+func (s *BlogPostService) Update(ctx context.Context, item model.BlogPost) (model.BlogPost, error) {
+	if item.ID == 0 {
+		return model.BlogPost{}, errors.Join(ErrValidation, errors.New("id is required"))
+	}
+	if err := s.validate(&item); err != nil {
+		return model.BlogPost{}, err
+	}
+	return s.repo.Update(ctx, item)
+}
+
+func (s *BlogPostService) Delete(ctx context.Context, id int64) error {
+	if id == 0 {
+		return errors.Join(ErrValidation, errors.New("id is required"))
+	}
+	return s.repo.Delete(ctx, id)
+}
