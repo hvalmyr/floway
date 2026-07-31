@@ -83,8 +83,8 @@ floway/
 
    ```bash
    cd frontend
-   npm install
-   npm run dev
+   bun install
+   bun run dev
    # http://localhost:3000
    ```
 
@@ -114,7 +114,7 @@ cd frontend && bun install && bun run lint && bun run format:check && bun run te
 
 Frontend-линт/форматтер — [oxlint](https://oxc.rs/docs/guide/usage/linter)/[oxfmt](https://oxc.rs/docs/guide/usage/formatter) (Rust-стек oxc, быстрее ESLint/Prettier на порядок). `bun run format` — исправить форматирование на месте. Backend — `gofmt` + `go vet` + [golangci-lint](https://golangci-lint.run/) (см. CI).
 
-Локальная разработка фронтенда по-прежнему через `npm` (см. выше) — `bun`/`bun.lock` используются в CI и опционально локально, если он у тебя есть.
+Пакетный менеджер фронтенда — [Bun](https://bun.sh) везде: локальная разработка, CI, `frontend/Dockerfile` (сборочный стейдж на `oven/bun`, рантайм — на `node:22-alpine`, т.к. Nitro-сборка — обычный Node-совместимый JS). `bun.lock` — единственный лок-файл, `package-lock.json` больше не используется.
 
 ## CI
 

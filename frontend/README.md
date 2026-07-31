@@ -1,75 +1,34 @@
-# Nuxt Minimal Starter
+# Floway frontend (Nuxt)
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Пакетный менеджер и раннер — [Bun](https://bun.sh). См. также корневой [README](../README.md).
 
-## Setup
-
-Make sure to install dependencies:
+## Установка зависимостей
 
 ```bash
-# npm
-npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
 bun install
 ```
 
-## Development Server
-
-Start the development server on `http://localhost:3000`:
+## Дев-сервер
 
 ```bash
-# npm
-npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
 bun run dev
+# http://localhost:3000
 ```
 
-## Production
-
-Build the application for production:
+## Продакшен-сборка
 
 ```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
 bun run build
+bun run preview   # локально проверить прод-сборку
 ```
 
-Locally preview production build:
+## Линт, форматирование, тесты
 
 ```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
+bun run lint          # oxlint
+bun run format:check  # oxfmt --check
+bun run format         # oxfmt (исправить на месте)
+bun run test           # vitest
 ```
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+Подробнее про [Nuxt](https://nuxt.com/docs/getting-started/introduction).

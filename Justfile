@@ -46,4 +46,7 @@ dev-down:
 
 dev-test:
     cd backend && go test ./...
-    cd frontend && npm run test
+    cd frontend && bun run test
+
+frontend-lint:
+    cd frontend && bun run lint && bun run format:check
