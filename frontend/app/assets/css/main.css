@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Плейсхолдер дизайн-токенов. Реальные значения (цвета, типографика, отступы)
+ * нужно вытащить из Figma (node-id 0:15 и др.) через get_design_context,
+ * как только будет доступ к Figma MCP — см. план фазы 1.
+ */
+:root {
+  --color-primary: #4a7c59;
+  --color-primary-dark: #345c40;
+  --color-accent: #e8b4bc;
+  --color-background: #fdfbf7;
+  --color-text: #2b2b2b;
+  --color-text-muted: #6b6b6b;
+
+  --font-family-base: 'Inter', system-ui, sans-serif;
+  --font-family-heading: 'Playfair Display', serif;
+
+  --spacing-section: 6rem;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-family-base);
+}

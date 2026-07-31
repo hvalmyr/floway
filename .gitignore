@@ -1,0 +1,10 @@
+# Local env
+.env
+
+# Go build artifacts
+/backend/floway-backend
+/backend/api
+
+# OS/editor
+.DS_Store
+.idea
