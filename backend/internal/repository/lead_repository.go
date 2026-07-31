@@ -27,7 +27,7 @@ func (r *LeadRepository) List(ctx context.Context) ([]model.Lead, error) {
 	}
 	defer rows.Close()
 
-	var items []model.Lead
+	items := []model.Lead{}
 	for rows.Next() {
 		var item model.Lead
 		if err := rows.Scan(

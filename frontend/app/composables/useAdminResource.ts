@@ -17,7 +17,7 @@ export function useAdminResource<T extends { id: number }>(basePath: string) {
     loading.value = true
     error.value = ''
     try {
-      items.value = await api<T[]>(basePath)
+      items.value = (await api<T[]>(basePath)) ?? []
     } catch {
       error.value = 'Не удалось загрузить данные'
     } finally {

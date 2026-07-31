@@ -27,7 +27,7 @@ func (r *FAQRepository) List(ctx context.Context) ([]model.FAQItem, error) {
 	}
 	defer rows.Close()
 
-	var items []model.FAQItem
+	items := []model.FAQItem{}
 	for rows.Next() {
 		var item model.FAQItem
 		if err := rows.Scan(&item.ID, &item.Question, &item.Answer, &item.SortOrder, &item.CreatedAt, &item.UpdatedAt); err != nil {

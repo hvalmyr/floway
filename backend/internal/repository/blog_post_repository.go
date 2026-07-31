@@ -27,7 +27,7 @@ func (r *BlogPostRepository) List(ctx context.Context) ([]model.BlogPost, error)
 	}
 	defer rows.Close()
 
-	var items []model.BlogPost
+	items := []model.BlogPost{}
 	for rows.Next() {
 		var item model.BlogPost
 		if err := rows.Scan(&item.ID, &item.Slug, &item.Title, &item.CoverImage, &item.Category, &item.Tags, &item.Author, &item.PublishedAt, &item.Content, &item.Status, &item.CreatedAt, &item.UpdatedAt); err != nil {

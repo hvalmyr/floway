@@ -27,7 +27,7 @@ func (r *TeacherRepository) List(ctx context.Context) ([]model.Teacher, error) {
 	}
 	defer rows.Close()
 
-	var items []model.Teacher
+	items := []model.Teacher{}
 	for rows.Next() {
 		var item model.Teacher
 		if err := rows.Scan(&item.ID, &item.Name, &item.Photo, &item.Description, &item.SortOrder, &item.CreatedAt, &item.UpdatedAt); err != nil {

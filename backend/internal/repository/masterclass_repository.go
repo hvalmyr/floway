@@ -28,7 +28,7 @@ func (r *MasterclassRepository) List(ctx context.Context) ([]model.Masterclass, 
 	}
 	defer rows.Close()
 
-	var items []model.Masterclass
+	items := []model.Masterclass{}
 	for rows.Next() {
 		var item model.Masterclass
 		if err := rows.Scan(

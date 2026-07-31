@@ -27,7 +27,7 @@ func (r *CourseRepository) List(ctx context.Context) ([]model.Course, error) {
 	}
 	defer rows.Close()
 
-	var items []model.Course
+	items := []model.Course{}
 	for rows.Next() {
 		var item model.Course
 		if err := rows.Scan(

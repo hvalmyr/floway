@@ -28,7 +28,7 @@ func (r *LessonRepository) ListByCourseBlockID(ctx context.Context, courseBlockI
 	}
 	defer rows.Close()
 
-	var items []model.Lesson
+	items := []model.Lesson{}
 	for rows.Next() {
 		var item model.Lesson
 		if err := rows.Scan(&item.ID, &item.CourseBlockID, &item.Number, &item.Title, &item.Topics, &item.Outcomes, &item.DurationHours, &item.CreatedAt, &item.UpdatedAt); err != nil {
