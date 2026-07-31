@@ -1,0 +1,32 @@
+---
+# Идемпотентный бутстрап чистой Ubuntu 24.04 VPS: пользователь для деплоя,
+# Docker, своп, автообновления безопасности, fail2ban, ufw, ssh-хардненинг.
+#
+# Первый запуск против чистой машины (пока нет пользователя deploy):
+#   ansible-playbook playbooks/bootstrap.yml -e ansible_user=root --ask-vault-pass
+#
+# Повторные запуски (после того как deploy_user создан и захардненен SSH):
+#   ansible-playbook playbooks/bootstrap.yml --ask-vault-pass
+#
+# Роли идут в порядке, где самая рискованная (ssh_hardening) — последняя,
+# и только после того, как deploy_user с рабочим ключом уже создан.
+- name: Bootstrap production VPS
+  hosts: floway_prod
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Ensure this is Ubuntu (this playbook targets Ubuntu 24.04)
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution == "Ubuntu"
+        fail_msg: "Этот плейбук рассчитан на Ubuntu (проверялся на 24.04)."
+
+  roles:
+    - bootstrap_user
+    - docker
+    - swap
+    - unattended_upgrades
+    - fail2ban
+    - firewall
+    - ssh_hardening

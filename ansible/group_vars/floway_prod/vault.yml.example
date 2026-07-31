@@ -1,0 +1,36 @@
+---
+# Скопируй этот файл в vault.yml (рядом, в той же group_vars/floway_prod/)
+# и зашифруй перед первым коммитом:
+#
+#   cp group_vars/floway_prod/vault.yml.example group_vars/floway_prod/vault.yml
+#   $EDITOR group_vars/floway_prod/vault.yml   # впиши реальные значения
+#   ansible-vault encrypt group_vars/floway_prod/vault.yml
+#
+# Файл лежит в group_vars/floway_prod/ (а не group_vars/floway_prod.yml) —
+# это директория, Ansible автоматически подхватывает все файлы внутри неё
+# для группы floway_prod, включая vault.yml, без явного vars_files в плейбуках.
+#
+# Зашифрованный vault.yml коммитить МОЖНО и НУЖНО (это и есть смысл vault —
+# секреты живут в git, но нечитаемы без пароля). Пароль от vault храни
+# отдельно (менеджер паролей / секрет в CI), никогда не рядом с репозиторием.
+
+vault_postgres_user: floway
+vault_postgres_password: "CHANGE_ME_RANDOM_PASSWORD"
+vault_postgres_db: floway
+
+# Генерируй длинную случайную строку, например: openssl rand -hex 32
+vault_jwt_secret: "CHANGE_ME_LONG_RANDOM_STRING"
+
+# SMTP для уведомлений о заявках (прод — реальный провайдер, не Mailhog)
+vault_smtp_host: ""
+vault_smtp_port: "587"
+vault_smtp_from: "noreply@floway.example.com"
+vault_notify_email_to: ""
+
+# Telegram Bot API (уведомления о заявках)
+vault_telegram_bot_token: ""
+vault_telegram_chat_id: ""
+
+# Нужны только если ghcr_login_required: true в group_vars
+vault_ghcr_username: ""
+vault_ghcr_token: ""

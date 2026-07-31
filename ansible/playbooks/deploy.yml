@@ -1,0 +1,19 @@
+---
+# Деплой приложения на уже забутстрапленную VPS (см. bootstrap.yml).
+#
+# Перед первым запуском:
+#   1. A/AAAA-запись floway_domain должна указывать на IP этой VPS
+#      (Caddy иначе не пройдёт ACME HTTP-01 challenge и не выдаст сертификат).
+#   2. Образы должны быть собраны и запушены в GHCR (см. ansible/README.md —
+#      пока вручную, позже через GitHub Actions).
+#
+#   ansible-playbook playbooks/deploy.yml --ask-vault-pass
+#
+# Повторные деплои — та же команда; -e image_tag=<sha> чтобы задеплоить
+# конкретный тег вместо latest.
+- name: Deploy Floway application stack
+  hosts: floway_prod
+  become: true
+  gather_facts: true
+  roles:
+    - deploy_app

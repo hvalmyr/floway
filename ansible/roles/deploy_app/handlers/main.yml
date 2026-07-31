@@ -1,0 +1,5 @@
+---
+- name: restart caddy
+  ansible.builtin.command:
+    cmd: docker compose restart caddy
+    chdir: "{{ deploy_path }}"

@@ -15,8 +15,11 @@
 
 ```
 floway/
-├── docker-compose.yml
+├── docker-compose.yml       # локальная разработка
+├── docker-compose.prod.yml  # прод: образы из GHCR, Caddy (авто-HTTPS), без Mailhog
+├── Justfile                 # шорткаты для docker compose и ansible
 ├── .env.example
+├── ansible/                 # бутстрап VPS + деплой, см. ansible/README.md
 ├── frontend/   # Nuxt-приложение (Dockerfile внутри)
 └── backend/    # Go-приложение (Dockerfile внутри)
 ```
@@ -108,6 +111,13 @@ UI-админка живёт на `/admin` (Nuxt, client-side): `/admin/login` �
 cd backend && go test ./...
 cd frontend && npm run test
 ```
+
+## Прод-деплой
+
+Бутстрап VPS (Ubuntu 24.04, security-хардненинг + Docker) и деплой самого
+приложения (образы из GHCR + Caddy с авто-HTTPS) — через Ansible, см.
+[ansible/README.md](ansible/README.md). Шорткаты в [Justfile](Justfile):
+`just bootstrap-first-run`, `just deploy` и т.д.
 
 ## Что уже сделано (фаза 1)
 

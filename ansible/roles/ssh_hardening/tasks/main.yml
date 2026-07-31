@@ -1,0 +1,27 @@
+---
+# ВАЖНО: эта роль запускается ПОСЛЕДНЕЙ в bootstrap.yml, после того как
+# bootstrap_user уже создал deploy_user с рабочим SSH-ключом и sudo. Порядок
+# важен: если сначала отключить root/пароль, а потом обнаружить, что ключ
+# deploy_user не работает — можно потерять доступ к машине.
+#
+# Безопасность обеспечена так: конфиг пишется, затем `sshd -t` проверяет его
+# синтаксис БЕЗ перезапуска демона. Если проверка не прошла — плейбук падает
+# ДО перезапуска sshd, старый (рабочий) демон продолжает работать со старым
+# конфигом, хендлер restart НЕ вызывается. Проверь доступ новым пользователем
+# в отдельном терминале, прежде чем закрывать текущую сессию (см. ansible/README.md).
+
+- name: Deploy SSH hardening drop-in config
+  ansible.builtin.template:
+    src: hardening.conf.j2
+    dest: /etc/ssh/sshd_config.d/90-hardening.conf
+    owner: root
+    group: root
+    mode: "0600"
+  notify: restart sshd
+
+- name: Validate sshd configuration syntax
+  ansible.builtin.command: sshd -t
+  changed_when: false
+
+- name: Apply sshd restart now that config is validated
+  ansible.builtin.meta: flush_handlers

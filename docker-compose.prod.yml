@@ -1,0 +1,90 @@
+# Продакшен-конфигурация, разворачивается на VPS через ansible/playbooks/deploy.yml.
+#
+# Отличия от dev-версии (docker-compose.yml):
+# - backend/frontend берутся как готовые образы из GHCR (ghcr.io/<owner>/floway-*),
+#   а не собираются на месте — сборка происходит в CI (GitHub Actions);
+# - никакого Mailhog — SMTP_* указывают на реальный почтовый сервис;
+# - postgres/backend/frontend не публикуют порты наружу — единственная точка
+#   входа снаружи это Caddy (80/443), всё остальное только по docker-сети;
+# - добавлен Caddy: автоматический HTTPS по FLOWAY_DOMAIN, реверс-прокси
+#   /api/* и /healthz -> backend, всё остальное -> frontend.
+#
+# Требуемые переменные окружения — см. ansible/roles/deploy_app/templates/env.j2
+# (шаблонизируется Ansible из group_vars + vault.yml, на VPS кладётся в .env
+# рядом с этим файлом).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    image: ${BACKEND_IMAGE}:${IMAGE_TAG:-latest}
+    entrypoint: ["./goose"]
+    command:
+      - "-dir"
+      - "migrations"
+      - "postgres"
+      - "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
+      - "up"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend:
+    image: ${BACKEND_IMAGE}:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      HTTP_PORT: 8080
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET}
+      FRONTEND_ORIGIN: https://${FLOWAY_DOMAIN}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_FROM: ${SMTP_FROM}
+      NOTIFY_EMAIL_TO: ${NOTIFY_EMAIL_TO}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  frontend:
+    image: ${FRONTEND_IMAGE}:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      NUXT_PUBLIC_API_BASE: https://${FLOWAY_DOMAIN}
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

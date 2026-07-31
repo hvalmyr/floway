@@ -1,0 +1,14 @@
+{{ ansible_managed | comment }}
+# Дроп-ин конфиг sshd (Ubuntu 24.04 подключает /etc/ssh/sshd_config.d/*.conf
+# из основного sshd_config через Include).
+Port {{ ssh_port }}
+
+PermitRootLogin no
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PubkeyAuthentication yes
+X11Forwarding no
+AllowUsers {{ deploy_user }}
+MaxAuthTries 3
+ClientAliveInterval 300
+ClientAliveCountMax 2

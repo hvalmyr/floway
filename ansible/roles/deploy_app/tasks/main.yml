@@ -1,0 +1,54 @@
+---
+- name: Ensure deploy directory exists
+  ansible.builtin.file:
+    path: "{{ deploy_path }}"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: "0750"
+
+- name: Template .env file (contains secrets — mode 0600)
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ deploy_path }}/.env"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: "0600"
+
+- name: Copy production docker-compose file
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../docker-compose.prod.yml"
+    dest: "{{ deploy_path }}/docker-compose.yml"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: "0644"
+
+- name: Template Caddyfile
+  ansible.builtin.template:
+    src: Caddyfile.j2
+    dest: "{{ deploy_path }}/Caddyfile"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: "0644"
+  notify: restart caddy
+
+- name: Log in to GHCR
+  ansible.builtin.shell: |
+    set -euo pipefail
+    echo "{{ vault_ghcr_token }}" | docker login ghcr.io -u "{{ vault_ghcr_username }}" --password-stdin
+  args:
+    executable: /bin/bash
+  when: ghcr_login_required
+  no_log: true
+  changed_when: true
+
+- name: Pull latest images and (re)start the stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ deploy_path }}"
+    pull: always
+    state: present
+    remove_orphans: true
+
+- name: Prune dangling Docker images to save disk space
+  community.docker.docker_prune:
+    images: true

@@ -1,0 +1,45 @@
+---
+- name: Install ufw
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Set default deny policy for incoming traffic
+  community.general.ufw:
+    direction: incoming
+    policy: deny
+
+- name: Set default allow policy for outgoing traffic
+  community.general.ufw:
+    direction: outgoing
+    policy: allow
+
+- name: Allow SSH port
+  community.general.ufw:
+    rule: allow
+    port: "{{ ssh_port }}"
+    proto: tcp
+    comment: "SSH"
+
+- name: Allow HTTP (Caddy / ACME challenge)
+  community.general.ufw:
+    rule: allow
+    port: "80"
+    proto: tcp
+    comment: "HTTP"
+  when: enable_http_https_ports
+
+- name: Allow HTTPS
+  community.general.ufw:
+    rule: allow
+    port: "443"
+    proto: tcp
+    comment: "HTTPS"
+  when: enable_http_https_ports
+
+- name: Enable ufw with logging
+  community.general.ufw:
+    state: enabled
+    logging: "on"

@@ -1,0 +1,42 @@
+---
+- name: Check current swap size
+  ansible.builtin.command: swapon --show=NAME --noheadings
+  register: swap_status
+  changed_when: false
+  when: enable_swap
+
+- name: Check if swapfile already exists
+  ansible.builtin.stat:
+    path: "{{ swap_file_path }}"
+  register: swap_stat
+  when: enable_swap
+
+- name: Create, format and enable swapfile
+  when:
+    - enable_swap
+    - not swap_stat.stat.exists
+  block:
+    - name: Allocate swapfile
+      ansible.builtin.command: "fallocate -l {{ swap_size }} {{ swap_file_path }}"
+
+    - name: Restrict swapfile permissions
+      ansible.builtin.file:
+        path: "{{ swap_file_path }}"
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: Format swapfile
+      ansible.builtin.command: "mkswap {{ swap_file_path }}"
+
+    - name: Enable swapfile now
+      ansible.builtin.command: "swapon {{ swap_file_path }}"
+
+- name: Persist swapfile in fstab
+  ansible.posix.mount:
+    name: none
+    src: "{{ swap_file_path }}"
+    fstype: swap
+    opts: sw
+    state: present
+  when: enable_swap
