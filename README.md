@@ -114,7 +114,7 @@ cd frontend && bun install && bun run lint && bun run format:check && bun run te
 
 Frontend-линт/форматтер — [oxlint](https://oxc.rs/docs/guide/usage/linter)/[oxfmt](https://oxc.rs/docs/guide/usage/formatter) (Rust-стек oxc, быстрее ESLint/Prettier на порядок). `bun run format` — исправить форматирование на месте. Backend — `gofmt` + `go vet` + [golangci-lint](https://golangci-lint.run/) (см. CI).
 
-Пакетный менеджер фронтенда — [Bun](https://bun.sh) везде: локальная разработка, CI, `frontend/Dockerfile` (сборочный стейдж на `oven/bun`, рантайм — на `node:22-alpine`, т.к. Nitro-сборка — обычный Node-совместимый JS). `bun.lock` — единственный лок-файл, `package-lock.json` больше не используется.
+Фронтенд полностью на [Bun](https://bun.sh) — пакетный менеджер и прод-рантайм. `bun.lock` — единственный лок-файл. Nitro собирается под `preset: "bun"` (`nuxt.config.ts`) — прод-сервер работает на `Bun.serve()`, а не на Node `http`. `frontend/Dockerfile` — оба стейджа на `oven/bun:1-alpine`, запуск через `bun run .output/server/index.mjs`.
 
 ## CI
 

@@ -18,6 +18,11 @@ export default defineNuxtConfig({
     },
   },
 
+  // Прод-рантайм — Bun (см. frontend/Dockerfile), не Node.
+  nitro: {
+    preset: "bun",
+  },
+
   typescript: {
     strict: true,
   },
