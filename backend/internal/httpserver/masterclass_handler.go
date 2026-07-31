@@ -12,18 +12,19 @@ import (
 )
 
 type masterclassHandler struct {
-	svc *service.MasterclassService
+	svc   *service.MasterclassService
+	admin func(http.Handler) http.Handler
 }
 
-func newMasterclassHandler(svc *service.MasterclassService) *masterclassHandler {
-	return &masterclassHandler{svc: svc}
+func newMasterclassHandler(svc *service.MasterclassService, admin func(http.Handler) http.Handler) *masterclassHandler {
+	return &masterclassHandler{svc: svc, admin: admin}
 }
 
 func (h *masterclassHandler) routes(r chi.Router) {
 	r.Get("/", h.list)
-	r.Post("/", h.create)
-	r.Put("/{id}", h.update)
-	r.Delete("/{id}", h.delete)
+	r.With(h.admin).Post("/", h.create)
+	r.With(h.admin).Put("/{id}", h.update)
+	r.With(h.admin).Delete("/{id}", h.delete)
 }
 
 type masterclassRequest struct {

@@ -9,6 +9,7 @@ RUN go mod download
 COPY . .
 
 RUN CGO_ENABLED=0 go build -o /out/api ./cmd/api
+RUN CGO_ENABLED=0 go build -o /out/create-admin ./cmd/create-admin
 RUN go install github.com/pressly/goose/v3/cmd/goose@v3.24.1 && \
     cp "$(go env GOPATH)/bin/goose" /out/goose
 
@@ -17,6 +18,7 @@ RUN apk add --no-cache ca-certificates tzdata
 WORKDIR /app
 
 COPY --from=builder /out/api ./api
+COPY --from=builder /out/create-admin ./create-admin
 COPY --from=builder /out/goose ./goose
 COPY migrations ./migrations
 

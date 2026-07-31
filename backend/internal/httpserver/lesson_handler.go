@@ -12,20 +12,21 @@ import (
 )
 
 type lessonHandler struct {
-	svc *service.LessonService
+	svc   *service.LessonService
+	admin func(http.Handler) http.Handler
 }
 
-func newLessonHandler(svc *service.LessonService) *lessonHandler {
-	return &lessonHandler{svc: svc}
+func newLessonHandler(svc *service.LessonService, admin func(http.Handler) http.Handler) *lessonHandler {
+	return &lessonHandler{svc: svc, admin: admin}
 }
 
 // routes registers lesson routes. It expects to be mounted under a path
 // containing a {blockId} URL parameter, e.g. /course-blocks/{blockId}/lessons.
 func (h *lessonHandler) routes(r chi.Router) {
 	r.Get("/", h.list)
-	r.Post("/", h.create)
-	r.Put("/{id}", h.update)
-	r.Delete("/{id}", h.delete)
+	r.With(h.admin).Post("/", h.create)
+	r.With(h.admin).Put("/{id}", h.update)
+	r.With(h.admin).Delete("/{id}", h.delete)
 }
 
 type lessonCreateRequest struct {

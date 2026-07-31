@@ -6,10 +6,11 @@ import (
 )
 
 type Config struct {
-	Env         string
-	HTTPPort    string
-	DatabaseURL string
-	JWTSecret   string
+	Env            string
+	HTTPPort       string
+	DatabaseURL    string
+	JWTSecret      string
+	FrontendOrigin string
 
 	SMTPHost      string
 	SMTPPort      string
@@ -22,10 +23,11 @@ type Config struct {
 
 func Load() (Config, error) {
 	cfg := Config{
-		Env:         getenv("APP_ENV", "local"),
-		HTTPPort:    getenv("HTTP_PORT", "8080"),
-		DatabaseURL: os.Getenv("DATABASE_URL"),
-		JWTSecret:   os.Getenv("JWT_SECRET"),
+		Env:            getenv("APP_ENV", "local"),
+		HTTPPort:       getenv("HTTP_PORT", "8080"),
+		DatabaseURL:    os.Getenv("DATABASE_URL"),
+		JWTSecret:      os.Getenv("JWT_SECRET"),
+		FrontendOrigin: getenv("FRONTEND_ORIGIN", "http://localhost:3000"),
 
 		SMTPHost:      os.Getenv("SMTP_HOST"),
 		SMTPPort:      os.Getenv("SMTP_PORT"),
@@ -38,6 +40,9 @@ func Load() (Config, error) {
 
 	if cfg.DatabaseURL == "" {
 		return Config{}, fmt.Errorf("DATABASE_URL is required")
+	}
+	if cfg.JWTSecret == "" {
+		return Config{}, fmt.Errorf("JWT_SECRET is required")
 	}
 
 	return cfg, nil

@@ -46,6 +46,7 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-floway}:${POSTGRES_PASSWORD:-floway}@postgres:5432/${POSTGRES_DB:-floway}?sslmode=disable
       SMTP_HOST: mailhog
+      FRONTEND_ORIGIN: http://localhost:${FRONTEND_PORT:-3000}
     ports:
       - "${HTTP_PORT:-8080}:${HTTP_PORT:-8080}"
     depends_on:

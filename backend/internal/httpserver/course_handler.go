@@ -12,18 +12,19 @@ import (
 )
 
 type courseHandler struct {
-	svc *service.CourseService
+	svc   *service.CourseService
+	admin func(http.Handler) http.Handler
 }
 
-func newCourseHandler(svc *service.CourseService) *courseHandler {
-	return &courseHandler{svc: svc}
+func newCourseHandler(svc *service.CourseService, admin func(http.Handler) http.Handler) *courseHandler {
+	return &courseHandler{svc: svc, admin: admin}
 }
 
 func (h *courseHandler) routes(r chi.Router) {
 	r.Get("/", h.list)
-	r.Post("/", h.create)
-	r.Put("/{id}", h.update)
-	r.Delete("/{id}", h.delete)
+	r.With(h.admin).Post("/", h.create)
+	r.With(h.admin).Put("/{id}", h.update)
+	r.With(h.admin).Delete("/{id}", h.delete)
 }
 
 type courseRequest struct {

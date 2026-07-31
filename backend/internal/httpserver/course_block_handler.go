@@ -12,11 +12,12 @@ import (
 )
 
 type courseBlockHandler struct {
-	svc *service.CourseBlockService
+	svc   *service.CourseBlockService
+	admin func(http.Handler) http.Handler
 }
 
-func newCourseBlockHandler(svc *service.CourseBlockService) *courseBlockHandler {
-	return &courseBlockHandler{svc: svc}
+func newCourseBlockHandler(svc *service.CourseBlockService, admin func(http.Handler) http.Handler) *courseBlockHandler {
+	return &courseBlockHandler{svc: svc, admin: admin}
 }
 
 // routes is expected to be mounted under a path carrying the {courseId} URL
@@ -25,9 +26,9 @@ func newCourseBlockHandler(svc *service.CourseBlockService) *courseBlockHandler 
 // {id} instead.
 func (h *courseBlockHandler) routes(r chi.Router) {
 	r.Get("/", h.list)
-	r.Post("/", h.create)
-	r.Put("/{id}", h.update)
-	r.Delete("/{id}", h.delete)
+	r.With(h.admin).Post("/", h.create)
+	r.With(h.admin).Put("/{id}", h.update)
+	r.With(h.admin).Delete("/{id}", h.delete)
 }
 
 type courseBlockCreateRequest struct {

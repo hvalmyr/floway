@@ -10,11 +10,14 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"floway-backend/internal/auth"
 	"floway-backend/internal/config"
 	"floway-backend/internal/httpserver"
 	"floway-backend/internal/repository"
 	"floway-backend/internal/service"
 )
+
+const adminSessionTTL = 12 * time.Hour
 
 func main() {
 	if err := run(); err != nil {
@@ -46,6 +49,11 @@ func run() error {
 		CourseBlock: service.NewCourseBlockService(repository.NewCourseBlockRepository(pool)),
 		Lesson:      service.NewLessonService(repository.NewLessonRepository(pool)),
 		Lead:        service.NewLeadService(repository.NewLeadRepository(pool)),
+		AdminUser:   service.NewAdminUserService(repository.NewAdminUserRepository(pool)),
+
+		Tokens:         auth.NewTokenManager(cfg.JWTSecret, adminSessionTTL),
+		SecureCookies:  cfg.Env != "local",
+		FrontendOrigin: cfg.FrontendOrigin,
 	}
 
 	srv := &http.Server{

@@ -13,18 +13,19 @@ import (
 )
 
 type blogPostHandler struct {
-	svc *service.BlogPostService
+	svc   *service.BlogPostService
+	admin func(http.Handler) http.Handler
 }
 
-func newBlogPostHandler(svc *service.BlogPostService) *blogPostHandler {
-	return &blogPostHandler{svc: svc}
+func newBlogPostHandler(svc *service.BlogPostService, admin func(http.Handler) http.Handler) *blogPostHandler {
+	return &blogPostHandler{svc: svc, admin: admin}
 }
 
 func (h *blogPostHandler) routes(r chi.Router) {
 	r.Get("/", h.list)
-	r.Post("/", h.create)
-	r.Put("/{id}", h.update)
-	r.Delete("/{id}", h.delete)
+	r.With(h.admin).Post("/", h.create)
+	r.With(h.admin).Put("/{id}", h.update)
+	r.With(h.admin).Delete("/{id}", h.delete)
 }
 
 type blogPostRequest struct {

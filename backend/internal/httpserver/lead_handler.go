@@ -12,18 +12,19 @@ import (
 )
 
 type leadHandler struct {
-	svc *service.LeadService
+	svc   *service.LeadService
+	admin func(http.Handler) http.Handler
 }
 
-func newLeadHandler(svc *service.LeadService) *leadHandler {
-	return &leadHandler{svc: svc}
+func newLeadHandler(svc *service.LeadService, admin func(http.Handler) http.Handler) *leadHandler {
+	return &leadHandler{svc: svc, admin: admin}
 }
 
 func (h *leadHandler) routes(r chi.Router) {
-	r.Get("/", h.list)
+	r.With(h.admin).Get("/", h.list)
 	r.Post("/", h.create)
-	r.Patch("/{id}/status", h.updateStatus)
-	r.Delete("/{id}", h.delete)
+	r.With(h.admin).Patch("/{id}/status", h.updateStatus)
+	r.With(h.admin).Delete("/{id}", h.delete)
 }
 
 type leadCreateRequest struct {

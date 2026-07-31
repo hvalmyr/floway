@@ -4,6 +4,7 @@
 # Go build artifacts
 /backend/floway-backend
 /backend/api
+/backend/create-admin
 
 # OS/editor
 .DS_Store

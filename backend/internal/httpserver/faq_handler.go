@@ -13,18 +13,19 @@ import (
 )
 
 type faqHandler struct {
-	svc *service.FAQService
+	svc   *service.FAQService
+	admin func(http.Handler) http.Handler
 }
 
-func newFAQHandler(svc *service.FAQService) *faqHandler {
-	return &faqHandler{svc: svc}
+func newFAQHandler(svc *service.FAQService, admin func(http.Handler) http.Handler) *faqHandler {
+	return &faqHandler{svc: svc, admin: admin}
 }
 
 func (h *faqHandler) routes(r chi.Router) {
 	r.Get("/", h.list)
-	r.Post("/", h.create)
-	r.Put("/{id}", h.update)
-	r.Delete("/{id}", h.delete)
+	r.With(h.admin).Post("/", h.create)
+	r.With(h.admin).Put("/{id}", h.update)
+	r.With(h.admin).Delete("/{id}", h.delete)
 }
 
 type faqCreateRequest struct {
