@@ -58,6 +58,16 @@ func (c *Client) Upload(ctx context.Context, key string, r io.Reader, size int64
 	return nil
 }
 
+// Delete removes an object. Deleting a key that doesn't exist is not an
+// error (Garage/S3 semantics) — callers doing best-effort cleanup don't need
+// to special-case "already gone".
+func (c *Client) Delete(ctx context.Context, key string) error {
+	if err := c.mc.RemoveObject(ctx, c.bucket, key, minio.RemoveObjectOptions{}); err != nil {
+		return fmt.Errorf("delete %s: %w", key, err)
+	}
+	return nil
+}
+
 // Download returns the object stream. Call Stat() on it before reading to
 // check existence (a missing key only surfaces as an error there, not here).
 func (c *Client) Download(ctx context.Context, key string) (*minio.Object, error) {

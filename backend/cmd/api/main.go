@@ -72,7 +72,7 @@ func run() error {
 		Lesson:       service.NewLessonService(lessonRepo),
 		Lead:         service.NewLeadService(repository.NewLeadRepository(pool)),
 		AdminUser:    service.NewAdminUserService(repository.NewAdminUserRepository(pool)),
-		PageContent:  service.NewPageContentService(repository.NewPageContentRepository(pool)),
+		PageContent:  service.NewPageContentService(repository.NewPageContentRepository(pool), garageClient),
 		Feature:      service.NewFeatureService(repository.NewFeatureRepository(pool)),
 		AboutItem:    service.NewAboutItemService(repository.NewAboutItemRepository(pool)),
 		SocialLink:   service.NewSocialLinkService(repository.NewSocialLinkRepository(pool)),
