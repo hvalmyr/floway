@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"floway-backend/internal/model"
@@ -16,10 +17,19 @@ func NewMasterclassRepository(db *pgxpool.Pool) *MasterclassRepository {
 	return &MasterclassRepository{db: db}
 }
 
+// masterclassColumns/scanMasterclass — see blog_post_repository.go's
+// identical comment (architecture review finding #12).
+const masterclassColumns = "id, slug, title, short_description, full_description, ending_text, duration, price_group, price_individual, price_description, cover_image, status, created_at, updated_at"
+
+func scanMasterclass(row pgx.Row) (model.Masterclass, error) {
+	var item model.Masterclass
+	err := row.Scan(&item.ID, &item.Slug, &item.Title, &item.ShortDesc, &item.FullDesc, &item.EndingText, &item.Duration, &item.PriceGroup, &item.PriceIndividual, &item.PriceDescription, &item.CoverImage, &item.Status, &item.CreatedAt, &item.UpdatedAt)
+	return item, err
+}
+
 func (r *MasterclassRepository) List(ctx context.Context) ([]model.Masterclass, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT id, slug, title, short_description, full_description, ending_text, duration,
-		       price_group, price_individual, price_description, cover_image, status, created_at, updated_at
+		SELECT `+masterclassColumns+`
 		FROM masterclasses
 		ORDER BY id
 	`)
@@ -30,12 +40,8 @@ func (r *MasterclassRepository) List(ctx context.Context) ([]model.Masterclass, 
 
 	items := []model.Masterclass{}
 	for rows.Next() {
-		var item model.Masterclass
-		if err := rows.Scan(
-			&item.ID, &item.Slug, &item.Title, &item.ShortDesc, &item.FullDesc, &item.EndingText, &item.Duration,
-			&item.PriceGroup, &item.PriceIndividual, &item.PriceDescription, &item.CoverImage, &item.Status,
-			&item.CreatedAt, &item.UpdatedAt,
-		); err != nil {
+		item, err := scanMasterclass(rows)
+		if err != nil {
 			return nil, err
 		}
 		items = append(items, item)
@@ -44,17 +50,12 @@ func (r *MasterclassRepository) List(ctx context.Context) ([]model.Masterclass, 
 }
 
 func (r *MasterclassRepository) FindBySlug(ctx context.Context, slug string) (model.Masterclass, error) {
-	var item model.Masterclass
-	err := r.db.QueryRow(ctx, `
-		SELECT id, slug, title, short_description, full_description, ending_text, duration,
-		       price_group, price_individual, price_description, cover_image, status, created_at, updated_at
+	row := r.db.QueryRow(ctx, `
+		SELECT `+masterclassColumns+`
 		FROM masterclasses
 		WHERE slug = $1
-	`, slug).Scan(
-		&item.ID, &item.Slug, &item.Title, &item.ShortDesc, &item.FullDesc, &item.EndingText, &item.Duration,
-		&item.PriceGroup, &item.PriceIndividual, &item.PriceDescription, &item.CoverImage, &item.Status,
-		&item.CreatedAt, &item.UpdatedAt,
-	)
+	`, slug)
+	item, err := scanMasterclass(row)
 	return item, translateNotFound(err)
 }
 

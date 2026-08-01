@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"floway-backend/internal/model"
@@ -16,9 +17,22 @@ func NewBlogPostRepository(db *pgxpool.Pool) *BlogPostRepository {
 	return &BlogPostRepository{db: db}
 }
 
+// blogPostColumns/scanBlogPost keep the SELECT list and its positional Scan
+// in exactly one place — List/ListPublished/FindPublishedBySlug all select
+// every column, and a column added to one but not updated in the other used
+// to be a real risk with no test to catch a scan-order drift (architecture
+// review finding #12).
+const blogPostColumns = "id, slug, title, cover_image, category, tags, author, published_at, content, status, created_at, updated_at"
+
+func scanBlogPost(row pgx.Row) (model.BlogPost, error) {
+	var item model.BlogPost
+	err := row.Scan(&item.ID, &item.Slug, &item.Title, &item.CoverImage, &item.Category, &item.Tags, &item.Author, &item.PublishedAt, &item.Content, &item.Status, &item.CreatedAt, &item.UpdatedAt)
+	return item, err
+}
+
 func (r *BlogPostRepository) List(ctx context.Context) ([]model.BlogPost, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT id, slug, title, cover_image, category, tags, author, published_at, content, status, created_at, updated_at
+		SELECT `+blogPostColumns+`
 		FROM blog_posts
 		ORDER BY published_at DESC NULLS LAST, id DESC
 	`)
@@ -29,8 +43,8 @@ func (r *BlogPostRepository) List(ctx context.Context) ([]model.BlogPost, error)
 
 	items := []model.BlogPost{}
 	for rows.Next() {
-		var item model.BlogPost
-		if err := rows.Scan(&item.ID, &item.Slug, &item.Title, &item.CoverImage, &item.Category, &item.Tags, &item.Author, &item.PublishedAt, &item.Content, &item.Status, &item.CreatedAt, &item.UpdatedAt); err != nil {
+		item, err := scanBlogPost(rows)
+		if err != nil {
 			return nil, err
 		}
 		items = append(items, item)
@@ -40,7 +54,7 @@ func (r *BlogPostRepository) List(ctx context.Context) ([]model.BlogPost, error)
 
 func (r *BlogPostRepository) ListPublished(ctx context.Context) ([]model.BlogPost, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT id, slug, title, cover_image, category, tags, author, published_at, content, status, created_at, updated_at
+		SELECT `+blogPostColumns+`
 		FROM blog_posts
 		WHERE status = $1
 		ORDER BY published_at DESC NULLS LAST, id DESC
@@ -52,8 +66,8 @@ func (r *BlogPostRepository) ListPublished(ctx context.Context) ([]model.BlogPos
 
 	items := []model.BlogPost{}
 	for rows.Next() {
-		var item model.BlogPost
-		if err := rows.Scan(&item.ID, &item.Slug, &item.Title, &item.CoverImage, &item.Category, &item.Tags, &item.Author, &item.PublishedAt, &item.Content, &item.Status, &item.CreatedAt, &item.UpdatedAt); err != nil {
+		item, err := scanBlogPost(rows)
+		if err != nil {
 			return nil, err
 		}
 		items = append(items, item)
@@ -62,14 +76,12 @@ func (r *BlogPostRepository) ListPublished(ctx context.Context) ([]model.BlogPos
 }
 
 func (r *BlogPostRepository) FindPublishedBySlug(ctx context.Context, slug string) (model.BlogPost, error) {
-	var item model.BlogPost
-	err := r.db.QueryRow(ctx, `
-		SELECT id, slug, title, cover_image, category, tags, author, published_at, content, status, created_at, updated_at
+	row := r.db.QueryRow(ctx, `
+		SELECT `+blogPostColumns+`
 		FROM blog_posts
 		WHERE slug = $1 AND status = $2
-	`, slug, model.BlogPostStatusPublished).Scan(
-		&item.ID, &item.Slug, &item.Title, &item.CoverImage, &item.Category, &item.Tags, &item.Author, &item.PublishedAt, &item.Content, &item.Status, &item.CreatedAt, &item.UpdatedAt,
-	)
+	`, slug, model.BlogPostStatusPublished)
+	item, err := scanBlogPost(row)
 	return item, translateNotFound(err)
 }
 

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"floway-backend/internal/model"
@@ -16,9 +17,19 @@ func NewFeatureRepository(db *pgxpool.Pool) *FeatureRepository {
 	return &FeatureRepository{db: db}
 }
 
+// featureColumns/scanFeature — see blog_post_repository.go's identical
+// comment (architecture review finding #12).
+const featureColumns = "id, page, icon, title, description, sort_order, created_at, updated_at"
+
+func scanFeature(row pgx.Row) (model.Feature, error) {
+	var item model.Feature
+	err := row.Scan(&item.ID, &item.Page, &item.Icon, &item.Title, &item.Description, &item.SortOrder, &item.CreatedAt, &item.UpdatedAt)
+	return item, err
+}
+
 func (r *FeatureRepository) List(ctx context.Context) ([]model.Feature, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT id, page, icon, title, description, sort_order, created_at, updated_at
+		SELECT `+featureColumns+`
 		FROM features
 		ORDER BY page, sort_order, id
 	`)
@@ -29,8 +40,8 @@ func (r *FeatureRepository) List(ctx context.Context) ([]model.Feature, error) {
 
 	items := []model.Feature{}
 	for rows.Next() {
-		var item model.Feature
-		if err := rows.Scan(&item.ID, &item.Page, &item.Icon, &item.Title, &item.Description, &item.SortOrder, &item.CreatedAt, &item.UpdatedAt); err != nil {
+		item, err := scanFeature(rows)
+		if err != nil {
 			return nil, err
 		}
 		items = append(items, item)
@@ -40,7 +51,7 @@ func (r *FeatureRepository) List(ctx context.Context) ([]model.Feature, error) {
 
 func (r *FeatureRepository) ListByPage(ctx context.Context, page string) ([]model.Feature, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT id, page, icon, title, description, sort_order, created_at, updated_at
+		SELECT `+featureColumns+`
 		FROM features
 		WHERE page = $1
 		ORDER BY sort_order, id
@@ -52,8 +63,8 @@ func (r *FeatureRepository) ListByPage(ctx context.Context, page string) ([]mode
 
 	items := []model.Feature{}
 	for rows.Next() {
-		var item model.Feature
-		if err := rows.Scan(&item.ID, &item.Page, &item.Icon, &item.Title, &item.Description, &item.SortOrder, &item.CreatedAt, &item.UpdatedAt); err != nil {
+		item, err := scanFeature(rows)
+		if err != nil {
 			return nil, err
 		}
 		items = append(items, item)

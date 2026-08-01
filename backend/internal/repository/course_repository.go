@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"floway-backend/internal/model"
@@ -16,9 +17,20 @@ func NewCourseRepository(db *pgxpool.Pool) *CourseRepository {
 	return &CourseRepository{db: db}
 }
 
+// courseColumns/scanCourse — see blog_post_repository.go's identical
+// comment (architecture review finding #12): one column list, one scan
+// order, used by both List and FindBySlug.
+const courseColumns = "id, slug, title, short_description, full_description, status, cover_image, gallery, sort_order, created_at, updated_at"
+
+func scanCourse(row pgx.Row) (model.Course, error) {
+	var item model.Course
+	err := row.Scan(&item.ID, &item.Slug, &item.Title, &item.ShortDesc, &item.FullDesc, &item.Status, &item.CoverImage, &item.Gallery, &item.SortOrder, &item.CreatedAt, &item.UpdatedAt)
+	return item, err
+}
+
 func (r *CourseRepository) List(ctx context.Context) ([]model.Course, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT id, slug, title, short_description, full_description, status, cover_image, gallery, sort_order, created_at, updated_at
+		SELECT `+courseColumns+`
 		FROM courses
 		ORDER BY sort_order, id
 	`)
@@ -29,20 +41,8 @@ func (r *CourseRepository) List(ctx context.Context) ([]model.Course, error) {
 
 	items := []model.Course{}
 	for rows.Next() {
-		var item model.Course
-		if err := rows.Scan(
-			&item.ID,
-			&item.Slug,
-			&item.Title,
-			&item.ShortDesc,
-			&item.FullDesc,
-			&item.Status,
-			&item.CoverImage,
-			&item.Gallery,
-			&item.SortOrder,
-			&item.CreatedAt,
-			&item.UpdatedAt,
-		); err != nil {
+		item, err := scanCourse(rows)
+		if err != nil {
 			return nil, err
 		}
 		items = append(items, item)
@@ -51,24 +51,12 @@ func (r *CourseRepository) List(ctx context.Context) ([]model.Course, error) {
 }
 
 func (r *CourseRepository) FindBySlug(ctx context.Context, slug string) (model.Course, error) {
-	var item model.Course
-	err := r.db.QueryRow(ctx, `
-		SELECT id, slug, title, short_description, full_description, status, cover_image, gallery, sort_order, created_at, updated_at
+	row := r.db.QueryRow(ctx, `
+		SELECT `+courseColumns+`
 		FROM courses
 		WHERE slug = $1
-	`, slug).Scan(
-		&item.ID,
-		&item.Slug,
-		&item.Title,
-		&item.ShortDesc,
-		&item.FullDesc,
-		&item.Status,
-		&item.CoverImage,
-		&item.Gallery,
-		&item.SortOrder,
-		&item.CreatedAt,
-		&item.UpdatedAt,
-	)
+	`, slug)
+	item, err := scanCourse(row)
 	return item, translateNotFound(err)
 }
 
