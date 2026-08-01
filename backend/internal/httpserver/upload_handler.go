@@ -41,7 +41,7 @@ func (h *uploadHandler) upload(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err)
 		return
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	contentType := header.Header.Get("Content-Type")
 	ext, ok := allowedImageExtensions[contentType]
@@ -67,7 +67,7 @@ func (h *uploadHandler) serve(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	defer obj.Close()
+	defer func() { _ = obj.Close() }()
 
 	info, err := obj.Stat()
 	if err != nil {
