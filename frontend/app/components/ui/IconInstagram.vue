@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** docs/icons/footer-icons/instagram.svg — real asset supplied by the client. */
+ /** docs/icons/footer-icons/instagram.svg — real asset supplied by the client. */
 </script>
 <template>
   <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">

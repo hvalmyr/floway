@@ -77,7 +77,10 @@ export default {
         "body-l": ["var(--text-body-l)", { lineHeight: "1.5" }],
         body: ["var(--text-body)", { lineHeight: "1.6" }],
         small: ["var(--text-small)", { lineHeight: "1.4", fontWeight: "600" }],
-        button: ["var(--text-button)", { lineHeight: "1" }],
+        // Одинаковый шрифт/размер/жирность с заголовками преимуществ, именами
+        // педагогов и вопросами FAQ — везде text-h4 font-display font-bold, у
+        // кнопок только line-height туже (однострочный текст).
+        button: ["var(--text-h4)", { lineHeight: "1", fontWeight: "700" }],
       },
     },
   },

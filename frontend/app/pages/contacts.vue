@@ -24,17 +24,17 @@ const socialIcons: Record<string, Component> = {
     <div class="flex flex-col gap-16">
       <h1 class="font-display text-h1 text-ink">Контакты</h1>
 
-      <p class="font-body text-body-l text-ink">
+      <p class="font-body text-body text-ink">
         Позвонить:
         <a :href="contactInfo.phoneHref" class="text-primary underline">{{ contactInfo.phone }}</a>
       </p>
-      <p class="font-body text-body-l text-ink">
+      <p class="font-body text-body text-ink">
         Написать на почту:
         <a :href="`mailto:${contactInfo.email}`" class="text-primary underline">{{
           contactInfo.email
         }}</a>
       </p>
-      <p class="font-body text-body-l text-ink">
+      <p class="font-body text-body text-ink">
         Написать в
         <a :href="contactInfo.telegramUrl" class="text-primary underline">Telegram</a>,
         <a :href="contactInfo.whatsappUrl" class="text-primary underline">Whatsapp</a>
@@ -48,7 +48,7 @@ const socialIcons: Record<string, Component> = {
       <div class="flex flex-col gap-16">
         <h2 class="font-display text-h2 text-primary">Адрес</h2>
 
-        <p class="font-body text-body-l text-ink">{{ contactInfo.address }}</p>
+        <p class="font-body text-body text-ink">{{ contactInfo.address }}</p>
         <p class="font-body text-body text-ink">
           Ближайшие станции метро:
           <strong>{{ contactInfo.metroStations.slice(0, -1).join(", ") }}</strong>
@@ -92,7 +92,7 @@ const socialIcons: Record<string, Component> = {
         <p
           v-for="social in socialLinks.filter((s) => s.disclaimer)"
           :key="`${social.label}-disclaimer`"
-          class="font-body text-small text-ink/70"
+          class="font-body text-body text-ink/70"
         >
           {{ social.disclaimer }}
         </p>

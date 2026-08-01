@@ -33,9 +33,10 @@ const props = withDefaults(
   },
 );
 
-const ctaVariant = computed(() =>
-  props.variant === "surface-white" ? "primary" : "outline-inverted",
-);
+// "outline" is a solid white-fill button, so it reads fine sitting on top of
+// the colored (primary/ink) card fills too — only the plain white card needs
+// the blue "primary" button to stand out at all.
+const ctaVariant = computed(() => (props.variant === "surface-white" ? "primary" : "outline"));
 </script>
 
 <template>
@@ -58,7 +59,9 @@ const ctaVariant = computed(() =>
       {{ lessonsCount ?? "?" }} занятий, {{ hours ?? "?" }} часов
     </p>
     <p v-if="description" class="mb-24 font-body text-body">{{ description }}</p>
-    <p v-if="price" class="mb-24 font-body text-h4 font-bold">{{ price.toLocaleString("ru-RU") }} ₽</p>
+    <p v-if="price" class="mb-24 font-body text-body font-bold">
+      {{ price.toLocaleString("ru-RU") }} ₽
+    </p>
 
     <UiButton :variant="ctaVariant" :to="to" class="mt-auto w-full justify-center">{{
       ctaLabel

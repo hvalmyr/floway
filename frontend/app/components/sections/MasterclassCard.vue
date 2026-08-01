@@ -51,11 +51,11 @@ const infoItems = computed(() => {
       <h2 class="font-display text-h2" :class="accent ? 'text-primary' : 'text-ink'">
         {{ masterclass.title }}
       </h2>
-      <p class="font-body text-body text-ink">{{ masterclass.shortDescription }}</p>
-      <p v-if="masterclass.fullDescription" class="font-body text-body text-ink">
+      <p class="w-full font-body text-body text-ink lg:w-4/5">{{ masterclass.shortDescription }}</p>
+      <p v-if="masterclass.fullDescription" class="w-full font-body text-body text-ink lg:w-4/5">
         {{ masterclass.fullDescription }}
       </p>
-      <p v-if="masterclass.endingText" class="font-body text-body text-ink">
+      <p v-if="masterclass.endingText" class="w-full font-body text-body text-ink lg:w-4/5">
         {{ masterclass.endingText }}
       </p>
 
@@ -65,7 +65,7 @@ const infoItems = computed(() => {
         Узнать подробнее
       </UiButton>
 
-      <p v-if="masterclass.priceDescription" class="font-body text-small text-ink/70">
+      <p v-if="masterclass.priceDescription" class="font-body text-body text-ink/70">
         {{ masterclass.priceDescription }}
       </p>
     </div>

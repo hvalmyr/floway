@@ -107,14 +107,14 @@ const onSubmit = handleSubmit(async (values) => {
         <UiRadioGroup name="source" label="Откуда вы о нас узнали?" :options="sourceOptions" />
       </template>
 
-      <p class="font-body text-small text-ink">
+      <p class="font-body text-body text-ink">
         Нажимая на кнопку, вы даёте согласие на обработку персональных данных и соглашаетесь с
         <NuxtLink to="/privacy" class="text-primary underline"
           >политикой конфиденциальности</NuxtLink
         >.
       </p>
 
-      <p v-if="status === 'error'" class="font-body text-small font-bold text-ink" role="alert">
+      <p v-if="status === 'error'" class="font-body text-body font-bold text-ink" role="alert">
         {{ submitError }}
       </p>
 

@@ -75,7 +75,7 @@ const schoolLinks = [
           <p
             v-for="social in socialLinks.filter((s) => s.disclaimer)"
             :key="`${social.label}-disclaimer`"
-            class="font-body text-small text-white/70"
+            class="font-body text-body text-white/70"
           >
             {{ social.disclaimer }}
           </p>
@@ -106,7 +106,7 @@ const schoolLinks = [
     </div>
 
     <div class="border-t border-white/25">
-      <p class="container py-24 font-body text-small text-white/80">
+      <p class="container py-24 font-body text-body text-white/80">
         &copy; {{ year }} ФлоВей — школа флористики
       </p>
     </div>

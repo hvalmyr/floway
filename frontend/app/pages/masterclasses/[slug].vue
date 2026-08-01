@@ -44,9 +44,7 @@ const infoItems = computed(() => {
       <template #title>Мастер-класс “{{ masterclass.title }}”</template>
       <template #lead>{{ masterclass.shortDescription }}</template>
       <template #actions>
-        <UiButton variant="primary" size="lg" to="#apply"
-          >Оставить заявку</UiButton
-        >
+        <UiButton variant="primary" to="#apply">Оставить заявку</UiButton>
       </template>
       <template v-if="masterclass.coverImage" #media>
         <img
@@ -59,14 +57,14 @@ const infoItems = computed(() => {
 
     <section class="py-64 sm:py-96 lg:py-120">
       <div class="container flex flex-col gap-24">
-        <p v-if="masterclass.fullDescription" class="font-body text-body-l text-ink">
+        <p v-if="masterclass.fullDescription" class="font-body text-body text-ink">
           {{ masterclass.fullDescription }}
         </p>
-        <p v-if="masterclass.endingText" class="font-body text-body-l text-ink">
+        <p v-if="masterclass.endingText" class="font-body text-body text-ink">
           {{ masterclass.endingText }}
         </p>
         <UiInfoRow :items="infoItems" />
-        <p v-if="masterclass.priceDescription" class="font-body text-small text-ink/70">
+        <p v-if="masterclass.priceDescription" class="font-body text-body text-ink/70">
           {{ masterclass.priceDescription }}
         </p>
       </div>

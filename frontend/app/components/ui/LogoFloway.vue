@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/**
+ /**
  * "фловей" wordmark as an SVG (not plain text), so it scales crisply at any
  * size. `textLength`/`lengthAdjust` pin the rendered width explicitly, so it
  * never clips or leaves stray whitespace regardless of how the browser

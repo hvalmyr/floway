@@ -14,11 +14,11 @@ withDefaults(defineProps<{ color?: "primary" | "ink" }>(), { color: "ink" });
 </script>
 
 <template>
-  <div class="mx-auto flex max-w-[720px] flex-col items-center gap-16 text-center">
+  <div class="mx-auto flex w-full flex-col items-center gap-16 text-center">
     <h2 class="font-display text-h2" :class="color === 'primary' ? 'text-primary' : 'text-ink'">
       <slot />
     </h2>
-    <p v-if="$slots.lead" class="font-body text-body-l text-ink">
+    <p v-if="$slots.lead" class="w-full font-body text-body text-ink lg:w-4/5">
       <slot name="lead" />
     </p>
   </div>

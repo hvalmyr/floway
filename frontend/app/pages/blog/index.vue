@@ -38,7 +38,7 @@ function formatDate(dateString: string | null) {
         <UiCard>
           <template v-if="post.category" #title>{{ post.category }}</template>
           <p class="mb-8 font-display text-h4 text-ink">{{ post.title }}</p>
-          <p v-if="post.publishedAt" class="text-small text-ink">
+          <p v-if="post.publishedAt" class="text-body text-ink">
             {{ formatDate(post.publishedAt) }}
           </p>
         </UiCard>

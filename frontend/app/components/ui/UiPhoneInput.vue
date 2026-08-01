@@ -48,6 +48,6 @@ function onInput(event: Event) {
       @blur="handleBlur"
     />
     <!-- Всегда занимает место (даже без ошибки), чтобы форма не "прыгала" по высоте. -->
-    <p :id="errorId" class="min-h-[22px] text-small font-bold text-ink">{{ errorMessage }}</p>
+    <p :id="errorId" class="min-h-[30px] text-body font-bold text-ink">{{ errorMessage }}</p>
   </div>
 </template>

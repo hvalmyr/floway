@@ -50,9 +50,7 @@ function isActive(to: string) {
 <template>
   <header class="sticky top-0 z-40 h-[64px] border-b-2 border-primary/15 bg-white lg:h-[88px]">
     <div class="container flex h-full items-center justify-between lg:grid lg:grid-cols-3">
-      <NuxtLink to="/" class="lg:hidden">
-        <LogoFloway class="h-32 w-auto text-primary" />
-      </NuxtLink>
+      <NuxtLink to="/" class="font-display text-h3 text-primary lg:hidden">фловей</NuxtLink>
 
       <nav
         class="hidden items-center gap-32 lg:flex lg:justify-self-start"
@@ -62,15 +60,18 @@ function isActive(to: string) {
           v-for="link in leftLinks"
           :key="link.to"
           :to="link.to"
-          class="border-b-2 border-transparent font-body text-body text-ink hover:text-primary"
+          class="border-b-2 border-transparent font-display text-body text-ink hover:text-primary"
           :class="isActive(link.to) ? 'border-primary text-primary' : ''"
         >
           {{ link.label }}
         </NuxtLink>
       </nav>
 
-      <NuxtLink to="/" class="hidden lg:block lg:justify-self-center">
-        <LogoFloway class="h-40 w-auto text-primary" />
+      <NuxtLink
+        to="/"
+        class="hidden font-display text-h2 text-primary lg:block lg:justify-self-center"
+      >
+        фловей
       </NuxtLink>
 
       <nav
@@ -81,7 +82,7 @@ function isActive(to: string) {
           v-for="link in rightLinks"
           :key="link.to"
           :to="link.to"
-          class="border-b-2 border-transparent font-body text-body text-ink hover:text-primary"
+          class="border-b-2 border-transparent font-display text-body text-ink hover:text-primary"
           :class="isActive(link.to) ? 'border-primary text-primary' : ''"
         >
           {{ link.label }}

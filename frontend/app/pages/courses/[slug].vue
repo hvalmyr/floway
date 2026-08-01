@@ -39,9 +39,7 @@ function priceRow(module: (typeof course.value.modules)[number]) {
       <template #title>Курс “{{ course.title }}”</template>
       <template #lead>{{ course.fullDescription }}</template>
       <template #actions>
-        <UiButton variant="primary" size="lg" to="#apply"
-          >Оставить заявку</UiButton
-        >
+        <UiButton variant="primary" to="#apply">Оставить заявку</UiButton>
       </template>
       <template v-if="course.coverImage" #media>
         <img
@@ -71,7 +69,7 @@ function priceRow(module: (typeof course.value.modules)[number]) {
               <span class="text-primary">Учебный план.</span>
               <span class="text-ink">Блок “{{ module.title }}”</span>
             </h2>
-            <p v-if="module.description" class="font-body text-body-l text-ink">
+            <p v-if="module.description" class="w-full font-body text-body text-ink lg:w-4/5">
               {{ module.description }}
             </p>
           </div>

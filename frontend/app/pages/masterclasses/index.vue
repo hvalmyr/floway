@@ -36,9 +36,7 @@ const features = computed(
     <Hero>
       <template #title>Мастер-классы по флористике в свободном графике</template>
       <template #actions>
-        <UiButton variant="primary" size="lg" to="#apply"
-          >Оставить заявку</UiButton
-        >
+        <UiButton variant="primary" to="#apply">Оставить заявку</UiButton>
       </template>
       <template v-if="text('masterclasses_hero_image')" #media>
         <img
@@ -51,7 +49,13 @@ const features = computed(
 
     <section class="bg-surface py-64 sm:py-96 lg:py-120">
       <div class="container flex flex-col gap-48">
-        <SectionHeading color="primary">Почему стоит выбрать мастер-класс “ФлоВей”</SectionHeading>
+        <SectionHeading color="primary">
+          Почему стоит выбрать мастер-класс “ФлоВей”
+          <template #lead
+            >Разовое занятие без обязательств: приходите, когда удобно, и уходите с готовой работой
+            в руках.</template
+          >
+        </SectionHeading>
         <FeatureGrid :items="features" />
       </div>
     </section>

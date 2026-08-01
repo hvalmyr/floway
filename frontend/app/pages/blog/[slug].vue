@@ -34,16 +34,16 @@ function formatDate(dateString: string | null) {
     >
 
     <div class="flex flex-col gap-8">
-      <p v-if="post.category" class="font-body text-small text-primary">{{ post.category }}</p>
+      <p v-if="post.category" class="font-body text-body text-primary">{{ post.category }}</p>
       <h1 class="font-display text-h1 text-ink">{{ post.title }}</h1>
-      <p class="font-body text-small text-ink">
+      <p class="font-body text-body text-ink">
         <span v-if="post.author">{{ post.author }}</span>
         <span v-if="post.author && post.publishedAt"> · </span>
         <span v-if="post.publishedAt">{{ formatDate(post.publishedAt) }}</span>
       </p>
     </div>
 
-    <div class="max-w-[720px] whitespace-pre-wrap font-body text-body-l text-ink">
+    <div class="max-w-[720px] whitespace-pre-wrap font-body text-body text-ink">
       {{ post.content }}
     </div>
 

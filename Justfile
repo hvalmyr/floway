@@ -50,3 +50,9 @@ dev-test:
 
 frontend-lint:
     cd frontend && bun run lint && bun run format:check
+
+# Включить git-хуки репозитория (.githooks/) — прогоняют форматтер/линтер/тесты
+# перед каждым коммитом, скоуп по тому, что реально застейджено (frontend/backend).
+install-hooks:
+    git config core.hooksPath .githooks
+    @echo "OK: git config core.hooksPath .githooks"

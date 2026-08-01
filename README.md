@@ -116,6 +116,14 @@ Frontend-линт/форматтер — [oxlint](https://oxc.rs/docs/guide/usag
 
 Фронтенд полностью на [Bun](https://bun.sh) — пакетный менеджер и прод-рантайм. `bun.lock` — единственный лок-файл. Nitro собирается под `preset: "bun"` (`nuxt.config.ts`) — прод-сервер работает на `Bun.serve()`, а не на Node `http`. `frontend/Dockerfile` — оба стейджа на `oven/bun:1-alpine`, запуск через `bun run .output/server/index.mjs`.
 
+### Git-хук перед коммитом
+
+```bash
+just install-hooks   # один раз на машину: git config core.hooksPath .githooks
+```
+
+`.githooks/pre-commit` прогоняет форматтер + линтер + тесты на каждый коммит, скоуп — по тому, что реально застейджено (`frontend/` и/или `backend/`); форматтер исправляет файлы на месте и дозастейджит их. Это лёгкое подмножество CI (без `go build -race`, `nuxt build`, `golangci-lint` — слишком медленно на каждый коммит), полная проверка всё равно остаётся в CI.
+
 ## CI
 
 `.github/workflows/ci.yml` (GitHub Actions) на каждый push в `main` и pull request: lint + build + test backend (Go: `gofmt`, `go vet`, `golangci-lint`, `go test -race`) и frontend (Bun: `oxlint`, `oxfmt --check`, `vitest`, `nuxt build`), плюс сборка обоих Docker-образов (без пуша — деплой пока не в CI, см. `ansible/`).

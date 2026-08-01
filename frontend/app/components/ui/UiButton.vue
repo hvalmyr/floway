@@ -3,25 +3,33 @@ import { NuxtLink } from "#components";
 
 /**
  * Button/link primitive. Renders a <NuxtLink> when `to` is set, otherwise a
- * <button>. Nav/hero/card CTAs are full pill (default); form submit buttons
- * use `:pill="false"` for the large-rounded-rect shape seen in the apply
- * forms mockups.
+ * <button>. Exactly one size/font everywhere — only bg/border/text color
+ * (and hover behavior) differ between the two variants:
+ *
+ * - `primary`: white text on blue fill. Hover inverts to blue text on white
+ *   fill; the blue border is there at rest too, just the same color as the
+ *   fill so it's invisible until the fill flips to white.
+ * - `outline` (brand brown): brown text on white fill with a brown border.
+ *   Hover fills brown with white text and drops the border.
+ *
+ * `pill` still controls shape (stadium vs. large-rounded-rect) since that's
+ * not restricted to one value — nav/hero/card CTAs are pill, form submit
+ * buttons use `:pill="false"`.
  *
  * `:is` takes the imported NuxtLink component, not the string "NuxtLink" —
  * a bare string doesn't resolve at runtime (Nuxt's auto-import only
  * rewrites literal <NuxtLink> tags at compile time, so `resolveDynamicComponent`
- * can't find it), which silently rendered an inert <nuxtlink> custom element
- * instead of a real link on every `to`-having button on the site.
+ * can't find it), which would silently render an inert <nuxtlink> custom
+ * element instead of a real link on every `to`-having button on the site.
  *
  * @example
- * <UiButton variant="primary" size="lg" to="/masterclasses">Мастер-классы</UiButton>
- * <UiButton variant="outline" size="md">О школе</UiButton>
+ * <UiButton variant="primary" to="/masterclasses">Мастер-классы</UiButton>
+ * <UiButton variant="outline" to="/#about">О школе</UiButton>
  * <UiButton type="submit" :pill="false" block :loading="pending">Отправить заявку</UiButton>
  */
 const props = withDefaults(
   defineProps<{
-    variant?: "primary" | "outline" | "outline-inverted";
-    size?: "md" | "lg";
+    variant?: "primary" | "outline";
     to?: string;
     type?: "button" | "submit" | "reset";
     disabled?: boolean;
@@ -33,7 +41,6 @@ const props = withDefaults(
   }>(),
   {
     variant: "primary",
-    size: "md",
     to: undefined,
     type: "button",
     disabled: false,
@@ -58,16 +65,15 @@ function onClick(event: MouseEvent) {
     :disabled="!to && (disabled || loading)"
     :aria-busy="loading || undefined"
     :aria-disabled="to && (disabled || loading) ? 'true' : undefined"
-    class="inline-flex items-center justify-center gap-8 font-display text-button font-bold transition-[background-color,transform,border-color,opacity] duration-200"
+    class="inline-flex h-[44px] items-center justify-center gap-8 border-2 px-24 font-display text-button font-bold transition-colors duration-200 sm:h-[64px] sm:px-40"
     :class="[
       pill ? 'rounded-pill' : 'rounded-lg',
       block ? 'w-full' : '',
-      size === 'lg' ? 'h-[44px] px-24 sm:h-[64px] sm:px-40' : 'h-[44px] px-24 sm:h-[56px] sm:px-32',
-      (disabled || loading) && 'cursor-not-allowed opacity-40 hover:translate-y-0',
-      variant === 'primary' && 'bg-primary text-white hover:-translate-y-px active:translate-y-0',
-      variant === 'outline' && 'border-2 border-ink bg-transparent text-ink hover:bg-surface',
-      variant === 'outline-inverted' &&
-        'border-2 border-white bg-transparent text-white hover:bg-white/10',
+      (disabled || loading) && 'cursor-not-allowed opacity-40',
+      variant === 'primary' &&
+        'border-primary bg-primary text-white hover:bg-white hover:text-primary',
+      variant === 'outline' &&
+        'border-ink bg-white text-ink hover:border-transparent hover:bg-ink hover:text-white',
     ]"
     @click="onClick"
   >

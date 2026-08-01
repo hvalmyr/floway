@@ -71,12 +71,8 @@ const openFaqIds = ref<Array<string | number>>([0]);
         }}
       </template>
       <template #actions>
-        <UiButton variant="primary" size="lg" to="/#courses"
-          >Курсы</UiButton
-        >
-        <UiButton variant="outline" size="lg" to="/#about"
-          >О школе</UiButton
-        >
+        <UiButton variant="primary" to="/#courses">Курсы</UiButton>
+        <UiButton variant="outline" to="/#about">О школе</UiButton>
       </template>
       <template v-if="text('home_hero_image')" #media>
         <img
@@ -103,15 +99,18 @@ const openFaqIds = ref<Array<string | number>>([0]);
     <section id="about" class="scroll-mt-64 bg-white py-64 sm:py-96 lg:scroll-mt-96 lg:py-120">
       <div class="container flex flex-col gap-48">
         <SectionHeading>О школе</SectionHeading>
-        <!-- Список (flex-column), не грид: каждый пункт — отдельная строка на всю ширину. -->
-        <div class="flex flex-col gap-24">
-          <div
-            v-for="item in aboutItems"
-            :key="item.id"
-            class="flex flex-col items-start gap-16 rounded-md bg-surface p-32"
-          >
-            <UiBadge>{{ item.badge }}</UiBadge>
-            <p class="font-body text-body text-ink">{{ item.description }}</p>
+        <!-- Бежевая карточка-обёртка вокруг списка (flex-column, не грид); каждый
+        пункт внутри — отдельная белая строка на всю ширину. -->
+        <div class="rounded-lg bg-surface p-24 sm:p-32">
+          <div class="flex flex-col gap-24">
+            <div
+              v-for="item in aboutItems"
+              :key="item.id"
+              class="flex flex-col items-start gap-16 rounded-md bg-white p-32"
+            >
+              <UiBadge>{{ item.badge }}</UiBadge>
+              <p class="font-body text-body text-ink">{{ item.description }}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -176,27 +175,28 @@ const openFaqIds = ref<Array<string | number>>([0]);
 
         <div class="grid grid-cols-1 gap-32 lg:grid-cols-2 lg:gap-64">
           <div class="flex flex-col gap-24">
-            <div class="flex flex-col items-center gap-8 text-center">
-              <h3 class="font-display text-h2 text-ink">
+            <div class="flex flex-col gap-8">
+              <h3 class="text-center font-display text-h2 text-ink">
                 {{ text("home_trial_lesson_title", "Пробное занятие") }}
               </h3>
-              <p class="font-body text-body text-ink">
+              <p class="text-left font-body text-body text-ink">
                 {{ text("home_trial_duration", "Продолжительность: 2,5 часа") }}
               </p>
-              <p class="font-body text-body text-ink">
+              <p class="text-left font-body text-body text-ink">
                 {{ text("home_trial_price", "Стоимость: 3 000 ₽") }}
               </p>
             </div>
             <ApplyForm context="trial_lesson" variant="simple" title="" />
           </div>
           <!-- TODO: заменить на видео с пробным уроком, когда оно будет готово (пока фото). -->
+          <!-- max-w ограничивает контейнер видео, чтобы оно не растягивалось на всю колонку. -->
           <img
             v-if="text('home_trial_image')"
             :src="resolveMediaUrl(text('home_trial_image'))"
             alt=""
-            class="aspect-[9/16] w-full rounded-lg object-cover"
+            class="mx-auto aspect-[9/16] w-full max-w-[280px] rounded-lg object-cover"
           />
-          <div v-else class="aspect-[9/16] rounded-lg bg-primary" />
+          <div v-else class="mx-auto aspect-[9/16] w-full max-w-[280px] rounded-lg bg-primary" />
         </div>
       </div>
     </section>
@@ -221,8 +221,10 @@ const openFaqIds = ref<Array<string | number>>([0]);
               class="aspect-square w-full rounded-lg"
               :class="index % 2 === 0 ? 'bg-primary' : 'bg-surface'"
             />
+            <!-- Тот же стиль (шрифт/размер/жирность), что и у заголовков преимуществ,
+            текста кнопок и вопросов FAQ: font-display text-h4 font-bold. -->
             <p
-              class="font-body text-h3 font-bold"
+              class="font-display text-h4 font-bold"
               :class="index % 2 === 0 ? 'text-primary' : 'text-ink'"
             >
               {{ teacher.name }}
