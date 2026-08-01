@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -55,10 +56,20 @@ type Services struct {
 	Tokens         *auth.TokenManager
 	SecureCookies  bool
 	FrontendOrigin string
+
+	// Logger defaults to slog.Default() when nil (tests mostly leave this
+	// unset) — production wiring in cmd/api/main.go always sets it to a
+	// JSON handler.
+	Logger *slog.Logger
 }
 
 func NewRouter(services Services) http.Handler {
 	r := chi.NewRouter()
+
+	logger := services.Logger
+	if logger == nil {
+		logger = slog.Default()
+	}
 
 	r.Use(middleware.RequestID)
 	// Exactly one trusted reverse proxy in front of this service in every
@@ -66,7 +77,8 @@ func NewRouter(services Services) http.Handler {
 	// directly). middleware.RealIP is deprecated/spoofable — this variant
 	// trusts exactly one XFF hop and never mutates r.RemoteAddr.
 	r.Use(middleware.ClientIPFromXFFTrustedProxies(1))
-	r.Use(middleware.Logger)
+	r.Use(injectLogger(logger))
+	r.Use(requestLoggerMiddleware)
 	r.Use(middleware.Recoverer)
 	r.Use(limitBodySize)
 	// CSRF: no anti-CSRF token by design, not by omission. The session

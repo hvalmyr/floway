@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -22,12 +23,16 @@ import (
 const adminSessionTTL = 12 * time.Hour
 
 func main() {
-	if err := run(); err != nil {
-		log.Fatal(err)
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+
+	if err := run(logger); err != nil {
+		logger.Error("fatal", "error", err)
+		os.Exit(1)
 	}
 }
 
-func run() error {
+func run(logger *slog.Logger) error {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
@@ -83,6 +88,7 @@ func run() error {
 		Tokens:         auth.NewTokenManager(cfg.JWTSecret, adminSessionTTL),
 		SecureCookies:  cfg.Env != "local",
 		FrontendOrigin: cfg.FrontendOrigin,
+		Logger:         logger,
 	}
 
 	srv := &http.Server{
@@ -103,12 +109,12 @@ func run() error {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		if err := srv.Shutdown(shutdownCtx); err != nil {
-			log.Printf("graceful shutdown error: %v", err)
+			logger.Error("graceful shutdown error", "error", err)
 		}
 		close(shutdownDone)
 	}()
 
-	log.Printf("floway-backend listening on :%s (env=%s)", cfg.HTTPPort, cfg.Env)
+	logger.Info("floway-backend listening", "port", cfg.HTTPPort, "env", cfg.Env)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return err
 	}

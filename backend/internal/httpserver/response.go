@@ -3,7 +3,6 @@ package httpserver
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -31,7 +30,7 @@ func writeError(w http.ResponseWriter, status int, err error) {
 // a bug report can be correlated back to the log line.
 func writeInternalError(w http.ResponseWriter, r *http.Request, err error) {
 	reqID := middleware.GetReqID(r.Context())
-	log.Printf("request %s: internal error: %v", reqID, err)
+	loggerFromContext(r.Context()).Error("internal error", "request_id", reqID, "error", err)
 	writeJSON(w, http.StatusInternalServerError, map[string]string{
 		"error":     "internal error",
 		"requestId": reqID,
