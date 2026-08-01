@@ -2,10 +2,11 @@
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
-  modules: ["@nuxtjs/tailwindcss", "@nuxt/image", "@nuxt/fonts"],
+  modules: ["@nuxtjs/tailwindcss", "@nuxt/image"],
 
-  // tokens.css first (CSS custom properties), then the Tailwind directives.
-  css: ["~/assets/styles/tokens.css", "~/assets/css/main.css"],
+  // tokens.css (CSS custom properties), fonts.css (@font-face for the local
+  // brand fonts in public/fonts), then the Tailwind directives.
+  css: ["~/assets/styles/tokens.css", "~/assets/styles/fonts.css", "~/assets/css/main.css"],
 
   // Explicit per-directory entries: each is scanned relative to itself, so
   // components register under their bare filename (<UiButton>, <Hero>,
@@ -43,13 +44,6 @@ export default defineNuxtConfig({
         changeOrigin: true,
       },
     },
-  },
-
-  fonts: {
-    families: [
-      { name: "Nunito", provider: "google", weights: [700, 800, 900], subsets: ["cyrillic", "cyrillic-ext", "latin"] },
-      { name: "Onest", provider: "google", weights: [400, 500, 600], subsets: ["cyrillic", "cyrillic-ext", "latin"] },
-    ],
   },
 
   image: {

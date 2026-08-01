@@ -5,7 +5,7 @@
  *
  * @example
  * <Hero>
- *   <template #title>Mы рядом с первого букета</template>
+ *   <template #title>Мы рядом с первого букета</template>
  *   <template #lead>Обучаем современной флористике с нуля — бережно, понятно, с практикой и поддержкой.</template>
  *   <template #actions>
  *     <UiButton variant="primary" size="lg" to="/#courses">Курсы</UiButton>
@@ -19,10 +19,10 @@
   <section class="py-64 sm:py-96 lg:py-120">
     <div class="container flex flex-col gap-32 lg:flex-row lg:items-center lg:gap-64">
       <div class="flex flex-col items-start gap-24 lg:w-1/2">
-        <h1 class="font-display text-h1 text-ink-900">
+        <h1 class="font-display text-h1 text-ink">
           <slot name="title" />
         </h1>
-        <p v-if="$slots.lead" class="text-body-l text-ink-700">
+        <p v-if="$slots.lead" class="font-body text-body-l text-ink">
           <slot name="lead" />
         </p>
         <div v-if="$slots.actions" class="flex w-full flex-col gap-16 sm:w-auto sm:flex-row">

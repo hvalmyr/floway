@@ -25,7 +25,7 @@ withDefaults(
 <template>
   <div
     aria-hidden="true"
-    class="flex items-center justify-center rounded-lg bg-surface text-ink-400"
+    class="flex items-center justify-center rounded-lg bg-surface text-ink/40"
     :class="{
       'aspect-[4/3]': aspect === '4/3',
       'aspect-[3/4]': aspect === '3/4',

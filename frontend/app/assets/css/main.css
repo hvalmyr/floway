@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply bg-white font-body text-ink-900;
+    @apply bg-white font-body text-ink;
   }
 
   h1,
@@ -16,7 +16,7 @@
 
   /* Visible focus ring everywhere, matching the design system's a11y rules. */
   :focus-visible {
-    outline: 2px solid var(--color-ink-900);
+    outline: 2px solid var(--color-ink);
     outline-offset: 2px;
   }
 }

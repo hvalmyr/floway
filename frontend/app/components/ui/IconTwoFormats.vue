@@ -1,0 +1,11 @@
+<script setup lang="ts">
+/** docs/icons/main-icons/icon.svg — "два формата обучения" (home advantages). */
+</script>
+<template>
+  <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M39 34.0093V41H9V38.1402C9 22.8878 30.25 25.4299 30.25 18.4393C30.25 15.2617 27.75 13.6729 24 13.6729C20.25 13.6729 17.75 15.8972 17.75 20.028V20.9813H9V20.028C9 11.7664 15.25 7 24.3125 7C32.75 7 39 11.1308 39 18.4393C39 29.8785 22.75 28.9252 19 34.0093H39Z"
+      fill="currentColor"
+    />
+  </svg>
+</template>

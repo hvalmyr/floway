@@ -3,7 +3,7 @@
 // package), not @vueuse/core — the brief named the wrong package; installed
 // the correct one instead of hand-rolling a trap.
 import { useFocusTrap } from "@vueuse/integrations/useFocusTrap";
-import { Menu, X } from "lucide-vue-next";
+import { Menu } from "lucide-vue-next";
 import { nextTick, onUnmounted, ref, watch } from "vue";
 
 const route = useRoute();
@@ -48,23 +48,23 @@ function isActive(to: string) {
 </script>
 
 <template>
-  <header class="sticky top-0 z-40 h-[64px] border-b border-line bg-white lg:h-[88px]">
+  <header class="sticky top-0 z-40 h-[64px] border-b-2 border-primary/15 bg-white lg:h-[88px]">
     <div class="container flex h-full items-center justify-between lg:grid lg:grid-cols-3">
-      <NuxtLink to="/" class="font-display text-h4 text-ink-900 lg:hidden">ФлоВей</NuxtLink>
+      <NuxtLink to="/" class="font-display text-h4 text-primary lg:hidden">ФлоВей</NuxtLink>
 
       <nav class="hidden items-center gap-32 lg:flex lg:justify-self-start" aria-label="Основная навигация">
         <NuxtLink
           v-for="link in leftLinks"
           :key="link.to"
           :to="link.to"
-          class="border-b-2 border-transparent text-body text-ink-700 hover:text-primary-600"
-          :class="isActive(link.to) ? 'border-primary-600 text-primary-600' : ''"
+          class="border-b-2 border-transparent font-body text-body text-ink hover:text-primary"
+          :class="isActive(link.to) ? 'border-primary text-primary' : ''"
         >
           {{ link.label }}
         </NuxtLink>
       </nav>
 
-      <NuxtLink to="/" class="hidden font-display text-h4 text-ink-900 lg:block lg:justify-self-center">
+      <NuxtLink to="/" class="hidden font-display text-h4 text-primary lg:block lg:justify-self-center">
         ФлоВей
       </NuxtLink>
 
@@ -73,8 +73,8 @@ function isActive(to: string) {
           v-for="link in rightLinks"
           :key="link.to"
           :to="link.to"
-          class="border-b-2 border-transparent text-body text-ink-700 hover:text-primary-600"
-          :class="isActive(link.to) ? 'border-primary-600 text-primary-600' : ''"
+          class="border-b-2 border-transparent font-body text-body text-ink hover:text-primary"
+          :class="isActive(link.to) ? 'border-primary text-primary' : ''"
         >
           {{ link.label }}
         </NuxtLink>
@@ -82,22 +82,24 @@ function isActive(to: string) {
 
       <button
         type="button"
-        class="grid size-[44px] place-items-center rounded-sm text-ink-900 lg:hidden"
+        class="grid size-[44px] place-items-center rounded-sm text-ink lg:hidden"
         aria-haspopup="true"
         :aria-expanded="isOpen"
         aria-controls="mobile-menu-panel"
-        @click="isOpen = true"
+        @click="isOpen = !isOpen"
       >
-        <Menu class="size-24" aria-hidden="true" />
-        <span class="sr-only">Открыть меню</span>
+        <IconClose v-if="isOpen" class="size-24" aria-hidden="true" />
+        <Menu v-else class="size-24" aria-hidden="true" />
+        <span class="sr-only">{{ isOpen ? "Закрыть меню" : "Открыть меню" }}</span>
       </button>
     </div>
 
+    <!-- Мобильное меню — выпадает сверху (dropdown), а не выезжает сбоку. -->
     <Transition name="header-fade">
-      <div v-if="isOpen" class="fixed inset-0 z-50 bg-ink-900/40 lg:hidden" @click="isOpen = false" />
+      <div v-if="isOpen" class="fixed inset-x-0 bottom-0 top-[64px] z-50 bg-ink/40 lg:hidden" @click="isOpen = false" />
     </Transition>
 
-    <Transition name="header-slide">
+    <Transition name="header-drop">
       <div
         v-if="isOpen"
         id="mobile-menu-panel"
@@ -105,22 +107,15 @@ function isActive(to: string) {
         role="dialog"
         aria-modal="true"
         aria-label="Меню"
-        class="fixed inset-y-0 right-0 z-50 flex w-full max-w-[360px] flex-col gap-32 bg-white p-32 lg:hidden"
+        class="fixed inset-x-0 top-[64px] z-50 border-b-2 border-primary/15 bg-white p-24 shadow-lg lg:hidden"
         @keydown.esc="isOpen = false"
       >
-        <div class="flex items-center justify-between">
-          <span class="font-display text-h4 text-ink-900">Меню</span>
-          <button type="button" class="grid size-[44px] place-items-center rounded-sm text-ink-900" @click="isOpen = false">
-            <X class="size-24" aria-hidden="true" />
-            <span class="sr-only">Закрыть меню</span>
-          </button>
-        </div>
-        <nav class="flex flex-col gap-24" aria-label="Мобильная навигация">
+        <nav class="flex flex-col gap-8" aria-label="Мобильная навигация">
           <NuxtLink
             v-for="link in [...leftLinks, ...rightLinks]"
             :key="link.to"
             :to="link.to"
-            class="font-display text-h4 text-ink-900"
+            class="rounded-sm px-12 py-12 font-display text-h4 text-ink hover:bg-surface hover:text-primary"
             @click="isOpen = false"
           >
             {{ link.label }}
@@ -141,20 +136,20 @@ function isActive(to: string) {
   opacity: 0;
 }
 
-.header-slide-enter-active,
-.header-slide-leave-active {
+.header-drop-enter-active,
+.header-drop-leave-active {
   transition: transform 0.25s ease;
 }
-.header-slide-enter-from,
-.header-slide-leave-to {
-  transform: translateX(100%);
+.header-drop-enter-from,
+.header-drop-leave-to {
+  transform: translateY(-100%);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .header-fade-enter-active,
   .header-fade-leave-active,
-  .header-slide-enter-active,
-  .header-slide-leave-active {
+  .header-drop-enter-active,
+  .header-drop-leave-active {
     transition: none;
   }
 }

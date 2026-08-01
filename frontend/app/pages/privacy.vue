@@ -7,8 +7,8 @@ useSeoMeta({ title: "Политика обработки персональны�
 
 <template>
   <div class="container flex flex-col gap-24 py-64 sm:py-96">
-    <h1 class="font-display text-h1 text-ink-900">Политика обработки персональных данных</h1>
-    <p class="text-body text-ink-700">
+    <h1 class="font-display text-h1 text-ink">Политика обработки персональных данных</h1>
+    <p class="font-body text-body text-ink">
       Текст политики находится на согласовании у заказчика. Здесь будет размещён финальный документ о том, какие
       данные собирает школа «ФлоВей» через формы на сайте, как они хранятся и используются.
     </p>

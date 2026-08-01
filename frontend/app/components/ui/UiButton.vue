@@ -1,13 +1,14 @@
 <script setup lang="ts">
 /**
- * Pill-shaped button/link primitive. Renders a <NuxtLink> when `to` is set,
- * otherwise a <button>. Variants follow docs/floway-design.md §5.1.
+ * Button/link primitive. Renders a <NuxtLink> when `to` is set, otherwise a
+ * <button>. Nav/hero/card CTAs are full pill (default); form submit buttons
+ * use `:pill="false"` for the large-rounded-rect shape seen in the apply
+ * forms mockups.
  *
  * @example
  * <UiButton variant="primary" size="lg" to="/masterclasses">Мастер-классы</UiButton>
  * <UiButton variant="outline" size="md">О школе</UiButton>
- * <UiButton type="submit" block :loading="pending" :disabled="pending">Отправить заявку</UiButton>
- * <UiButton variant="outline-inverted" size="md" to="/courses/osnovy-floristiki">Узнать больше</UiButton>
+ * <UiButton type="submit" :pill="false" block :loading="pending">Отправить заявку</UiButton>
  */
 const props = withDefaults(
   defineProps<{
@@ -17,8 +18,10 @@ const props = withDefaults(
     type?: "button" | "submit" | "reset";
     disabled?: boolean;
     loading?: boolean;
-    /** Always full-width, regardless of breakpoint (used for the apply-form submit button). */
+    /** Always full-width, regardless of breakpoint (used for apply-form submit buttons). */
     block?: boolean;
+    /** Stadium/pill shape (nav, hero, card CTAs). Set false for the flatter form-submit shape. */
+    pill?: boolean;
   }>(),
   {
     variant: "primary",
@@ -28,6 +31,7 @@ const props = withDefaults(
     disabled: false,
     loading: false,
     block: false,
+    pill: true,
   },
 );
 
@@ -46,16 +50,15 @@ function onClick(event: MouseEvent) {
     :disabled="!to && (disabled || loading)"
     :aria-busy="loading || undefined"
     :aria-disabled="to && (disabled || loading) ? 'true' : undefined"
-    class="inline-flex items-center justify-center gap-8 rounded-pill font-display text-button font-bold transition-[background-color,transform,border-color] duration-200"
+    class="inline-flex items-center justify-center gap-8 font-display text-button font-bold transition-[background-color,transform,border-color,opacity] duration-200"
     :class="[
+      pill ? 'rounded-pill' : 'rounded-lg',
       block ? 'w-full' : '',
       size === 'lg' ? 'h-[44px] px-24 sm:h-[64px] sm:px-40' : 'h-[44px] px-24 sm:h-[56px] sm:px-32',
-      variant === 'primary' &&
-        'bg-primary-600 text-white hover:-translate-y-px hover:bg-primary-700 active:translate-y-0 disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-surface disabled:text-ink-400',
-      variant === 'outline' &&
-        'border-2 border-ink-900 bg-transparent text-ink-900 hover:bg-primary-50 disabled:cursor-not-allowed disabled:border-ink-400 disabled:text-ink-400 disabled:hover:bg-transparent',
-      variant === 'outline-inverted' &&
-        'border-2 border-white bg-transparent text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:border-ink-400 disabled:text-ink-400 disabled:hover:bg-transparent',
+      (disabled || loading) && 'cursor-not-allowed opacity-40 hover:translate-y-0',
+      variant === 'primary' && 'bg-primary text-white hover:-translate-y-px active:translate-y-0',
+      variant === 'outline' && 'border-2 border-ink bg-transparent text-ink hover:bg-surface',
+      variant === 'outline-inverted' && 'border-2 border-white bg-transparent text-white hover:bg-white/10',
     ]"
     @click="onClick"
   >

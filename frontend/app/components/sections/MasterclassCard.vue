@@ -6,60 +6,57 @@ import type { Masterclass } from "~/types/api";
  * /masterclasses and as the main content block of /masterclasses/[slug].
  * `linkToDetail` shows the "узнать подробнее" CTA (listing use); omit it on
  * the detail page itself, which has its own <ApplyForm> below instead.
+ * `accent` switches the title between blue and dark ink — the listing
+ * alternates it per item, matching the mockup.
  *
  * @example
- * <MasterclassCard :masterclass="mc" link-to-detail />
+ * <MasterclassCard :masterclass="mc" link-to-detail accent />
  */
 const props = withDefaults(
   defineProps<{
     masterclass: Masterclass;
     linkToDetail?: boolean;
+    accent?: boolean;
   }>(),
-  { linkToDetail: false },
+  { linkToDetail: false, accent: false },
 );
 
 const infoItems = computed(() => {
-  const items: { label: string; value: string }[] = [
-    { label: "Длительность", value: props.masterclass.duration ?? "уточняется" },
-  ];
+  const duration = props.masterclass.duration ?? "уточняется";
 
-  items.push({
-    label: "Цена (группа)",
-    value: props.masterclass.priceGroup != null ? `от ${props.masterclass.priceGroup.toLocaleString("ru-RU")} ₽` : "уточняется",
-  });
-
-  if (props.masterclass.priceIndividual != null) {
-    items.push({
-      label: "Индивидуально",
-      value: `от ${props.masterclass.priceIndividual.toLocaleString("ru-RU")} ₽`,
-    });
+  if (props.masterclass.priceGroup == null) {
+    return [duration, "цена уточняется"];
   }
-
-  return items;
+  if (props.masterclass.priceIndividual != null) {
+    return [
+      duration,
+      `${props.masterclass.priceGroup.toLocaleString("ru-RU")}₽ или ${props.masterclass.priceIndividual.toLocaleString("ru-RU")}₽ [*]`,
+    ];
+  }
+  return [duration, `${props.masterclass.priceGroup.toLocaleString("ru-RU")}₽`];
 });
 </script>
 
 <template>
   <article class="grid grid-cols-1 gap-24 lg:grid-cols-[38%_1fr] lg:gap-40">
-    <!-- TODO: заменить на один <NuxtImg> с `sizes` под брейкпоинты, когда появятся
-    реальные фото — сейчас два плейсхолдера переключаются видимостью, чтобы не
-    завязывать компонент на responsive-варианты одного prop`а. -->
-    <UiMediaPlaceholder aspect="4/3" class="lg:hidden" />
-    <UiMediaPlaceholder aspect="3/4" class="hidden lg:block" />
+    <!-- TODO: заменить на <NuxtImg> с реальным фото, когда появятся ассеты. -->
+    <div class="aspect-[4/3] rounded-lg bg-surface lg:aspect-[3/4]" />
 
     <div class="flex flex-col items-start gap-16">
-      <h2 class="font-display text-h2 text-ink-900">{{ masterclass.title }}</h2>
-      <p class="text-body text-ink-700">{{ masterclass.shortDescription }}</p>
-      <p v-if="masterclass.fullDescription" class="text-body text-ink-700">{{ masterclass.fullDescription }}</p>
-      <p v-if="masterclass.endingText" class="text-body text-ink-700">{{ masterclass.endingText }}</p>
+      <h2 class="font-display text-h2" :class="accent ? 'text-primary' : 'text-ink'">{{ masterclass.title }}</h2>
+      <p class="font-body text-body text-ink">{{ masterclass.shortDescription }}</p>
+      <p v-if="masterclass.fullDescription" class="font-body text-body text-ink">{{ masterclass.fullDescription }}</p>
+      <p v-if="masterclass.endingText" class="font-body text-body text-ink">{{ masterclass.endingText }}</p>
 
       <UiInfoRow :items="infoItems" class="w-full" />
 
-      <UiButton v-if="linkToDetail" variant="outline" :to="`/masterclasses/${masterclass.slug}`">
+      <UiButton v-if="linkToDetail" variant="primary" :to="`/masterclasses/${masterclass.slug}`">
         Узнать подробнее
       </UiButton>
 
-      <p v-if="masterclass.priceDescription" class="text-small text-ink-400">{{ masterclass.priceDescription }}</p>
+      <p v-if="masterclass.priceDescription" class="font-body text-small text-ink/70">
+        {{ masterclass.priceDescription }}
+      </p>
     </div>
   </article>
 </template>

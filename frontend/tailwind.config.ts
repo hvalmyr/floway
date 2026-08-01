@@ -59,30 +59,15 @@ export default {
         lg: "28px",
         pill: "999px",
       },
+      // Ровно 4 цвета по требованию заказчика — никаких оттенков/шейдов.
       colors: {
-        primary: {
-          50: "#EAF2F7",
-          300: "#A9C9DD",
-          500: "#82B1CC",
-          600: "#5F93B3",
-          700: "#42708F",
-        },
-        ink: {
-          900: "#41342A",
-          700: "#6B5D51",
-          400: "#A79A8E",
-        },
-        surface: {
-          DEFAULT: "#F7F5F3",
-          100: "#FBFAF9",
-        },
-        line: "#E4DFDA",
-        success: "#5B9A6F",
-        error: "#C15B4A",
+        primary: "#82B1CC",
+        surface: "#F7F5F3",
+        ink: "#41342A",
       },
       fontFamily: {
-        display: ["Nunito", "sans-serif"],
-        body: ["Onest", "sans-serif"],
+        display: ["Soyuz Grotesk", "sans-serif"],
+        body: ["Non Bureau", "sans-serif"],
       },
       fontSize: {
         h1: ["var(--text-h1)", { lineHeight: "1.08", fontWeight: "800" }],

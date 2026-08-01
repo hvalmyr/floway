@@ -19,15 +19,14 @@ const openLessonIds = ref<Record<number, Array<string | number>>>(
   Object.fromEntries(course.value.modules.map((m) => [m.id, m.lessons.length ? [m.lessons[0].id] : []])),
 );
 
-function priceInfo(module: (typeof course.value.modules)[number]) {
+function priceRow(module: (typeof course.value.modules)[number]) {
+  const lessonsWord = module.lessonsCount === 1 ? "занятие" : "занятий";
+  const price = `${module.price.toLocaleString("ru-RU")} ₽`;
   return [
-    { label: "Занятия", value: String(module.lessonsCount) },
-    { label: "Часы", value: String(module.hours) },
-    {
-      label: "Цена",
-      value: `${module.price.toLocaleString("ru-RU")} ₽`,
-      oldValue: module.oldPrice ? `${module.oldPrice.toLocaleString("ru-RU")} ₽` : undefined,
-    },
+    `Блок «${module.title}»`,
+    `${module.lessonsCount} ${lessonsWord}`,
+    `${module.hours} часов`,
+    module.oldPrice ? `${module.oldPrice.toLocaleString("ru-RU")} ₽ → ${price}` : price,
   ];
 }
 </script>
@@ -44,30 +43,29 @@ function priceInfo(module: (typeof course.value.modules)[number]) {
 
     <section v-if="course.modules.length" class="py-64 sm:py-96 lg:py-120">
       <div class="container flex flex-col gap-24">
-        <SectionHeading>Стоимость обучения</SectionHeading>
-        <div v-for="module in course.modules" :key="module.id" class="flex flex-col gap-8">
-          <p class="font-display text-h4 text-ink-900">Блок «{{ module.title }}»</p>
-          <UiInfoRow :items="priceInfo(module)" />
-        </div>
+        <UiInfoRow
+          v-for="(module, i) in course.modules"
+          :key="module.id"
+          :items="priceRow(module)"
+          :highlighted="i % 2 === 1"
+        />
       </div>
     </section>
 
     <section v-if="course.modules.length" class="bg-surface py-64 sm:py-96 lg:py-120">
-      <div class="container flex flex-col gap-48">
-        <SectionHeading>
-          Учебный план
-          <template #lead>Что происходит на занятиях, блок за блоком.</template>
-        </SectionHeading>
-
+      <div class="container flex flex-col gap-64">
         <div v-for="module in course.modules" :key="module.id" class="flex flex-col gap-24">
-          <h3 class="font-display text-h3 text-ink-900">Блок «{{ module.title }}»</h3>
+          <div class="flex flex-col gap-16">
+            <h2 class="font-display text-h2"><span class="text-primary">Учебный план.</span> <span class="text-ink">Блок «{{ module.title }}»</span></h2>
+            <p v-if="module.description" class="font-body text-body-l text-ink">{{ module.description }}</p>
+          </div>
           <UiAccordion v-model="openLessonIds[module.id]">
             <UiAccordionItem v-for="lesson in module.lessons" :key="lesson.id" :id="lesson.id" :title="lesson.title">
-              <p class="mb-8"><strong class="font-display text-ink-900">Темы:</strong> {{ lesson.topics }}</p>
+              <p class="mb-8"><strong class="font-display text-ink">Темы:</strong> {{ lesson.topics }}</p>
               <p class="mb-8">
-                <strong class="font-display text-ink-900">Вы научитесь:</strong> {{ lesson.outcomes }}
+                <strong class="font-display text-ink">Вы научитесь:</strong> {{ lesson.outcomes }}
               </p>
-              <p><strong class="font-display text-ink-900">Продолжительность:</strong> {{ lesson.durationHours }} ч.</p>
+              <p><strong class="font-display text-ink">Продолжительность:</strong> {{ lesson.durationHours }} часа.</p>
             </UiAccordionItem>
           </UiAccordion>
         </div>
@@ -75,7 +73,7 @@ function priceInfo(module: (typeof course.value.modules)[number]) {
     </section>
     <section v-else class="py-64">
       <div class="container">
-        <p class="text-body text-ink-700">
+        <p class="font-body text-body text-ink">
           Программа курса пока готовится — оставьте заявку, и мы расскажем подробности при звонке.
         </p>
       </div>

@@ -21,13 +21,36 @@ useSeoMeta({
   title: () => `${masterclass.value?.title} — мастер-класс ФлоВей`,
   description: () => masterclass.value?.shortDescription,
 });
+
+const infoItems = computed(() => {
+  const mc = masterclass.value!;
+  const duration = mc.duration ?? "уточняется";
+  if (mc.priceGroup == null) return [duration, "цена уточняется"];
+  if (mc.priceIndividual != null) {
+    return [duration, `${mc.priceGroup.toLocaleString("ru-RU")}₽ или ${mc.priceIndividual.toLocaleString("ru-RU")}₽ [*]`];
+  }
+  return [duration, `${mc.priceGroup.toLocaleString("ru-RU")}₽`];
+});
 </script>
 
 <template>
   <div v-if="masterclass">
+    <Hero>
+      <template #title>Мастер-класс «{{ masterclass.title }}»</template>
+      <template #lead>{{ masterclass.shortDescription }}</template>
+      <template #actions>
+        <UiButton variant="primary" size="lg" to="#apply" class="w-full sm:w-auto">Оставить заявку</UiButton>
+      </template>
+    </Hero>
+
     <section class="py-64 sm:py-96 lg:py-120">
-      <div class="container">
-        <MasterclassCard :masterclass="masterclass" />
+      <div class="container flex flex-col gap-24">
+        <p v-if="masterclass.fullDescription" class="font-body text-body-l text-ink">{{ masterclass.fullDescription }}</p>
+        <p v-if="masterclass.endingText" class="font-body text-body-l text-ink">{{ masterclass.endingText }}</p>
+        <UiInfoRow :items="infoItems" />
+        <p v-if="masterclass.priceDescription" class="font-body text-small text-ink/70">
+          {{ masterclass.priceDescription }}
+        </p>
       </div>
     </section>
 

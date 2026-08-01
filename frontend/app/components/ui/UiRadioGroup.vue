@@ -33,13 +33,13 @@ const errorId = useId();
     :aria-describedby="errorMessage ? errorId : undefined"
     :aria-invalid="!!errorMessage"
   >
-    <legend class="mb-4 text-small text-ink-700">{{ label }}</legend>
+    <legend class="mb-4 font-display text-body-l font-bold text-primary">{{ label }}</legend>
     <label
       v-for="option in options"
       :key="option.value"
-      class="flex min-h-[44px] cursor-pointer items-center gap-12 rounded-sm px-12 py-8 text-body text-ink-900 hover:bg-primary-50"
+      class="flex min-h-[44px] cursor-pointer items-center gap-12 rounded-sm px-12 py-8 font-body text-body text-primary hover:bg-surface"
     >
-      <span class="relative grid size-[20px] shrink-0 place-items-center rounded-full border-[1.5px] border-primary-300">
+      <span class="relative grid size-[24px] shrink-0 place-items-center rounded-full border-2 border-primary">
         <input
           v-model="value"
           type="radio"
@@ -48,16 +48,16 @@ const errorId = useId();
           class="peer absolute inset-0 size-full cursor-pointer appearance-none opacity-0"
         />
         <span
-          class="size-[10px] rounded-full bg-primary-600 transition-transform duration-150 motion-reduce:transition-none"
+          class="size-[12px] rounded-full bg-primary transition-transform duration-150 motion-reduce:transition-none"
           :class="value === option.value ? 'scale-100' : 'scale-0'"
           aria-hidden="true"
         />
         <span
-          class="pointer-events-none absolute -inset-2 rounded-full peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink-900"
+          class="pointer-events-none absolute -inset-2 rounded-full peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink"
         />
       </span>
       {{ option.label }}
     </label>
-    <p v-if="errorMessage" :id="errorId" class="text-small text-error">{{ errorMessage }}</p>
+    <p v-if="errorMessage" :id="errorId" class="text-small font-bold text-ink">{{ errorMessage }}</p>
   </fieldset>
 </template>

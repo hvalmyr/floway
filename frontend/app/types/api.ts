@@ -47,6 +47,8 @@ export interface Lesson {
 }
 
 export interface CourseModule extends CourseBlock {
+  /** Intro text shown above the "Учебный план" accordion for this block. */
+  description?: string;
   lessons: Lesson[];
 }
 

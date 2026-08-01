@@ -1,0 +1,46 @@
+/**
+ * Local brand fonts (docs/fonts): Soyuz Grotesk (accent/headings, Bold only)
+ * and Non Bureau (body text). Self-hosted from public/fonts — no Google
+ * Fonts/CDN involved.
+ */
+@font-face {
+  font-family: "Soyuz Grotesk";
+  src:
+    url("/fonts/SoyuzGrotesk-Bold.woff") format("woff"),
+    url("/fonts/SoyuzGrotesk-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Non Bureau";
+  src: url("/fonts/NonBureau-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Non Bureau";
+  src: url("/fonts/NonBureau-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Non Bureau";
+  src: url("/fonts/NonBureau-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Non Bureau";
+  src: url("/fonts/NonBureau-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}

@@ -1,35 +1,36 @@
 <script setup lang="ts">
 /**
- * Price/duration info panel (docs/floway-design.md §5.2 "инфо-плашка цены").
- * A horizontal row of 2–4 values on desktop that stacks vertically on
- * mobile, per §7 of the design doc.
+ * Price/duration info panel (course price table rows, masterclass duration+
+ * price bar). A single row of plain-text columns — first column in blue
+ * (label-like), the rest in bold ink — that stacks vertically on mobile.
+ * `highlighted` switches from the plain surface fill to the white+blue-
+ * border treatment used for the second row in the course price table.
  *
  * @example
- * <UiInfoRow
- *   :items="[
- *     { label: 'Длительность', value: '2–3 часа' },
- *     { label: 'Цена (групповое)', value: '3 000 ₽' },
- *     { label: 'Цена (индивидуальное)', value: '4 500 ₽' },
- *   ]"
- * />
+ * <UiInfoRow :items="['Блок «Букеты»', '7 занятий', '30 часов', '38 500 ₽']" />
+ * <UiInfoRow :items="['Блок «Композиции»', '4 занятия', '17 часов', '22 000 ₽']" highlighted />
  */
-defineProps<{
-  items: { label: string; value: string; oldValue?: string }[];
-}>();
+withDefaults(
+  defineProps<{
+    items: string[];
+    highlighted?: boolean;
+  }>(),
+  { highlighted: false },
+);
 </script>
 
 <template>
   <div
-    class="flex flex-col divide-y divide-line rounded-md border border-line bg-surface md:flex-row md:divide-x md:divide-y-0"
+    class="flex flex-col divide-y divide-primary/20 rounded-md md:flex-row md:items-center md:divide-x md:divide-y-0"
+    :class="highlighted ? 'border-2 border-primary bg-white' : 'bg-surface'"
   >
-    <div v-for="item in items" :key="item.label" class="flex flex-1 flex-col gap-4 px-24 py-16">
-      <span class="text-small text-ink-700">{{ item.label }}</span>
-      <span class="font-display text-h4 text-ink-900">
-        <span v-if="item.oldValue" class="mr-8 text-body font-body text-ink-400 line-through">
-          <span class="sr-only">Старая цена: </span>{{ item.oldValue }}
-        </span>
-        {{ item.value }}
-      </span>
+    <div
+      v-for="(item, i) in items"
+      :key="i"
+      class="flex-1 px-24 py-16 font-body text-body"
+      :class="i === 0 ? 'font-bold text-primary' : 'font-bold text-ink'"
+    >
+      {{ item }}
     </div>
   </div>
 </template>
