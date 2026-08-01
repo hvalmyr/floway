@@ -54,10 +54,10 @@ func (r *TeacherRepository) Update(ctx context.Context, item model.Teacher) (mod
 		WHERE id = $5
 		RETURNING updated_at
 	`, item.Name, item.Photo, item.Description, item.SortOrder, item.ID).Scan(&item.UpdatedAt)
-	return item, err
+	return item, translateNotFound(err)
 }
 
 func (r *TeacherRepository) Delete(ctx context.Context, id int64) error {
-	_, err := r.db.Exec(ctx, `DELETE FROM teachers WHERE id = $1`, id)
-	return err
+	tag, err := r.db.Exec(ctx, `DELETE FROM teachers WHERE id = $1`, id)
+	return checkDeleted(tag, err)
 }

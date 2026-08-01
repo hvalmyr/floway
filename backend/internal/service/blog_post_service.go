@@ -5,8 +5,6 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/jackc/pgx/v5"
-
 	"floway-backend/internal/model"
 )
 
@@ -41,11 +39,7 @@ func (s *BlogPostService) ListPublished(ctx context.Context) ([]model.BlogPost, 
 }
 
 func (s *BlogPostService) GetPublishedBySlug(ctx context.Context, slug string) (model.BlogPost, error) {
-	item, err := s.repo.FindPublishedBySlug(ctx, slug)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return model.BlogPost{}, ErrNotFound
-	}
-	return item, err
+	return s.repo.FindPublishedBySlug(ctx, slug)
 }
 
 func (s *BlogPostService) validate(item *model.BlogPost) error {

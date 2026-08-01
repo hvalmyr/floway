@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -39,7 +38,7 @@ func (f *fakeCourseRepository) FindBySlug(ctx context.Context, slug string) (mod
 			return existing, nil
 		}
 	}
-	return model.Course{}, pgx.ErrNoRows
+	return model.Course{}, service.ErrNotFound
 }
 
 func (f *fakeCourseRepository) Create(ctx context.Context, item model.Course) (model.Course, error) {

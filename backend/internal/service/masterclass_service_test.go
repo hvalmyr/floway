@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -39,7 +38,7 @@ func (f *fakeMasterclassRepository) FindBySlug(ctx context.Context, slug string)
 			return existing, nil
 		}
 	}
-	return model.Masterclass{}, pgx.ErrNoRows
+	return model.Masterclass{}, service.ErrNotFound
 }
 
 func (f *fakeMasterclassRepository) Create(ctx context.Context, item model.Masterclass) (model.Masterclass, error) {

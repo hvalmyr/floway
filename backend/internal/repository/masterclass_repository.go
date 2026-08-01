@@ -55,7 +55,7 @@ func (r *MasterclassRepository) FindBySlug(ctx context.Context, slug string) (mo
 		&item.PriceGroup, &item.PriceIndividual, &item.PriceDescription, &item.CoverImage, &item.Status,
 		&item.CreatedAt, &item.UpdatedAt,
 	)
-	return item, err
+	return item, translateNotFound(err)
 }
 
 func (r *MasterclassRepository) Create(ctx context.Context, item model.Masterclass) (model.Masterclass, error) {
@@ -85,10 +85,10 @@ func (r *MasterclassRepository) Update(ctx context.Context, item model.Mastercla
 		item.Slug, item.Title, item.ShortDesc, item.FullDesc, item.EndingText, item.Duration,
 		item.PriceGroup, item.PriceIndividual, item.PriceDescription, item.CoverImage, item.Status, item.ID,
 	).Scan(&item.UpdatedAt)
-	return item, err
+	return item, translateNotFound(err)
 }
 
 func (r *MasterclassRepository) Delete(ctx context.Context, id int64) error {
-	_, err := r.db.Exec(ctx, `DELETE FROM masterclasses WHERE id = $1`, id)
-	return err
+	tag, err := r.db.Exec(ctx, `DELETE FROM masterclasses WHERE id = $1`, id)
+	return checkDeleted(tag, err)
 }

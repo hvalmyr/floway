@@ -64,7 +64,7 @@ func NewRouter(services Services) http.Handler {
 		r.Route("/admin/uploads", uploads.adminRoutes)
 		r.Route("/faq", newFAQHandler(services.FAQ, admin).routes)
 		r.Route("/teachers", newTeacherHandler(services.Teacher, admin).routes)
-		r.Route("/blog-posts", newBlogPostHandler(services.BlogPost, admin).routes)
+		r.Route("/blog-posts", newBlogPostHandler(services.BlogPost, services.Tokens, admin).routes)
 		r.Route("/masterclasses", newMasterclassHandler(services.Masterclass, admin).routes)
 		r.Route("/courses", func(r chi.Router) {
 			newCourseHandler(services.Course, services.CourseBlock, services.Lesson, admin).routes(r)

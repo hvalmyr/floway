@@ -8,17 +8,19 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"floway-backend/internal/auth"
 	"floway-backend/internal/model"
 	"floway-backend/internal/service"
 )
 
 type blogPostHandler struct {
-	svc   *service.BlogPostService
-	admin func(http.Handler) http.Handler
+	svc    *service.BlogPostService
+	tokens *auth.TokenManager
+	admin  func(http.Handler) http.Handler
 }
 
-func newBlogPostHandler(svc *service.BlogPostService, admin func(http.Handler) http.Handler) *blogPostHandler {
-	return &blogPostHandler{svc: svc, admin: admin}
+func newBlogPostHandler(svc *service.BlogPostService, tokens *auth.TokenManager, admin func(http.Handler) http.Handler) *blogPostHandler {
+	return &blogPostHandler{svc: svc, tokens: tokens, admin: admin}
 }
 
 func (h *blogPostHandler) routes(r chi.Router) {
@@ -44,16 +46,21 @@ type blogPostRequest struct {
 	Status      string     `json:"status"`
 }
 
-// list returns every post (drafts included) by default, for the admin
-// panel. Public callers pass ?status=published to get only published posts,
-// which is what the public blog listing page uses.
+// list is a public route (no requireAdminMiddleware — the admin panel's own
+// requests hit this same node), so the response depends on who's asking:
+// an authenticated admin session sees every post, drafts included; anyone
+// else only ever sees published posts, regardless of query string. Drafts
+// must never be reachable by an unauthenticated request (architecture
+// review finding #4) — this used to default to "everything" and rely on
+// the frontend voluntarily passing ?status=published, which anyone probing
+// the API directly could simply not do.
 func (h *blogPostHandler) list(w http.ResponseWriter, r *http.Request) {
 	var items []model.BlogPost
 	var err error
-	if r.URL.Query().Get("status") == string(model.BlogPostStatusPublished) {
-		items, err = h.svc.ListPublished(r.Context())
-	} else {
+	if isAdminRequest(r, h.tokens) {
 		items, err = h.svc.List(r.Context())
+	} else {
+		items, err = h.svc.ListPublished(r.Context())
 	}
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)

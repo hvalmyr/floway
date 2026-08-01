@@ -10,11 +10,6 @@ import (
 	"floway-backend/internal/model"
 )
 
-// ErrInvalidCredentials is returned by Authenticate when the login does not
-// exist or the password does not match. It intentionally does not reveal
-// which of the two is the case.
-var ErrInvalidCredentials = errors.New("invalid credentials")
-
 const minPasswordLength = 8
 
 type AdminUserRepository interface {

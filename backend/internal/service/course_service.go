@@ -5,14 +5,8 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/jackc/pgx/v5"
-
 	"floway-backend/internal/model"
 )
-
-// ErrNotFound is returned by *GetBySlug (and similar single-item lookups)
-// when no matching row exists. Handlers translate it to a 404.
-var ErrNotFound = errors.New("not found")
 
 type CourseRepository interface {
 	List(ctx context.Context) ([]model.Course, error)
@@ -35,11 +29,7 @@ func (s *CourseService) List(ctx context.Context) ([]model.Course, error) {
 }
 
 func (s *CourseService) GetBySlug(ctx context.Context, slug string) (model.Course, error) {
-	item, err := s.repo.FindBySlug(ctx, slug)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return model.Course{}, ErrNotFound
-	}
-	return item, err
+	return s.repo.FindBySlug(ctx, slug)
 }
 
 func (s *CourseService) Create(ctx context.Context, item model.Course) (model.Course, error) {

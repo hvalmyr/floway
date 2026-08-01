@@ -5,8 +5,6 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/jackc/pgx/v5"
-
 	"floway-backend/internal/model"
 )
 
@@ -33,9 +31,5 @@ func (s *PageContentService) Update(ctx context.Context, key, value string) (mod
 		return model.PageContent{}, errors.Join(ErrValidation, errors.New("key is required"))
 	}
 
-	item, err := s.repo.Update(ctx, key, value)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return model.PageContent{}, ErrNotFound
-	}
-	return item, err
+	return s.repo.Update(ctx, key, value)
 }

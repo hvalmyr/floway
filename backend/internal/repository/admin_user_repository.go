@@ -27,7 +27,7 @@ func (r *AdminUserRepository) List(ctx context.Context) ([]model.AdminUser, erro
 	}
 	defer rows.Close()
 
-	var users []model.AdminUser
+	users := []model.AdminUser{}
 	for rows.Next() {
 		var user model.AdminUser
 		if err := rows.Scan(&user.ID, &user.Login, &user.PasswordHash, &user.CreatedAt); err != nil {
@@ -45,7 +45,7 @@ func (r *AdminUserRepository) FindByLogin(ctx context.Context, login string) (mo
 		FROM admin_users
 		WHERE login = $1
 	`, login).Scan(&user.ID, &user.Login, &user.PasswordHash, &user.CreatedAt)
-	return user, err
+	return user, translateNotFound(err)
 }
 
 func (r *AdminUserRepository) Create(ctx context.Context, login, passwordHash string) (model.AdminUser, error) {
@@ -59,6 +59,6 @@ func (r *AdminUserRepository) Create(ctx context.Context, login, passwordHash st
 }
 
 func (r *AdminUserRepository) Delete(ctx context.Context, id int64) error {
-	_, err := r.db.Exec(ctx, `DELETE FROM admin_users WHERE id = $1`, id)
-	return err
+	tag, err := r.db.Exec(ctx, `DELETE FROM admin_users WHERE id = $1`, id)
+	return checkDeleted(tag, err)
 }

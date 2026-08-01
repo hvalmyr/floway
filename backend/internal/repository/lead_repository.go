@@ -86,10 +86,10 @@ func (r *LeadRepository) UpdateStatus(ctx context.Context, id int64, status mode
 		&item.Status,
 		&item.CreatedAt,
 	)
-	return item, err
+	return item, translateNotFound(err)
 }
 
 func (r *LeadRepository) Delete(ctx context.Context, id int64) error {
-	_, err := r.db.Exec(ctx, `DELETE FROM leads WHERE id = $1`, id)
-	return err
+	tag, err := r.db.Exec(ctx, `DELETE FROM leads WHERE id = $1`, id)
+	return checkDeleted(tag, err)
 }

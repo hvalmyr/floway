@@ -69,7 +69,7 @@ func (r *CourseRepository) FindBySlug(ctx context.Context, slug string) (model.C
 		&item.CreatedAt,
 		&item.UpdatedAt,
 	)
-	return item, err
+	return item, translateNotFound(err)
 }
 
 func (r *CourseRepository) Create(ctx context.Context, item model.Course) (model.Course, error) {
@@ -108,10 +108,10 @@ func (r *CourseRepository) Update(ctx context.Context, item model.Course) (model
 		item.SortOrder,
 		item.ID,
 	).Scan(&item.UpdatedAt)
-	return item, err
+	return item, translateNotFound(err)
 }
 
 func (r *CourseRepository) Delete(ctx context.Context, id int64) error {
-	_, err := r.db.Exec(ctx, `DELETE FROM courses WHERE id = $1`, id)
-	return err
+	tag, err := r.db.Exec(ctx, `DELETE FROM courses WHERE id = $1`, id)
+	return checkDeleted(tag, err)
 }

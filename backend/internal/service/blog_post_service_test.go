@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -52,7 +51,7 @@ func (f *fakeBlogPostRepository) FindPublishedBySlug(ctx context.Context, slug s
 			return item, nil
 		}
 	}
-	return model.BlogPost{}, pgx.ErrNoRows
+	return model.BlogPost{}, service.ErrNotFound
 }
 
 func (f *fakeBlogPostRepository) Create(ctx context.Context, item model.BlogPost) (model.BlogPost, error) {

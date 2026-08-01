@@ -54,10 +54,10 @@ func (r *SocialLinkRepository) Update(ctx context.Context, item model.SocialLink
 		WHERE id = $5
 		RETURNING updated_at
 	`, item.Label, item.Href, item.Disclaimer, item.SortOrder, item.ID).Scan(&item.UpdatedAt)
-	return item, err
+	return item, translateNotFound(err)
 }
 
 func (r *SocialLinkRepository) Delete(ctx context.Context, id int64) error {
-	_, err := r.db.Exec(ctx, `DELETE FROM social_links WHERE id = $1`, id)
-	return err
+	tag, err := r.db.Exec(ctx, `DELETE FROM social_links WHERE id = $1`, id)
+	return checkDeleted(tag, err)
 }

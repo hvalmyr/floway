@@ -55,10 +55,10 @@ func (r *CourseBlockRepository) Update(ctx context.Context, item model.CourseBlo
 		WHERE id = $7
 		RETURNING course_id, updated_at
 	`, item.Title, item.LessonsCount, item.Hours, item.Price, item.OldPrice, item.SortOrder, item.ID).Scan(&item.CourseID, &item.UpdatedAt)
-	return item, err
+	return item, translateNotFound(err)
 }
 
 func (r *CourseBlockRepository) Delete(ctx context.Context, id int64) error {
-	_, err := r.db.Exec(ctx, `DELETE FROM course_blocks WHERE id = $1`, id)
-	return err
+	tag, err := r.db.Exec(ctx, `DELETE FROM course_blocks WHERE id = $1`, id)
+	return checkDeleted(tag, err)
 }

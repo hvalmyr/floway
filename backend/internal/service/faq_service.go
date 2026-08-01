@@ -8,8 +8,6 @@ import (
 	"floway-backend/internal/model"
 )
 
-var ErrValidation = errors.New("validation error")
-
 type FAQRepository interface {
 	List(ctx context.Context) ([]model.FAQItem, error)
 	Create(ctx context.Context, item model.FAQItem) (model.FAQItem, error)

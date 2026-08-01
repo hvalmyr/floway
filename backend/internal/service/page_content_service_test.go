@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -42,7 +41,7 @@ func (f *fakePageContentRepository) Update(ctx context.Context, key, value strin
 	}
 	item, ok := f.items[key]
 	if !ok {
-		return model.PageContent{}, pgx.ErrNoRows
+		return model.PageContent{}, service.ErrNotFound
 	}
 	item.Value = value
 	f.items[key] = item

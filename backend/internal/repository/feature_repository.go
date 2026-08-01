@@ -77,10 +77,10 @@ func (r *FeatureRepository) Update(ctx context.Context, item model.Feature) (mod
 		WHERE id = $6
 		RETURNING updated_at
 	`, item.Page, item.Icon, item.Title, item.Description, item.SortOrder, item.ID).Scan(&item.UpdatedAt)
-	return item, err
+	return item, translateNotFound(err)
 }
 
 func (r *FeatureRepository) Delete(ctx context.Context, id int64) error {
-	_, err := r.db.Exec(ctx, `DELETE FROM features WHERE id = $1`, id)
-	return err
+	tag, err := r.db.Exec(ctx, `DELETE FROM features WHERE id = $1`, id)
+	return checkDeleted(tag, err)
 }

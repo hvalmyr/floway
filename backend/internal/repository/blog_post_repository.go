@@ -70,7 +70,7 @@ func (r *BlogPostRepository) FindPublishedBySlug(ctx context.Context, slug strin
 	`, slug, model.BlogPostStatusPublished).Scan(
 		&item.ID, &item.Slug, &item.Title, &item.CoverImage, &item.Category, &item.Tags, &item.Author, &item.PublishedAt, &item.Content, &item.Status, &item.CreatedAt, &item.UpdatedAt,
 	)
-	return item, err
+	return item, translateNotFound(err)
 }
 
 func (r *BlogPostRepository) Create(ctx context.Context, item model.BlogPost) (model.BlogPost, error) {
@@ -92,10 +92,10 @@ func (r *BlogPostRepository) Update(ctx context.Context, item model.BlogPost) (m
 		RETURNING updated_at
 	`, item.Slug, item.Title, item.CoverImage, item.Category, item.Tags, item.Author, item.PublishedAt, item.Content, item.Status, item.ID).
 		Scan(&item.UpdatedAt)
-	return item, err
+	return item, translateNotFound(err)
 }
 
 func (r *BlogPostRepository) Delete(ctx context.Context, id int64) error {
-	_, err := r.db.Exec(ctx, `DELETE FROM blog_posts WHERE id = $1`, id)
-	return err
+	tag, err := r.db.Exec(ctx, `DELETE FROM blog_posts WHERE id = $1`, id)
+	return checkDeleted(tag, err)
 }

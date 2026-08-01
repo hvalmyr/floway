@@ -39,7 +39,7 @@ func (r *PageContentRepository) List(ctx context.Context) ([]model.PageContent, 
 }
 
 // Update sets the value for an existing key. Keys are seeded by migrations,
-// not created through the API — updating an unknown key returns pgx.ErrNoRows.
+// not created through the API — updating an unknown key returns apperr.ErrNotFound.
 func (r *PageContentRepository) Update(ctx context.Context, key, value string) (model.PageContent, error) {
 	var item model.PageContent
 	item.Key = key
@@ -50,5 +50,5 @@ func (r *PageContentRepository) Update(ctx context.Context, key, value string) (
 		WHERE key = $2
 		RETURNING label, type, updated_at
 	`, value, key).Scan(&item.Label, &item.Type, &item.UpdatedAt)
-	return item, err
+	return item, translateNotFound(err)
 }
