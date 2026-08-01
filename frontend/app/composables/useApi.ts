@@ -10,6 +10,7 @@ import type {
   FAQItem,
   Lead,
   Masterclass,
+  PageContent,
   Teacher,
 } from "~/types/api";
 
@@ -108,6 +109,19 @@ export function useApi() {
   }
 
   /**
+   * GET /api/v1/page-content — public, no auth. Generic freeform site copy
+   * (Hero text, legal pages, etc.) — see usePageContent() for the
+   * key-lookup helper components actually use.
+   */
+  async function getPageContent(): Promise<PageContent[]> {
+    try {
+      return await client<PageContent[]>("/api/v1/page-content");
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
    * GET /api/v1/blog-posts?status=published — draft posts are never
    * returned (see blog_post_handler.go). No mocks fallback: there's no
    * design brief for the blog yet, so this always hits the real backend.
@@ -144,6 +158,7 @@ export function useApi() {
     getMasterClass,
     getTeachers,
     getFAQItems,
+    getPageContent,
     getBlogPosts,
     getBlogPost,
     submitApplication,

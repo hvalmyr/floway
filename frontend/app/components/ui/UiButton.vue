@@ -1,9 +1,17 @@
 <script setup lang="ts">
+import { NuxtLink } from "#components";
+
 /**
  * Button/link primitive. Renders a <NuxtLink> when `to` is set, otherwise a
  * <button>. Nav/hero/card CTAs are full pill (default); form submit buttons
  * use `:pill="false"` for the large-rounded-rect shape seen in the apply
  * forms mockups.
+ *
+ * `:is` takes the imported NuxtLink component, not the string "NuxtLink" —
+ * a bare string doesn't resolve at runtime (Nuxt's auto-import only
+ * rewrites literal <NuxtLink> tags at compile time, so `resolveDynamicComponent`
+ * can't find it), which silently rendered an inert <nuxtlink> custom element
+ * instead of a real link on every `to`-having button on the site.
  *
  * @example
  * <UiButton variant="primary" size="lg" to="/masterclasses">Мастер-классы</UiButton>
@@ -44,7 +52,7 @@ function onClick(event: MouseEvent) {
 
 <template>
   <component
-    :is="to ? 'NuxtLink' : 'button'"
+    :is="to ? NuxtLink : 'button'"
     :to="to"
     :type="to ? undefined : type"
     :disabled="!to && (disabled || loading)"

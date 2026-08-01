@@ -18,6 +18,7 @@ async function onLogout() {
           <NuxtLink to="/admin/masterclasses">Мастер-классы</NuxtLink>
           <NuxtLink to="/admin/courses">Курсы</NuxtLink>
           <NuxtLink to="/admin/faq">FAQ</NuxtLink>
+          <NuxtLink to="/admin/page-content">Тексты сайта</NuxtLink>
           <NuxtLink to="/admin/leads">Заявки</NuxtLink>
         </nav>
         <div class="flex items-center gap-3 text-sm">

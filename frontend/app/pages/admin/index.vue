@@ -7,6 +7,7 @@ const sections = [
   { to: "/admin/masterclasses", title: "Мастер-классы" },
   { to: "/admin/courses", title: "Курсы" },
   { to: "/admin/faq", title: "FAQ" },
+  { to: "/admin/page-content", title: "Тексты сайта" },
   { to: "/admin/leads", title: "Заявки" },
 ];
 </script>

@@ -160,6 +160,13 @@ type FAQItem struct {
 	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
 }
 
+type PageContent struct {
+	Key       string    `db:"key" json:"key"`
+	Label     string    `db:"label" json:"label"`
+	Value     string    `db:"value" json:"value"`
+	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
+}
+
 type AdminUser struct {
 	ID           int64     `db:"id" json:"id"`
 	Login        string    `db:"login" json:"login"`

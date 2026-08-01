@@ -21,6 +21,7 @@
     "@vueuse/integrations": "^14.4.0",
     "focus-trap": "^8.2.2",
     "lucide-vue-next": "^1.0.0",
+    "markdown-it": "^15.0.0",
     "nuxt": "^4.5.1",
     "vee-validate": "^4.15.1",
     "vue": "^3.5.40",
@@ -28,6 +29,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@types/markdown-it": "^14.1.2",
     "oxfmt": "^0.61.0",
     "oxlint": "^1.76.0",
     "typescript": "^5.9.3",

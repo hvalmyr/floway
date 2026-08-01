@@ -13,6 +13,7 @@ useSeoMeta({
 });
 
 const api = useApi();
+const { text } = await usePageContent();
 
 const { data: mainCourse } = await useAsyncData("home-course-osnovy", () =>
   api.getCourse("osnovy-floristiki"),
@@ -110,9 +111,14 @@ const openFaqIds = ref<Array<string | number>>([0]);
 <template>
   <div>
     <Hero>
-      <template #title>Мы рядом с первого букета</template>
+      <template #title>{{ text("home_hero_title", "Мы рядом с первого букета") }}</template>
       <template #lead>
-        Обучаем современной флористике с нуля — бережно, понятно, с практикой и поддержкой.
+        {{
+          text(
+            "home_hero_lead",
+            "Обучаем современной флористике с нуля — бережно, понятно, с практикой и поддержкой.",
+          )
+        }}
       </template>
       <template #actions>
         <UiButton variant="primary" size="lg" to="/#courses" class="w-full sm:w-auto"
@@ -200,22 +206,31 @@ const openFaqIds = ref<Array<string | number>>([0]);
     <section class="py-64 sm:py-96 lg:py-120">
       <div class="container flex flex-col gap-48">
         <div class="flex flex-col gap-16">
-          <h2 class="font-display text-h2 text-primary">Попробуйте флористику на практике</h2>
+          <h2 class="font-display text-h2 text-primary">
+            {{ text("home_trial_heading", "Попробуйте флористику на практике") }}
+          </h2>
           <p class="max-w-[760px] font-body text-body-l text-ink">
-            Вы научитесь собирать круглый букет в спиральной технике: поймёте принцип работы со
-            спиралью, научитесь уверенно удерживать букет в руках во время сборки и правильно
-            подвязывать букет. Кроме практики, вы сможете познакомиться с нашим педагогом, узнать,
-            как проходят занятия в школе, задать все интересующие вопросы и понять, подходит ли вам
-            обучение.
+            {{
+              text(
+                "home_trial_description",
+                "Вы научитесь собирать круглый букет в спиральной технике: поймёте принцип работы со спиралью, научитесь уверенно удерживать букет в руках во время сборки и правильно подвязывать букет. Кроме практики, вы сможете познакомиться с нашим педагогом, узнать, как проходят занятия в школе, задать все интересующие вопросы и понять, подходит ли вам обучение.",
+              )
+            }}
           </p>
         </div>
 
         <div class="grid grid-cols-1 gap-32 lg:grid-cols-2 lg:gap-64">
           <div class="flex flex-col gap-24">
             <div class="flex flex-col gap-8">
-              <h3 class="font-display text-h3 text-ink">Пробное занятие</h3>
-              <p class="font-body text-body text-ink">Продолжительность: 2,5 часа</p>
-              <p class="font-body text-body text-ink">Стоимость: 3 000 ₽</p>
+              <h3 class="font-display text-h3 text-ink">
+                {{ text("home_trial_lesson_title", "Пробное занятие") }}
+              </h3>
+              <p class="font-body text-body text-ink">
+                {{ text("home_trial_duration", "Продолжительность: 2,5 часа") }}
+              </p>
+              <p class="font-body text-body text-ink">
+                {{ text("home_trial_price", "Стоимость: 3 000 ₽") }}
+              </p>
             </div>
             <ApplyForm context="trial_lesson" variant="simple" title="" />
           </div>

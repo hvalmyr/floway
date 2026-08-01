@@ -56,6 +56,7 @@ func run() error {
 		Lesson:      service.NewLessonService(repository.NewLessonRepository(pool)),
 		Lead:        service.NewLeadService(repository.NewLeadRepository(pool)),
 		AdminUser:   service.NewAdminUserService(repository.NewAdminUserRepository(pool)),
+		PageContent: service.NewPageContentService(repository.NewPageContentRepository(pool)),
 
 		Storage: garageClient,
 

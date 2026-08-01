@@ -78,6 +78,19 @@ export interface Masterclass {
   status: MasterclassStatus;
 }
 
+/**
+ * Shape returned by the public GET /api/v1/page-content (list, no auth).
+ * Generic freeform site copy (Hero text, legal pages, etc.) — see
+ * usePageContent(). `value` may contain markdown; render it with
+ * <MarkdownContent> where the surrounding markup allows block content.
+ */
+export interface PageContent {
+  key: string;
+  label: string;
+  value: string;
+  updatedAt: string;
+}
+
 /** Shape returned by the public GET /api/v1/faq (list, no auth, pre-sorted by sortOrder). */
 export interface FAQItem {
   id: number;
