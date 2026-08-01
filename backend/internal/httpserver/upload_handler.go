@@ -43,10 +43,24 @@ func (h *uploadHandler) upload(w http.ResponseWriter, r *http.Request) {
 	}
 	defer func() { _ = file.Close() }()
 
-	contentType := header.Header.Get("Content-Type")
+	// The multipart Content-Type header is client-supplied and trivially
+	// spoofed (a script can name any file "photo.png" with any header it
+	// likes) — sniff the actual bytes instead of trusting it, then seek
+	// back to the start so storage.Upload reads the whole file.
+	sniffBuf := make([]byte, 512)
+	n, err := file.Read(sniffBuf)
+	if err != nil && err != io.EOF {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	contentType := http.DetectContentType(sniffBuf[:n])
 	ext, ok := allowedImageExtensions[contentType]
 	if !ok {
 		writeError(w, http.StatusBadRequest, errors.New("unsupported image type, allowed: jpeg, png, webp, gif"))
+		return
+	}
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		writeInternalError(w, r, err)
 		return
 	}
 
@@ -81,5 +95,11 @@ func (h *uploadHandler) serve(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", info.ContentType)
 	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+	// The Content-Type above is now trustworthy (sniffed from real bytes at
+	// upload time, not client-declared) — nosniff tells the browser to
+	// honor it as-is instead of re-guessing from the body, closing the
+	// usual "served image gets reinterpreted as HTML/script" MIME-confusion
+	// class of bug.
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 	_, _ = io.Copy(w, obj)
 }
