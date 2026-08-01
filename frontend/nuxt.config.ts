@@ -24,12 +24,23 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    // Сервер (SSR) и браузер видят backend по-разному в Docker: браузер идёт
+    // по публичному адресу (apiBase), а SSR-запросы из контейнера фронтенда
+    // должны идти по внутренней docker-сети (например http://backend:8080),
+    // иначе "localhost" внутри контейнера указывает сам на себя, а не на
+    // backend. Локально без Docker (bun run dev) оба адреса совпадают, так
+    // что apiBaseInternal по умолчанию просто берёт публичный.
+    apiBaseInternal:
+      process.env.NUXT_API_BASE_INTERNAL ||
+      process.env.NUXT_PUBLIC_API_BASE ||
+      "http://localhost:8080",
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || "http://localhost:8080",
-      // Бэкенд пока не отдаёт публичные эндпоинты по slug (курс/мастер-класс
-      // с деталями) — см. TODO в app/composables/useApi.ts. Пока это так,
-      // useApi() отдаёт данные из app/mocks/*, чтобы вёрстка не блокировалась.
-      useMocks: (process.env.NUXT_PUBLIC_USE_MOCKS ?? "true") === "true",
+      // Бэкенд теперь отдаёт публичные эндпоинты по slug (GET
+      // /api/v1/courses/{slug}/full, GET /api/v1/masterclasses/{slug}) —
+      // моки из app/mocks/* используются только если явно включить флагом,
+      // например для вёрстки без поднятого бэкенда.
+      useMocks: process.env.NUXT_PUBLIC_USE_MOCKS === "true",
     },
   },
 

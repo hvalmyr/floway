@@ -52,7 +52,10 @@ function isActive(to: string) {
     <div class="container flex h-full items-center justify-between lg:grid lg:grid-cols-3">
       <NuxtLink to="/" class="font-display text-h4 text-primary lg:hidden">ФлоВей</NuxtLink>
 
-      <nav class="hidden items-center gap-32 lg:flex lg:justify-self-start" aria-label="Основная навигация">
+      <nav
+        class="hidden items-center gap-32 lg:flex lg:justify-self-start"
+        aria-label="Основная навигация"
+      >
         <NuxtLink
           v-for="link in leftLinks"
           :key="link.to"
@@ -64,11 +67,17 @@ function isActive(to: string) {
         </NuxtLink>
       </nav>
 
-      <NuxtLink to="/" class="hidden font-display text-h4 text-primary lg:block lg:justify-self-center">
+      <NuxtLink
+        to="/"
+        class="hidden font-display text-h4 text-primary lg:block lg:justify-self-center"
+      >
         ФлоВей
       </NuxtLink>
 
-      <nav class="hidden items-center gap-32 lg:flex lg:justify-self-end" aria-label="Дополнительная навигация">
+      <nav
+        class="hidden items-center gap-32 lg:flex lg:justify-self-end"
+        aria-label="Дополнительная навигация"
+      >
         <NuxtLink
           v-for="link in rightLinks"
           :key="link.to"
@@ -96,7 +105,11 @@ function isActive(to: string) {
 
     <!-- Мобильное меню — выпадает сверху (dropdown), а не выезжает сбоку. -->
     <Transition name="header-fade">
-      <div v-if="isOpen" class="fixed inset-x-0 bottom-0 top-[64px] z-50 bg-ink/40 lg:hidden" @click="isOpen = false" />
+      <div
+        v-if="isOpen"
+        class="fixed inset-x-0 bottom-0 top-[64px] z-50 bg-ink/40 lg:hidden"
+        @click="isOpen = false"
+      />
     </Transition>
 
     <Transition name="header-drop">

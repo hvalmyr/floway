@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -27,6 +28,18 @@ func (f *fakeCourseRepository) List(ctx context.Context) ([]model.Course, error)
 		return nil, f.err
 	}
 	return f.items, nil
+}
+
+func (f *fakeCourseRepository) FindBySlug(ctx context.Context, slug string) (model.Course, error) {
+	if f.err != nil {
+		return model.Course{}, f.err
+	}
+	for _, existing := range f.items {
+		if existing.Slug == slug {
+			return existing, nil
+		}
+	}
+	return model.Course{}, pgx.ErrNoRows
 }
 
 func (f *fakeCourseRepository) Create(ctx context.Context, item model.Course) (model.Course, error) {
@@ -180,6 +193,27 @@ func TestCourseService_Delete(t *testing.T) {
 		err := svc.Delete(context.Background(), 0)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, service.ErrValidation)
+	})
+}
+
+func TestCourseService_GetBySlug(t *testing.T) {
+	repo := newFakeCourseRepository()
+	svc := service.NewCourseService(repo)
+	created, err := svc.Create(context.Background(), model.Course{Slug: "slug", Title: "Title"})
+	require.NoError(t, err)
+
+	t.Run("finds an existing course", func(t *testing.T) {
+		found, err := svc.GetBySlug(context.Background(), "slug")
+
+		require.NoError(t, err)
+		assert.Equal(t, created.ID, found.ID)
+	})
+
+	t.Run("returns ErrNotFound for an unknown slug", func(t *testing.T) {
+		_, err := svc.GetBySlug(context.Background(), "does-not-exist")
+
+		require.Error(t, err)
+		assert.ErrorIs(t, err, service.ErrNotFound)
 	})
 }
 

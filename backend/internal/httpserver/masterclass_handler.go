@@ -22,6 +22,11 @@ func newMasterclassHandler(svc *service.MasterclassService, admin func(http.Hand
 
 func (h *masterclassHandler) routes(r chi.Router) {
 	r.Get("/", h.list)
+	// Public detail lookup by slug, shares the "/{id}" pattern with the
+	// admin-only Put/Delete below — same route node, dispatched by method,
+	// this handler just treats the captured value as a slug instead of a
+	// numeric id.
+	r.Get("/{id}", h.getBySlug)
 	r.With(h.admin).Post("/", h.create)
 	r.With(h.admin).Put("/{id}", h.update)
 	r.With(h.admin).Delete("/{id}", h.delete)
@@ -48,6 +53,17 @@ func (h *masterclassHandler) list(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, items)
+}
+
+func (h *masterclassHandler) getBySlug(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "id")
+
+	item, err := h.svc.GetBySlug(r.Context(), slug)
+	if err != nil {
+		writeServiceError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, item)
 }
 
 func (h *masterclassHandler) create(w http.ResponseWriter, r *http.Request) {

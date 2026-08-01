@@ -8,18 +8,28 @@ import IconTwoFormats from "~/components/ui/IconTwoFormats.vue";
 
 useSeoMeta({
   title: "ФлоВей — школа флористики в Москве",
-  description: "Курсы и мастер-классы по флористике в Москве: с нуля до уверенной самостоятельной работы.",
+  description:
+    "Курсы и мастер-классы по флористике в Москве: с нуля до уверенной самостоятельной работы.",
 });
 
 const api = useApi();
 
-const { data: mainCourse } = await useAsyncData("home-course-osnovy", () => api.getCourse("osnovy-floristiki"));
+const { data: mainCourse } = await useAsyncData("home-course-osnovy", () =>
+  api.getCourse("osnovy-floristiki"),
+);
 const { data: courses } = await useAsyncData("home-courses", () => api.getCourses());
 
-const profileSlugs = ["kommercheskaya-floristika", "aktualnaya-floristika", "svadebnaya-floristika"];
+const profileSlugs = [
+  "kommercheskaya-floristika",
+  "aktualnaya-floristika",
+  "svadebnaya-floristika",
+];
 const profileVariants = ["surface-ink", "surface-primary", "surface-white"] as const;
 const profileCourses = computed(
-  () => courses.value?.filter((c) => profileSlugs.includes(c.slug)).sort((a, b) => a.sortOrder - b.sortOrder) ?? [],
+  () =>
+    courses.value
+      ?.filter((c) => profileSlugs.includes(c.slug))
+      .sort((a, b) => a.sortOrder - b.sortOrder) ?? [],
 );
 
 const features = [
@@ -32,7 +42,8 @@ const features = [
   {
     icon: IconPeopleGroup,
     title: "комфортное обучение",
-    description: "Небольшие группы из 5–7 человек позволяют преподавателю уделить внимание каждому ученику.",
+    description:
+      "Небольшие группы из 5–7 человек позволяют преподавателю уделить внимание каждому ученику.",
   },
   {
     icon: IconMapPin,
@@ -48,7 +59,8 @@ const features = [
   {
     icon: IconEightyTwenty,
     title: "максимум практики",
-    description: "Большую часть обучения занимает работа с живыми цветами. Только 20% курса — теория.",
+    description:
+      "Большую часть обучения занимает работа с живыми цветами. Только 20% курса — теория.",
   },
   {
     icon: IconLevels,
@@ -102,15 +114,18 @@ const faqItems = [
   },
   {
     question: "Что такое свободное посещение?",
-    answer: "Формат, при котором вы сами выбираете даты и время занятий, не дожидаясь набора группы.",
+    answer:
+      "Формат, при котором вы сами выбираете даты и время занятий, не дожидаясь набора группы.",
   },
   {
     question: "Проводите ли вы мастер-классы?",
-    answer: "Да — разовые мастер-классы по букетам и композициям, подробности на странице «Мастер-классы».",
+    answer:
+      "Да — разовые мастер-классы по букетам и композициям, подробности на странице «Мастер-классы».",
   },
   {
     question: "Как записаться на обучение?",
-    answer: "Оставьте заявку в форме на сайте — мы свяжемся с вами и поможем выбрать курс или мастер-класс.",
+    answer:
+      "Оставьте заявку в форме на сайте — мы свяжемся с вами и поможем выбрать курс или мастер-класс.",
   },
   {
     question: "Нужно ли покупать цветы и инструменты?",
@@ -132,8 +147,12 @@ const openFaqIds = ref<Array<string | number>>([0]);
         Обучаем современной флористике с нуля — бережно, понятно, с практикой и поддержкой.
       </template>
       <template #actions>
-        <UiButton variant="primary" size="lg" to="/#courses" class="w-full sm:w-auto">Курсы</UiButton>
-        <UiButton variant="outline" size="lg" to="/#about" class="w-full sm:w-auto">О школе</UiButton>
+        <UiButton variant="primary" size="lg" to="/#courses" class="w-full sm:w-auto"
+          >Курсы</UiButton
+        >
+        <UiButton variant="outline" size="lg" to="/#about" class="w-full sm:w-auto"
+          >О школе</UiButton
+        >
       </template>
     </Hero>
 
@@ -141,7 +160,10 @@ const openFaqIds = ref<Array<string | number>>([0]);
       <div class="container flex flex-col gap-48">
         <SectionHeading color="primary">
           Почему стоит учиться в школе «ФлоВей»?
-          <template #lead>Мы создали школу, в которой удобно учиться, легко развиваться и получать реальные практические навыки флористики.</template>
+          <template #lead
+            >Мы создали школу, в которой удобно учиться, легко развиваться и получать реальные
+            практические навыки флористики.</template
+          >
         </SectionHeading>
         <FeatureGrid :items="features" />
       </div>
@@ -152,7 +174,11 @@ const openFaqIds = ref<Array<string | number>>([0]);
         <SectionHeading>О школе</SectionHeading>
         <!-- Список (flex-column), не грид: каждый пункт — отдельная строка на всю ширину. -->
         <div class="flex flex-col gap-24">
-          <div v-for="item in aboutItems" :key="item.badge" class="flex flex-col items-start gap-16 rounded-md bg-white p-32">
+          <div
+            v-for="item in aboutItems"
+            :key="item.badge"
+            class="flex flex-col items-start gap-16 rounded-md bg-white p-32"
+          >
             <UiBadge>{{ item.badge }}</UiBadge>
             <p class="font-body text-body text-ink">{{ item.description }}</p>
           </div>
@@ -185,7 +211,10 @@ const openFaqIds = ref<Array<string | number>>([0]);
       <div class="container flex flex-col gap-48">
         <SectionHeading>
           Профильные курсы
-          <template #lead>После прохождения курса «Основы флористики» вы можете продолжить обучение по одному или сразу нескольким специализированным направлениям.</template>
+          <template #lead
+            >После прохождения курса «Основы флористики» вы можете продолжить обучение по одному или
+            сразу нескольким специализированным направлениям.</template
+          >
         </SectionHeading>
         <div class="grid grid-cols-1 gap-24 md:grid-cols-2 lg:grid-cols-3 lg:gap-32">
           <CourseCard
@@ -204,10 +233,11 @@ const openFaqIds = ref<Array<string | number>>([0]);
         <div class="flex flex-col gap-16">
           <h2 class="font-display text-h2 text-primary">Попробуйте флористику на практике</h2>
           <p class="max-w-[760px] font-body text-body-l text-ink">
-            Вы научитесь собирать круглый букет в спиральной технике: поймёте принцип работы со спиралью, научитесь
-            уверенно удерживать букет в руках во время сборки и правильно подвязывать букет. Кроме практики, вы
-            сможете познакомиться с нашим педагогом, узнать, как проходят занятия в школе, задать все интересующие
-            вопросы и понять, подходит ли вам обучение.
+            Вы научитесь собирать круглый букет в спиральной технике: поймёте принцип работы со
+            спиралью, научитесь уверенно удерживать букет в руках во время сборки и правильно
+            подвязывать букет. Кроме практики, вы сможете познакомиться с нашим педагогом, узнать,
+            как проходят занятия в школе, задать все интересующие вопросы и понять, подходит ли вам
+            обучение.
           </p>
         </div>
 
@@ -230,8 +260,15 @@ const openFaqIds = ref<Array<string | number>>([0]);
       <div class="container flex flex-col gap-48">
         <SectionHeading>Педагоги</SectionHeading>
         <div class="grid grid-cols-1 gap-24 md:grid-cols-3">
-          <div v-for="teacher in teachers" :key="teacher.name" class="flex flex-col items-center gap-16">
-            <div class="aspect-square w-full rounded-lg" :class="teacher.accent ? 'bg-primary' : 'bg-surface'" />
+          <div
+            v-for="teacher in teachers"
+            :key="teacher.name"
+            class="flex flex-col items-center gap-16"
+          >
+            <div
+              class="aspect-square w-full rounded-lg"
+              :class="teacher.accent ? 'bg-primary' : 'bg-surface'"
+            />
             <p class="font-display text-h4" :class="teacher.accent ? 'text-primary' : 'text-ink'">
               {{ teacher.name }}
             </p>

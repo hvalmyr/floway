@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** docs/icons/main-icons/icon-2.svg — "центр Москвы" (home advantages). */
+ /** docs/icons/main-icons/icon-2.svg — "центр Москвы" (home advantages). */
 </script>
 <template>
   <svg viewBox="0 0 50 48" fill="none" xmlns="http://www.w3.org/2000/svg">

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** docs/icons/main-icons/icon-4.svg — "80/20", "максимум практики" (home advantages). */
+ /** docs/icons/main-icons/icon-4.svg — "80/20", "максимум практики" (home advantages). */
 </script>
 <template>
   <svg viewBox="0 0 114 48" fill="none" xmlns="http://www.w3.org/2000/svg">

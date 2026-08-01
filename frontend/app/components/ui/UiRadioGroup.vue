@@ -39,7 +39,9 @@ const errorId = useId();
       :key="option.value"
       class="flex min-h-[44px] cursor-pointer items-center gap-12 rounded-sm px-12 py-8 font-body text-body text-primary hover:bg-surface"
     >
-      <span class="relative grid size-[24px] shrink-0 place-items-center rounded-full border-2 border-primary">
+      <span
+        class="relative grid size-[24px] shrink-0 place-items-center rounded-full border-2 border-primary"
+      >
         <input
           v-model="value"
           type="radio"
@@ -58,6 +60,8 @@ const errorId = useId();
       </span>
       {{ option.label }}
     </label>
-    <p v-if="errorMessage" :id="errorId" class="text-small font-bold text-ink">{{ errorMessage }}</p>
+    <p v-if="errorMessage" :id="errorId" class="text-small font-bold text-ink">
+      {{ errorMessage }}
+    </p>
   </fieldset>
 </template>

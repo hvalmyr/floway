@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -27,6 +28,18 @@ func (f *fakeMasterclassRepository) List(ctx context.Context) ([]model.Mastercla
 		return nil, f.err
 	}
 	return f.items, nil
+}
+
+func (f *fakeMasterclassRepository) FindBySlug(ctx context.Context, slug string) (model.Masterclass, error) {
+	if f.err != nil {
+		return model.Masterclass{}, f.err
+	}
+	for _, existing := range f.items {
+		if existing.Slug == slug {
+			return existing, nil
+		}
+	}
+	return model.Masterclass{}, pgx.ErrNoRows
 }
 
 func (f *fakeMasterclassRepository) Create(ctx context.Context, item model.Masterclass) (model.Masterclass, error) {
@@ -184,6 +197,27 @@ func TestMasterclassService_Delete(t *testing.T) {
 		err := svc.Delete(context.Background(), 0)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, service.ErrValidation)
+	})
+}
+
+func TestMasterclassService_GetBySlug(t *testing.T) {
+	repo := newFakeMasterclassRepository()
+	svc := service.NewMasterclassService(repo)
+	created, err := svc.Create(context.Background(), model.Masterclass{Slug: "vocal-basics", Title: "Основы вокала"})
+	require.NoError(t, err)
+
+	t.Run("finds an existing item", func(t *testing.T) {
+		found, err := svc.GetBySlug(context.Background(), "vocal-basics")
+
+		require.NoError(t, err)
+		assert.Equal(t, created.ID, found.ID)
+	})
+
+	t.Run("returns ErrNotFound for an unknown slug", func(t *testing.T) {
+		_, err := svc.GetBySlug(context.Background(), "does-not-exist")
+
+		require.Error(t, err)
+		assert.ErrorIs(t, err, service.ErrNotFound)
 	})
 }
 

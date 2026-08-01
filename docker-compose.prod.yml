@@ -66,6 +66,10 @@ services:
     restart: unless-stopped
     environment:
       NUXT_PUBLIC_API_BASE: https://${FLOWAY_DOMAIN}
+      # SSR внутри контейнера должно идти на backend по docker-сети напрямую,
+      # а не через публичный домен/Caddy (см. комментарий в
+      # frontend/app/composables/useApiClient.ts).
+      NUXT_API_BASE_INTERNAL: http://backend:8080
     depends_on:
       backend:
         condition: service_healthy

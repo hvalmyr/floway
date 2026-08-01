@@ -105,7 +105,9 @@ const schoolLinks = [
     </div>
 
     <div class="border-t border-white/25">
-      <p class="container py-24 font-body text-small text-white/80">&copy; {{ year }} ФлоВей — школа флористики</p>
+      <p class="container py-24 font-body text-small text-white/80">
+        &copy; {{ year }} ФлоВей — школа флористики
+      </p>
     </div>
   </footer>
 </template>

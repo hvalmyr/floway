@@ -5,11 +5,14 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
+
 	"floway-backend/internal/model"
 )
 
 type MasterclassRepository interface {
 	List(ctx context.Context) ([]model.Masterclass, error)
+	FindBySlug(ctx context.Context, slug string) (model.Masterclass, error)
 	Create(ctx context.Context, item model.Masterclass) (model.Masterclass, error)
 	Update(ctx context.Context, item model.Masterclass) (model.Masterclass, error)
 	Delete(ctx context.Context, id int64) error
@@ -25,6 +28,14 @@ func NewMasterclassService(repo MasterclassRepository) *MasterclassService {
 
 func (s *MasterclassService) List(ctx context.Context) ([]model.Masterclass, error) {
 	return s.repo.List(ctx)
+}
+
+func (s *MasterclassService) GetBySlug(ctx context.Context, slug string) (model.Masterclass, error) {
+	item, err := s.repo.FindBySlug(ctx, slug)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return model.Masterclass{}, ErrNotFound
+	}
+	return item, err
 }
 
 func (s *MasterclassService) Create(ctx context.Context, item model.Masterclass) (model.Masterclass, error) {

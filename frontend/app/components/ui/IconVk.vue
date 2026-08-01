@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/**
+ /**
  * docs/icons/footer-icons/vk.svg — real VK logomark, supplied by the client
  * for this project. Pair with an aria-label on the surrounding link.
  *

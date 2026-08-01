@@ -52,15 +52,7 @@ export interface CourseModule extends CourseBlock {
   lessons: Lesson[];
 }
 
-/**
- * TODO: бэкенд пока не отдаёт курс со вложенными блоками/занятиями одним
- * запросом (см. backend/internal/httpserver/course_handler.go — только
- * список курсов и CRUD по числовому id, без публичного GET по slug и без
- * вложенности). Нужно либо агрегировать на фронте тремя запросами
- * (курс → блоки курса → занятия каждого блока), либо согласовать с бэкендом
- * отдельный публичный эндпоинт вида GET /api/v1/courses/{slug}/full.
- * Пока используется мок с этой формой.
- */
+/** Shape returned by the public GET /api/v1/courses/{slug}/full. */
 export interface CourseDetail extends Course {
   modules: CourseModule[];
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/**
+ /**
  * Shared hero layout for all 4 page types: H1 + lead + CTAs on the left,
  * photo/video media on the right; stacks to text → CTA → media below `lg`.
  *

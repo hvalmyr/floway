@@ -1,11 +1,8 @@
 import type { Course, CourseDetail, CourseModule } from "~/types/api";
 
 /**
- * Mock data standing in for the Go backend until it exposes a public
- * "course with nested blocks/lessons" endpoint (see the TODO on
- * `CourseDetail` in ~/types/api.ts). Shaped identically to what that
- * endpoint should return, so swapping useApi() over to the real API later
- * doesn't require touching any component.
+ * Mock data used only when NUXT_PUBLIC_USE_MOCKS=true (see useApi.ts) — the
+ * real GET /api/v1/courses/{slug}/full endpoint returns this same shape.
  *
  * Titles/intro copy below come straight from the course mockup
  * (desktop-course.png) where visible; per-lesson "Темы"/"Вы научитесь" text
@@ -43,7 +40,12 @@ function buketyLessons(): CourseModule["lessons"] {
 }
 
 function kompozitsiiLessons(): CourseModule["lessons"] {
-  const titles = ["Основы композиции в вазе", "Композиции на флористической губке", "Интерьерная композиция", "Раскидистая композиция"];
+  const titles = [
+    "Основы композиции в вазе",
+    "Композиции на флористической губке",
+    "Интерьерная композиция",
+    "Раскидистая композиция",
+  ];
   return titles.map((title, i) => ({
     id: 100 + i + 1,
     courseBlockId: 2,
@@ -85,7 +87,8 @@ const osnovyFloristikiDetail: CourseDetail = {
       courseId: 1,
       title: "Композиции",
       // TODO: согласовать с методистом реальный вводный текст блока «Композиции» (в макете не показан).
-      description: "Блок посвящён технике сборки цветочных композиций в вазе и на флористической губке.",
+      description:
+        "Блок посвящён технике сборки цветочных композиций в вазе и на флористической губке.",
       lessonsCount: 4,
       // TODO: бриф расходится сам с собой — на главной указано 16 часов для
       // блока «Композиции», а в блоке цены на странице курса — 17 часов.

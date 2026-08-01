@@ -47,6 +47,8 @@ function onInput(event: Event) {
       @input="onInput"
       @blur="handleBlur"
     />
-    <p v-if="errorMessage" :id="errorId" class="text-small font-bold text-ink">{{ errorMessage }}</p>
+    <p v-if="errorMessage" :id="errorId" class="text-small font-bold text-ink">
+      {{ errorMessage }}
+    </p>
   </div>
 </template>

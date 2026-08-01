@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/**
+ /**
  * Simplified circle+dot mark matching the minimal Instagram glyph used in
  * the footer/contacts mockups (no Instagram SVG was supplied in
  * docs/icons — this reproduces the same minimal visual, not the official

@@ -103,6 +103,10 @@ func writeServiceError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusBadRequest, err)
 		return
 	}
+	if errors.Is(err, service.ErrNotFound) {
+		writeError(w, http.StatusNotFound, err)
+		return
+	}
 	writeError(w, http.StatusInternalServerError, err)
 }
 

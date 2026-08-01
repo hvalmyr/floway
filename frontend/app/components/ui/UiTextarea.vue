@@ -40,6 +40,8 @@ const errorId = useId();
       class="resize-y rounded-lg border-2 border-primary bg-white px-24 py-16 font-body text-body text-ink outline-none placeholder:text-primary/50"
       @blur="handleBlur"
     />
-    <p v-if="errorMessage" :id="errorId" class="text-small font-bold text-ink">{{ errorMessage }}</p>
+    <p v-if="errorMessage" :id="errorId" class="text-small font-bold text-ink">
+      {{ errorMessage }}
+    </p>
   </div>
 </template>

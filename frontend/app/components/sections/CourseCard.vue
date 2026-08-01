@@ -32,7 +32,9 @@ const props = withDefaults(
   },
 );
 
-const ctaVariant = computed(() => (props.variant === "surface-white" ? "primary" : "outline-inverted"));
+const ctaVariant = computed(() =>
+  props.variant === "surface-white" ? "primary" : "outline-inverted",
+);
 </script>
 
 <template>
@@ -42,10 +44,14 @@ const ctaVariant = computed(() => (props.variant === "surface-white" ? "primary"
     </template>
     <template #title>{{ title }}</template>
 
-    <p class="mb-16 font-body text-body">{{ lessonsCount ?? "?" }} занятий, {{ hours ?? "?" }} часов</p>
+    <p class="mb-16 font-body text-body">
+      {{ lessonsCount ?? "?" }} занятий, {{ hours ?? "?" }} часов
+    </p>
     <p v-if="description" class="mb-24 font-body text-body">{{ description }}</p>
     <p v-if="price" class="mb-24 font-display text-h4">{{ price.toLocaleString("ru-RU") }} ₽</p>
 
-    <UiButton :variant="ctaVariant" :to="to" class="mt-auto w-full justify-center">{{ ctaLabel }}</UiButton>
+    <UiButton :variant="ctaVariant" :to="to" class="mt-auto w-full justify-center">{{
+      ctaLabel
+    }}</UiButton>
   </UiCard>
 </template>

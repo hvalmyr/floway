@@ -43,6 +43,21 @@ func (r *MasterclassRepository) List(ctx context.Context) ([]model.Masterclass, 
 	return items, rows.Err()
 }
 
+func (r *MasterclassRepository) FindBySlug(ctx context.Context, slug string) (model.Masterclass, error) {
+	var item model.Masterclass
+	err := r.db.QueryRow(ctx, `
+		SELECT id, slug, title, short_description, full_description, ending_text, duration,
+		       price_group, price_individual, price_description, cover_image, status, created_at, updated_at
+		FROM masterclasses
+		WHERE slug = $1
+	`, slug).Scan(
+		&item.ID, &item.Slug, &item.Title, &item.ShortDesc, &item.FullDesc, &item.EndingText, &item.Duration,
+		&item.PriceGroup, &item.PriceIndividual, &item.PriceDescription, &item.CoverImage, &item.Status,
+		&item.CreatedAt, &item.UpdatedAt,
+	)
+	return item, err
+}
+
 func (r *MasterclassRepository) Create(ctx context.Context, item model.Masterclass) (model.Masterclass, error) {
 	err := r.db.QueryRow(ctx, `
 		INSERT INTO masterclasses (

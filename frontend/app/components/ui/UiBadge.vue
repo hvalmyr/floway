@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/**
+ /**
  * Pill label used for callouts like "работаем с 2013 года" or
  * "маленькие группы до 7 человек". Purely presentational text, no props.
  *

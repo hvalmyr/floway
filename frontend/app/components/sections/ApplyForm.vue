@@ -75,7 +75,8 @@ const onSubmit = handleSubmit(async (values) => {
     status.value = "success";
   } catch (err) {
     status.value = "error";
-    submitError.value = (err as { message?: string } | undefined)?.message ?? "Не удалось отправить заявку";
+    submitError.value =
+      (err as { message?: string } | undefined)?.message ?? "Не удалось отправить заявку";
   }
 });
 </script>
@@ -84,7 +85,11 @@ const onSubmit = handleSubmit(async (values) => {
   <div class="rounded-lg bg-surface p-32 sm:p-48">
     <h2 v-if="title" class="mb-24 font-display text-h2 text-primary">{{ title }}</h2>
 
-    <div v-if="status === 'success'" class="flex flex-col items-center gap-16 py-32 text-center" role="status">
+    <div
+      v-if="status === 'success'"
+      class="flex flex-col items-center gap-16 py-32 text-center"
+      role="status"
+    >
       <p class="font-display text-h3 text-primary">Заявка отправлена!</p>
       <p class="font-body text-body text-ink">Мы свяжемся с вами в ближайшее время.</p>
     </div>
@@ -94,16 +99,24 @@ const onSubmit = handleSubmit(async (values) => {
       <UiPhoneInput name="phone" label="Номер телефона" required />
       <UiInput name="email" label="Почта" type="email" autocomplete="email" />
       <template v-if="variant === 'full'">
-        <UiRadioGroup name="contactMethod" label="Как с вами связаться?" :options="contactMethodOptions" />
+        <UiRadioGroup
+          name="contactMethod"
+          label="Как с вами связаться?"
+          :options="contactMethodOptions"
+        />
         <UiRadioGroup name="source" label="Откуда вы о нас узнали?" :options="sourceOptions" />
       </template>
 
       <p class="font-body text-small text-ink">
         Нажимая на кнопку, вы даёте согласие на обработку персональных данных и соглашаетесь с
-        <NuxtLink to="/privacy" class="text-primary underline">политикой конфиденциальности</NuxtLink>.
+        <NuxtLink to="/privacy" class="text-primary underline"
+          >политикой конфиденциальности</NuxtLink
+        >.
       </p>
 
-      <p v-if="status === 'error'" class="font-body text-small font-bold text-ink" role="alert">{{ submitError }}</p>
+      <p v-if="status === 'error'" class="font-body text-small font-bold text-ink" role="alert">
+        {{ submitError }}
+      </p>
 
       <UiButton type="submit" :pill="false" block :loading="isSubmitting" :disabled="isSubmitting">
         {{ variant === "simple" ? "Записаться на занятие" : "Отправить заявку" }}

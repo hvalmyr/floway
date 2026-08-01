@@ -1,17 +1,18 @@
 import type { Masterclass } from "~/types/api";
 
 /**
- * Mock data standing in for GET /api/v1/masterclasses (list already exists
- * on the backend) and a not-yet-built public GET-by-slug detail route — see
- * the TODO in useApi.ts. Content below comes directly from the brief, except
- * where noted.
+ * Mock data used only when NUXT_PUBLIC_USE_MOCKS=true (see useApi.ts) —
+ * both GET /api/v1/masterclasses and GET /api/v1/masterclasses/{slug} are
+ * real backend routes now. Content below comes directly from the brief,
+ * except where noted.
  */
 const masterclasses: Masterclass[] = [
   {
     id: 1,
     slug: "krugliy-buket",
     title: "Круглый букет",
-    shortDescription: "Классический круглый букет, который подойдёт для первого знакомства с флористикой.",
+    shortDescription:
+      "Классический круглый букет, который подойдёт для первого знакомства с флористикой.",
     fullDescription:
       "Соберёте плотный круглый букет по спиральной технике — базовый навык, на котором строится вся остальная флористика.",
     endingText: "Заберёте букет с собой и разберётесь, как ухаживать за ним дома.",
@@ -20,7 +21,8 @@ const masterclasses: Masterclass[] = [
     priceIndividual: 4500,
     // TODO: сноска про разницу групповой/индивидуальной цены сформулирована
     // по смыслу брифа — согласовать точную формулировку с заказчиком.
-    priceDescription: "Индивидуальное занятие — если удобнее заниматься один на один с преподавателем, а не в группе.",
+    priceDescription:
+      "Индивидуальное занятие — если удобнее заниматься один на один с преподавателем, а не в группе.",
     coverImage: "",
     status: "active",
   },
@@ -41,7 +43,8 @@ const masterclasses: Masterclass[] = [
     id: 3,
     slug: "kruglaya-kompozitsiya",
     title: "Круглая композиция",
-    shortDescription: "Компактная композиция во флористической губке — украшение для дома или подарок.",
+    shortDescription:
+      "Компактная композиция во флористической губке — украшение для дома или подарок.",
     fullDescription: "Соберёте аккуратную круглую композицию в кашпо на флористической губке.",
     endingText: "Заберёте готовую композицию с собой.",
     duration: "2–3 часа",
@@ -54,7 +57,8 @@ const masterclasses: Masterclass[] = [
     slug: "raskidistaya-kompozitsiya",
     title: "Раскидистая композиция",
     shortDescription: "Крупная композиция свободной формы для интерьера.",
-    fullDescription: "Соберёте объёмную композицию с раскидистым силуэтом — эффектный акцент для интерьера.",
+    fullDescription:
+      "Соберёте объёмную композицию с раскидистым силуэтом — эффектный акцент для интерьера.",
     endingText: "Заберёте готовую композицию с собой.",
     duration: "3–4 часа",
     priceGroup: 6000,

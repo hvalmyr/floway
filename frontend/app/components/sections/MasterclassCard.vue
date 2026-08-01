@@ -43,10 +43,16 @@ const infoItems = computed(() => {
     <div class="aspect-[4/3] rounded-lg bg-surface lg:aspect-[3/4]" />
 
     <div class="flex flex-col items-start gap-16">
-      <h2 class="font-display text-h2" :class="accent ? 'text-primary' : 'text-ink'">{{ masterclass.title }}</h2>
+      <h2 class="font-display text-h2" :class="accent ? 'text-primary' : 'text-ink'">
+        {{ masterclass.title }}
+      </h2>
       <p class="font-body text-body text-ink">{{ masterclass.shortDescription }}</p>
-      <p v-if="masterclass.fullDescription" class="font-body text-body text-ink">{{ masterclass.fullDescription }}</p>
-      <p v-if="masterclass.endingText" class="font-body text-body text-ink">{{ masterclass.endingText }}</p>
+      <p v-if="masterclass.fullDescription" class="font-body text-body text-ink">
+        {{ masterclass.fullDescription }}
+      </p>
+      <p v-if="masterclass.endingText" class="font-body text-body text-ink">
+        {{ masterclass.endingText }}
+      </p>
 
       <UiInfoRow :items="infoItems" class="w-full" />
 

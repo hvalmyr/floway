@@ -58,11 +58,18 @@ function onClick(event: MouseEvent) {
       (disabled || loading) && 'cursor-not-allowed opacity-40 hover:translate-y-0',
       variant === 'primary' && 'bg-primary text-white hover:-translate-y-px active:translate-y-0',
       variant === 'outline' && 'border-2 border-ink bg-transparent text-ink hover:bg-surface',
-      variant === 'outline-inverted' && 'border-2 border-white bg-transparent text-white hover:bg-white/10',
+      variant === 'outline-inverted' &&
+        'border-2 border-white bg-transparent text-white hover:bg-white/10',
     ]"
     @click="onClick"
   >
-    <svg v-if="loading" class="size-16 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg
+      v-if="loading"
+      class="size-16 animate-spin"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z" />
     </svg>

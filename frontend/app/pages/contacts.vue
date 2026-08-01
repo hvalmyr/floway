@@ -23,11 +23,14 @@ const socialIcons: Record<string, Component> = {
       <h1 class="font-display text-h1 text-ink">Контакты</h1>
 
       <p class="font-body text-body-l text-ink">
-        Позвонить: <a :href="contactInfo.phoneHref" class="text-primary underline">{{ contactInfo.phone }}</a>
+        Позвонить:
+        <a :href="contactInfo.phoneHref" class="text-primary underline">{{ contactInfo.phone }}</a>
       </p>
       <p class="font-body text-body-l text-ink">
         Написать на почту:
-        <a :href="`mailto:${contactInfo.email}`" class="text-primary underline">{{ contactInfo.email }}</a>
+        <a :href="`mailto:${contactInfo.email}`" class="text-primary underline">{{
+          contactInfo.email
+        }}</a>
       </p>
       <p class="font-body text-body-l text-ink">
         Написать в
@@ -51,7 +54,11 @@ const socialIcons: Record<string, Component> = {
           <strong>{{ contactInfo.metroStations.at(-1) }}</strong
           >.
         </p>
-        <p v-for="(paragraph, i) in contactInfo.directions" :key="i" class="font-body text-body text-ink">
+        <p
+          v-for="(paragraph, i) in contactInfo.directions"
+          :key="i"
+          class="font-body text-body text-ink"
+        >
           {{ paragraph }}
         </p>
       </div>

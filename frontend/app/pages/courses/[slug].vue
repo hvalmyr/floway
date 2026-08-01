@@ -16,7 +16,9 @@ useSeoMeta({
 
 // Первое занятие каждого блока открыто по умолчанию.
 const openLessonIds = ref<Record<number, Array<string | number>>>(
-  Object.fromEntries(course.value.modules.map((m) => [m.id, m.lessons.length ? [m.lessons[0].id] : []])),
+  Object.fromEntries(
+    course.value.modules.map((m) => [m.id, m.lessons.length ? [m.lessons[0].id] : []]),
+  ),
 );
 
 function priceRow(module: (typeof course.value.modules)[number]) {
@@ -37,7 +39,9 @@ function priceRow(module: (typeof course.value.modules)[number]) {
       <template #title>Курс «{{ course.title }}»</template>
       <template #lead>{{ course.fullDescription }}</template>
       <template #actions>
-        <UiButton variant="primary" size="lg" to="#apply" class="w-full sm:w-auto">Оставить заявку</UiButton>
+        <UiButton variant="primary" size="lg" to="#apply" class="w-full sm:w-auto"
+          >Оставить заявку</UiButton
+        >
       </template>
     </Hero>
 
@@ -56,16 +60,31 @@ function priceRow(module: (typeof course.value.modules)[number]) {
       <div class="container flex flex-col gap-64">
         <div v-for="module in course.modules" :key="module.id" class="flex flex-col gap-24">
           <div class="flex flex-col gap-16">
-            <h2 class="font-display text-h2"><span class="text-primary">Учебный план.</span> <span class="text-ink">Блок «{{ module.title }}»</span></h2>
-            <p v-if="module.description" class="font-body text-body-l text-ink">{{ module.description }}</p>
+            <h2 class="font-display text-h2">
+              <span class="text-primary">Учебный план.</span>
+              <span class="text-ink">Блок «{{ module.title }}»</span>
+            </h2>
+            <p v-if="module.description" class="font-body text-body-l text-ink">
+              {{ module.description }}
+            </p>
           </div>
           <UiAccordion v-model="openLessonIds[module.id]">
-            <UiAccordionItem v-for="lesson in module.lessons" :key="lesson.id" :id="lesson.id" :title="lesson.title">
-              <p class="mb-8"><strong class="font-display text-ink">Темы:</strong> {{ lesson.topics }}</p>
+            <UiAccordionItem
+              v-for="lesson in module.lessons"
+              :key="lesson.id"
+              :id="lesson.id"
+              :title="lesson.title"
+            >
+              <p class="mb-8">
+                <strong class="font-display text-ink">Темы:</strong> {{ lesson.topics }}
+              </p>
               <p class="mb-8">
                 <strong class="font-display text-ink">Вы научитесь:</strong> {{ lesson.outcomes }}
               </p>
-              <p><strong class="font-display text-ink">Продолжительность:</strong> {{ lesson.durationHours }} часа.</p>
+              <p>
+                <strong class="font-display text-ink">Продолжительность:</strong>
+                {{ lesson.durationHours }} часа.
+              </p>
             </UiAccordionItem>
           </UiAccordion>
         </div>

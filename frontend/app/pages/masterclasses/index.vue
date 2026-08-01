@@ -8,11 +8,14 @@ import IconTulips from "~/components/ui/IconTulips.vue";
 
 useSeoMeta({
   title: "Мастер-классы по флористике в Москве — ФлоВей",
-  description: "Мастер-классы по флористике в свободном графике: букеты и композиции, все материалы включены.",
+  description:
+    "Мастер-классы по флористике в свободном графике: букеты и композиции, все материалы включены.",
 });
 
 const api = useApi();
-const { data: masterclasses } = await useAsyncData("masterclasses-list", () => api.getMasterClasses());
+const { data: masterclasses } = await useAsyncData("masterclasses-list", () =>
+  api.getMasterClasses(),
+);
 
 const features = [
   {
@@ -59,7 +62,9 @@ const features = [
     <Hero>
       <template #title>Мастер-классы по флористике в свободном графике</template>
       <template #actions>
-        <UiButton variant="primary" size="lg" to="#apply" class="w-full sm:w-auto">Оставить заявку</UiButton>
+        <UiButton variant="primary" size="lg" to="#apply" class="w-full sm:w-auto"
+          >Оставить заявку</UiButton
+        >
       </template>
     </Hero>
 

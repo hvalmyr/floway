@@ -50,6 +50,28 @@ func (r *CourseRepository) List(ctx context.Context) ([]model.Course, error) {
 	return items, rows.Err()
 }
 
+func (r *CourseRepository) FindBySlug(ctx context.Context, slug string) (model.Course, error) {
+	var item model.Course
+	err := r.db.QueryRow(ctx, `
+		SELECT id, slug, title, short_description, full_description, status, cover_image, gallery, sort_order, created_at, updated_at
+		FROM courses
+		WHERE slug = $1
+	`, slug).Scan(
+		&item.ID,
+		&item.Slug,
+		&item.Title,
+		&item.ShortDesc,
+		&item.FullDesc,
+		&item.Status,
+		&item.CoverImage,
+		&item.Gallery,
+		&item.SortOrder,
+		&item.CreatedAt,
+		&item.UpdatedAt,
+	)
+	return item, err
+}
+
 func (r *CourseRepository) Create(ctx context.Context, item model.Course) (model.Course, error) {
 	err := r.db.QueryRow(ctx, `
 		INSERT INTO courses (slug, title, short_description, full_description, status, cover_image, gallery, sort_order)
