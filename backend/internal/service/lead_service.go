@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"strings"
 
 	"floway-backend/internal/model"
@@ -42,12 +43,20 @@ type LeadRepository interface {
 	Delete(ctx context.Context, id int64) error
 }
 
-type LeadService struct {
-	repo LeadRepository
+// LeadNotifier tells someone a new lead came in — email, Telegram, or both
+// (see internal/notify.MultiNotifier). Optional: a nil notifier just means
+// no channel is configured, not an error.
+type LeadNotifier interface {
+	NotifyNewLead(ctx context.Context, lead model.Lead) error
 }
 
-func NewLeadService(repo LeadRepository) *LeadService {
-	return &LeadService{repo: repo}
+type LeadService struct {
+	repo     LeadRepository
+	notifier LeadNotifier
+}
+
+func NewLeadService(repo LeadRepository, notifier LeadNotifier) *LeadService {
+	return &LeadService{repo: repo, notifier: notifier}
 }
 
 func (s *LeadService) List(ctx context.Context) ([]model.Lead, error) {
@@ -76,7 +85,22 @@ func (s *LeadService) Create(ctx context.Context, item model.Lead) (model.Lead, 
 	// This is a public endpoint: the client never gets to set the status.
 	item.Status = model.LeadStatusNew
 
-	return s.repo.Create(ctx, item)
+	created, err := s.repo.Create(ctx, item)
+	if err != nil {
+		return model.Lead{}, err
+	}
+
+	if s.notifier != nil {
+		// Best-effort: the lead is already saved and will show up in the
+		// admin panel regardless — a notification hiccup (SMTP relay down,
+		// Telegram API blip) must not turn a successful form submission
+		// into a 500 for the visitor. Logged so it's not silently invisible.
+		if err := s.notifier.NotifyNewLead(ctx, created); err != nil {
+			slog.Default().Error("lead notification failed", "leadId", created.ID, "error", err)
+		}
+	}
+
+	return created, nil
 }
 
 func (s *LeadService) UpdateStatus(ctx context.Context, id int64, status model.LeadStatus) (model.Lead, error) {

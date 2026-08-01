@@ -65,6 +65,16 @@ func (f *fakeLeadRepository) Delete(ctx context.Context, id int64) error {
 	return errors.New("not found")
 }
 
+type fakeLeadNotifier struct {
+	notified []model.Lead
+	err      error
+}
+
+func (f *fakeLeadNotifier) NotifyNewLead(ctx context.Context, lead model.Lead) error {
+	f.notified = append(f.notified, lead)
+	return f.err
+}
+
 func validLead() model.Lead {
 	return model.Lead{
 		Name:          "Иван Иванов",
@@ -79,7 +89,7 @@ func validLead() model.Lead {
 func TestLeadService_Create(t *testing.T) {
 	t.Run("creates a valid lead", func(t *testing.T) {
 		repo := newFakeLeadRepository()
-		svc := service.NewLeadService(repo)
+		svc := service.NewLeadService(repo, nil)
 
 		lead, err := svc.Create(context.Background(), validLead())
 
@@ -91,7 +101,7 @@ func TestLeadService_Create(t *testing.T) {
 
 	t.Run("trims name and phone", func(t *testing.T) {
 		repo := newFakeLeadRepository()
-		svc := service.NewLeadService(repo)
+		svc := service.NewLeadService(repo, nil)
 
 		item := validLead()
 		item.Name = "  Иван Иванов  "
@@ -106,7 +116,7 @@ func TestLeadService_Create(t *testing.T) {
 
 	t.Run("rejects an empty name", func(t *testing.T) {
 		repo := newFakeLeadRepository()
-		svc := service.NewLeadService(repo)
+		svc := service.NewLeadService(repo, nil)
 
 		item := validLead()
 		item.Name = "   "
@@ -120,7 +130,7 @@ func TestLeadService_Create(t *testing.T) {
 
 	t.Run("rejects an empty phone", func(t *testing.T) {
 		repo := newFakeLeadRepository()
-		svc := service.NewLeadService(repo)
+		svc := service.NewLeadService(repo, nil)
 
 		item := validLead()
 		item.Phone = "   "
@@ -133,7 +143,7 @@ func TestLeadService_Create(t *testing.T) {
 
 	t.Run("rejects an invalid contact method", func(t *testing.T) {
 		repo := newFakeLeadRepository()
-		svc := service.NewLeadService(repo)
+		svc := service.NewLeadService(repo, nil)
 
 		item := validLead()
 		item.ContactMethod = "carrier_pigeon"
@@ -146,7 +156,7 @@ func TestLeadService_Create(t *testing.T) {
 
 	t.Run("rejects an invalid source", func(t *testing.T) {
 		repo := newFakeLeadRepository()
-		svc := service.NewLeadService(repo)
+		svc := service.NewLeadService(repo, nil)
 
 		item := validLead()
 		item.Source = "unknown"
@@ -159,7 +169,7 @@ func TestLeadService_Create(t *testing.T) {
 
 	t.Run("rejects an invalid request type", func(t *testing.T) {
 		repo := newFakeLeadRepository()
-		svc := service.NewLeadService(repo)
+		svc := service.NewLeadService(repo, nil)
 
 		item := validLead()
 		item.RequestType = "unknown"
@@ -172,7 +182,7 @@ func TestLeadService_Create(t *testing.T) {
 
 	t.Run("forces status to new regardless of input", func(t *testing.T) {
 		repo := newFakeLeadRepository()
-		svc := service.NewLeadService(repo)
+		svc := service.NewLeadService(repo, nil)
 
 		item := validLead()
 		item.Status = model.LeadStatusClosed
@@ -184,9 +194,59 @@ func TestLeadService_Create(t *testing.T) {
 	})
 }
 
+func TestLeadService_Create_Notifications(t *testing.T) {
+	t.Run("notifies with the created lead on success", func(t *testing.T) {
+		repo := newFakeLeadRepository()
+		notifier := &fakeLeadNotifier{}
+		svc := service.NewLeadService(repo, notifier)
+
+		lead, err := svc.Create(context.Background(), validLead())
+
+		require.NoError(t, err)
+		require.Len(t, notifier.notified, 1)
+		assert.Equal(t, lead.ID, notifier.notified[0].ID, "must be notified with the ID assigned by the repository, not the pre-insert value")
+	})
+
+	t.Run("a notification failure does not fail lead creation", func(t *testing.T) {
+		repo := newFakeLeadRepository()
+		notifier := &fakeLeadNotifier{err: errors.New("smtp relay unreachable")}
+		svc := service.NewLeadService(repo, notifier)
+
+		lead, err := svc.Create(context.Background(), validLead())
+
+		require.NoError(t, err, "the lead is already saved — a notification hiccup must not turn a successful submission into an error")
+		assert.NotZero(t, lead.ID)
+	})
+
+	t.Run("does not notify when validation rejects the lead", func(t *testing.T) {
+		repo := newFakeLeadRepository()
+		notifier := &fakeLeadNotifier{}
+		svc := service.NewLeadService(repo, notifier)
+
+		item := validLead()
+		item.Name = "   "
+		_, err := svc.Create(context.Background(), item)
+
+		require.Error(t, err)
+		assert.Empty(t, notifier.notified, "nothing was actually created — there's nothing to notify about")
+	})
+
+	t.Run("does not notify when the repository fails", func(t *testing.T) {
+		repo := newFakeLeadRepository()
+		repo.err = errors.New("boom")
+		notifier := &fakeLeadNotifier{}
+		svc := service.NewLeadService(repo, notifier)
+
+		_, err := svc.Create(context.Background(), validLead())
+
+		require.Error(t, err)
+		assert.Empty(t, notifier.notified)
+	})
+}
+
 func TestLeadService_UpdateStatus(t *testing.T) {
 	repo := newFakeLeadRepository()
-	svc := service.NewLeadService(repo)
+	svc := service.NewLeadService(repo, nil)
 	created, err := svc.Create(context.Background(), validLead())
 	require.NoError(t, err)
 
@@ -214,7 +274,7 @@ func TestLeadService_UpdateStatus(t *testing.T) {
 
 func TestLeadService_Delete(t *testing.T) {
 	repo := newFakeLeadRepository()
-	svc := service.NewLeadService(repo)
+	svc := service.NewLeadService(repo, nil)
 	created, err := svc.Create(context.Background(), validLead())
 	require.NoError(t, err)
 
@@ -235,7 +295,7 @@ func TestLeadService_Delete(t *testing.T) {
 func TestLeadService_List_PropagatesRepositoryError(t *testing.T) {
 	repo := newFakeLeadRepository()
 	repo.err = errors.New("boom")
-	svc := service.NewLeadService(repo)
+	svc := service.NewLeadService(repo, nil)
 
 	_, err := svc.List(context.Background())
 

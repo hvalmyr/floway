@@ -15,6 +15,7 @@ import (
 	"floway-backend/internal/auth"
 	"floway-backend/internal/config"
 	"floway-backend/internal/httpserver"
+	"floway-backend/internal/notify"
 	"floway-backend/internal/repository"
 	"floway-backend/internal/service"
 	"floway-backend/internal/storage"
@@ -66,6 +67,23 @@ func run(logger *slog.Logger) error {
 	courseBlockRepo := repository.NewCourseBlockRepository(pool)
 	lessonRepo := repository.NewLessonRepository(pool)
 
+	// Both channels are optional and independent — SMTP_*/TELEGRAM_* are
+	// deliberately absent from config.Load()'s required checks, so an
+	// unconfigured channel is silently skipped rather than failing startup.
+	var leadNotifyChannels []notify.Channel
+	if cfg.SMTPHost != "" && cfg.NotifyEmailTo != "" {
+		leadNotifyChannels = append(leadNotifyChannels, notify.NewEmailNotifier(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPFrom, cfg.NotifyEmailTo))
+	}
+	if cfg.TelegramBotToken != "" && cfg.TelegramChatID != "" {
+		leadNotifyChannels = append(leadNotifyChannels, notify.NewTelegramNotifier(cfg.TelegramBotToken, cfg.TelegramChatID))
+	}
+	var leadNotifier service.LeadNotifier
+	if len(leadNotifyChannels) > 0 {
+		leadNotifier = notify.NewMultiNotifier(leadNotifyChannels...)
+	} else {
+		logger.Info("lead notifications disabled: no SMTP or Telegram channel configured")
+	}
+
 	services := httpserver.Services{
 		FAQ:          service.NewFAQService(repository.NewFAQRepository(pool)),
 		Teacher:      service.NewTeacherService(repository.NewTeacherRepository(pool)),
@@ -75,7 +93,7 @@ func run(logger *slog.Logger) error {
 		CourseDetail: service.NewCourseDetailService(courseRepo, courseBlockRepo, lessonRepo),
 		CourseBlock:  service.NewCourseBlockService(courseBlockRepo),
 		Lesson:       service.NewLessonService(lessonRepo),
-		Lead:         service.NewLeadService(repository.NewLeadRepository(pool)),
+		Lead:         service.NewLeadService(repository.NewLeadRepository(pool), leadNotifier),
 		AdminUser:    service.NewAdminUserService(repository.NewAdminUserRepository(pool)),
 		PageContent:  service.NewPageContentService(repository.NewPageContentRepository(pool), garageClient),
 		Feature:      service.NewFeatureService(repository.NewFeatureRepository(pool)),
