@@ -14,13 +14,14 @@ import (
 )
 
 type blogPostHandler struct {
-	svc    *service.BlogPostService
-	tokens *auth.TokenManager
-	admin  func(http.Handler) http.Handler
+	svc     *service.BlogPostService
+	tokens  *auth.TokenManager
+	checker tokenVersionChecker
+	admin   func(http.Handler) http.Handler
 }
 
-func newBlogPostHandler(svc *service.BlogPostService, tokens *auth.TokenManager, admin func(http.Handler) http.Handler) *blogPostHandler {
-	return &blogPostHandler{svc: svc, tokens: tokens, admin: admin}
+func newBlogPostHandler(svc *service.BlogPostService, tokens *auth.TokenManager, checker tokenVersionChecker, admin func(http.Handler) http.Handler) *blogPostHandler {
+	return &blogPostHandler{svc: svc, tokens: tokens, checker: checker, admin: admin}
 }
 
 func (h *blogPostHandler) routes(r chi.Router) {
@@ -57,7 +58,7 @@ type blogPostRequest struct {
 func (h *blogPostHandler) list(w http.ResponseWriter, r *http.Request) {
 	var items []model.BlogPost
 	var err error
-	if isAdminRequest(r, h.tokens) {
+	if isAdminRequest(r, h.tokens, h.checker) {
 		items, err = h.svc.List(r.Context())
 	} else {
 		items, err = h.svc.ListPublished(r.Context())

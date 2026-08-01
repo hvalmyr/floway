@@ -22,13 +22,6 @@ func newFakeAdminUserRepository() *fakeAdminUserRepository {
 	return &fakeAdminUserRepository{nextID: 1}
 }
 
-func (f *fakeAdminUserRepository) List(ctx context.Context) ([]model.AdminUser, error) {
-	if f.err != nil {
-		return nil, f.err
-	}
-	return f.items, nil
-}
-
 func (f *fakeAdminUserRepository) FindByLogin(ctx context.Context, login string) (model.AdminUser, error) {
 	if f.err != nil {
 		return model.AdminUser{}, f.err
@@ -41,6 +34,18 @@ func (f *fakeAdminUserRepository) FindByLogin(ctx context.Context, login string)
 	return model.AdminUser{}, errors.New("not found")
 }
 
+func (f *fakeAdminUserRepository) FindByID(ctx context.Context, id int64) (model.AdminUser, error) {
+	if f.err != nil {
+		return model.AdminUser{}, f.err
+	}
+	for _, existing := range f.items {
+		if existing.ID == id {
+			return existing, nil
+		}
+	}
+	return model.AdminUser{}, service.ErrNotFound
+}
+
 func (f *fakeAdminUserRepository) Create(ctx context.Context, login, passwordHash string) (model.AdminUser, error) {
 	if f.err != nil {
 		return model.AdminUser{}, f.err
@@ -51,17 +56,17 @@ func (f *fakeAdminUserRepository) Create(ctx context.Context, login, passwordHas
 	return user, nil
 }
 
-func (f *fakeAdminUserRepository) Delete(ctx context.Context, id int64) error {
+func (f *fakeAdminUserRepository) IncrementTokenVersion(ctx context.Context, id int64) error {
 	if f.err != nil {
 		return f.err
 	}
 	for i, existing := range f.items {
 		if existing.ID == id {
-			f.items = append(f.items[:i], f.items[i+1:]...)
+			f.items[i].TokenVersion++
 			return nil
 		}
 	}
-	return errors.New("not found")
+	return service.ErrNotFound
 }
 
 func TestAdminUserService_Create(t *testing.T) {
@@ -129,32 +134,48 @@ func TestAdminUserService_Authenticate(t *testing.T) {
 	})
 }
 
-func TestAdminUserService_Delete(t *testing.T) {
+func TestAdminUserService_CurrentTokenVersion(t *testing.T) {
 	repo := newFakeAdminUserRepository()
 	svc := service.NewAdminUserService(repo)
 	created, err := svc.Create(context.Background(), "admin", "supersecret")
 	require.NoError(t, err)
 
-	t.Run("deletes an existing user", func(t *testing.T) {
-		require.NoError(t, svc.Delete(context.Background(), created.ID))
-		users, err := svc.List(context.Background())
+	t.Run("returns the stored version for an existing user", func(t *testing.T) {
+		version, err := svc.CurrentTokenVersion(context.Background(), created.ID)
+
 		require.NoError(t, err)
-		assert.Empty(t, users)
+		assert.Equal(t, 0, version)
 	})
 
-	t.Run("rejects a zero id", func(t *testing.T) {
-		err := svc.Delete(context.Background(), 0)
+	t.Run("propagates the repository error for an unknown user", func(t *testing.T) {
+		_, err := svc.CurrentTokenVersion(context.Background(), 999)
+
 		require.Error(t, err)
-		assert.ErrorIs(t, err, service.ErrValidation)
+		assert.ErrorIs(t, err, service.ErrNotFound)
 	})
 }
 
-func TestAdminUserService_List_PropagatesRepositoryError(t *testing.T) {
+func TestAdminUserService_Logout(t *testing.T) {
 	repo := newFakeAdminUserRepository()
-	repo.err = errors.New("boom")
 	svc := service.NewAdminUserService(repo)
+	created, err := svc.Create(context.Background(), "admin", "supersecret")
+	require.NoError(t, err)
 
-	_, err := svc.List(context.Background())
+	t.Run("bumps the token version, invalidating tokens issued before it", func(t *testing.T) {
+		before, err := svc.CurrentTokenVersion(context.Background(), created.ID)
+		require.NoError(t, err)
 
-	require.Error(t, err)
+		require.NoError(t, svc.Logout(context.Background(), created.ID))
+
+		after, err := svc.CurrentTokenVersion(context.Background(), created.ID)
+		require.NoError(t, err)
+		assert.Equal(t, before+1, after)
+	})
+
+	t.Run("propagates the repository error for an unknown user", func(t *testing.T) {
+		err := svc.Logout(context.Background(), 999)
+
+		require.Error(t, err)
+		assert.ErrorIs(t, err, service.ErrNotFound)
+	})
 }

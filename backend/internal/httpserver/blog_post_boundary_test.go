@@ -99,6 +99,7 @@ func TestBlogPostBoundary_AuthenticatedListIncludesDrafts(t *testing.T) {
 		Tokens:         tokens,
 		FrontendOrigin: "http://localhost:3000",
 		BlogPost:       service.NewBlogPostService(repo),
+		AdminUser:      newTestAdminUserService(),
 	}
 	srv := httptest.NewServer(httpserver.NewRouter(services))
 	defer srv.Close()

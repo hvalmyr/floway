@@ -69,6 +69,12 @@ func NewRouter(services Services) http.Handler {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(limitBodySize)
+	// CSRF: no anti-CSRF token by design, not by omission. The session
+	// cookie is SameSite=Lax (never sent on a cross-site POST/PUT/DELETE)
+	// plus this CORS policy allows exactly one origin with credentials —
+	// together they close the same hole a CSRF token would, without a
+	// second token to issue/store/validate. Revisit if a second frontend
+	// origin or a SameSite=None requirement ever shows up.
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{services.FrontendOrigin},
 		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete},
@@ -85,7 +91,7 @@ func NewRouter(services Services) http.Handler {
 	r.Get("/healthz", handleHealth)
 	r.Get("/readyz", handleReady(services.DB))
 
-	admin := requireAdminMiddleware(services.Tokens)
+	admin := requireAdminMiddleware(services.Tokens, services.AdminUser)
 	uploads := newUploadHandler(services.Storage, admin)
 	r.Get("/uploads/{key}", uploads.serve)
 
@@ -97,7 +103,7 @@ func NewRouter(services Services) http.Handler {
 		r.Route("/admin/uploads", uploads.adminRoutes)
 		r.Route("/faq", newFAQHandler(services.FAQ, admin).routes)
 		r.Route("/teachers", newTeacherHandler(services.Teacher, admin).routes)
-		r.Route("/blog-posts", newBlogPostHandler(services.BlogPost, services.Tokens, admin).routes)
+		r.Route("/blog-posts", newBlogPostHandler(services.BlogPost, services.Tokens, services.AdminUser, admin).routes)
 		r.Route("/masterclasses", newMasterclassHandler(services.Masterclass, admin).routes)
 		r.Route("/courses", func(r chi.Router) {
 			newCourseHandler(services.Course, services.CourseDetail, admin).routes(r)

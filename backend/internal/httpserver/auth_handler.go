@@ -55,7 +55,7 @@ func (h *authHandler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, expiresAt, err := h.tokens.Issue(user.ID, user.Login)
+	token, expiresAt, err := h.tokens.Issue(user.ID, user.Login, user.TokenVersion)
 	if err != nil {
 		writeInternalError(w, r, err)
 		return
@@ -65,7 +65,18 @@ func (h *authHandler) login(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"login": user.Login})
 }
 
+// logout bumps the token version for whichever admin the session cookie
+// belongs to, invalidating every JWT issued to them — not just clearing the
+// cookie client-side, which left a copied/leaked token valid for the rest of
+// its TTL (architecture review finding #16). A missing or already-invalid
+// cookie still gets a clean 204: there's nothing to revoke, and logout must
+// never fail just because the session was already gone.
 func (h *authHandler) logout(w http.ResponseWriter, r *http.Request) {
+	if cookie, err := r.Cookie(sessionCookieName); err == nil {
+		if claims, err := h.tokens.Parse(cookie.Value); err == nil {
+			_ = h.svc.Logout(r.Context(), claims.UserID)
+		}
+	}
 	h.clearSessionCookie(w)
 	w.WriteHeader(http.StatusNoContent)
 }

@@ -15,6 +15,11 @@ var (
 type Claims struct {
 	UserID int64  `json:"uid"`
 	Login  string `json:"login"`
+	// Version mirrors AdminUser.TokenVersion at issue time. The caller
+	// compares it against the current stored value on every request — a
+	// mismatch means the token was issued before the holder's last logout
+	// and must be rejected even though it hasn't expired yet.
+	Version int `json:"ver"`
 	jwt.RegisteredClaims
 }
 
@@ -27,13 +32,14 @@ func NewTokenManager(secret string, ttl time.Duration) *TokenManager {
 	return &TokenManager{secret: []byte(secret), ttl: ttl}
 }
 
-func (m *TokenManager) Issue(userID int64, login string) (string, time.Time, error) {
+func (m *TokenManager) Issue(userID int64, login string, tokenVersion int) (string, time.Time, error) {
 	now := time.Now()
 	expiresAt := now.Add(m.ttl)
 
 	claims := Claims{
-		UserID: userID,
-		Login:  login,
+		UserID:  userID,
+		Login:   login,
+		Version: tokenVersion,
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(expiresAt),

@@ -63,13 +63,41 @@ func (f *fakeFAQRepository) Delete(ctx context.Context, id int64) error {
 
 func newAuthenticatedRequest(t *testing.T, tokens *auth.TokenManager, method, url string) *http.Request {
 	t.Helper()
-	token, _, err := tokens.Issue(1, "admin")
+	token, _, err := tokens.Issue(1, "admin", 0)
 	require.NoError(t, err)
 
 	req, err := http.NewRequest(method, url, nil)
 	require.NoError(t, err)
 	req.AddCookie(&http.Cookie{Name: "floway_admin_session", Value: token})
 	return req
+}
+
+// fakeAdminUserRepositoryForAuth backs the AdminUserService that
+// requireAdminMiddleware/isAdminRequest consult on every authenticated
+// request (see auth_middleware.go's tokenVersionChecker) — any boundary test
+// that authenticates via newAuthenticatedRequest needs one wired into
+// httpserver.Services.AdminUser, or the middleware panics on a nil checker.
+// Token version is always 0, matching the 0 newAuthenticatedRequest issues.
+type fakeAdminUserRepositoryForAuth struct{}
+
+func (f *fakeAdminUserRepositoryForAuth) FindByLogin(ctx context.Context, login string) (model.AdminUser, error) {
+	return model.AdminUser{ID: 1, Login: login}, nil
+}
+
+func (f *fakeAdminUserRepositoryForAuth) FindByID(ctx context.Context, id int64) (model.AdminUser, error) {
+	return model.AdminUser{ID: id, Login: "admin"}, nil
+}
+
+func (f *fakeAdminUserRepositoryForAuth) Create(ctx context.Context, login, passwordHash string) (model.AdminUser, error) {
+	return model.AdminUser{ID: 1, Login: login}, nil
+}
+
+func (f *fakeAdminUserRepositoryForAuth) IncrementTokenVersion(ctx context.Context, id int64) error {
+	return nil
+}
+
+func newTestAdminUserService() *service.AdminUserService {
+	return service.NewAdminUserService(&fakeAdminUserRepositoryForAuth{})
 }
 
 func TestFAQBoundary_UpdateMissingID_Returns404NotInternalError(t *testing.T) {
@@ -79,6 +107,7 @@ func TestFAQBoundary_UpdateMissingID_Returns404NotInternalError(t *testing.T) {
 		Tokens:         tokens,
 		FrontendOrigin: "http://localhost:3000",
 		FAQ:            service.NewFAQService(repo),
+		AdminUser:      newTestAdminUserService(),
 	}
 	srv := httptest.NewServer(httpserver.NewRouter(services))
 	defer srv.Close()
@@ -103,6 +132,7 @@ func TestFAQBoundary_DeleteMissingID_Returns404NotSilent204(t *testing.T) {
 		Tokens:         tokens,
 		FrontendOrigin: "http://localhost:3000",
 		FAQ:            service.NewFAQService(repo),
+		AdminUser:      newTestAdminUserService(),
 	}
 	srv := httptest.NewServer(httpserver.NewRouter(services))
 	defer srv.Close()
@@ -130,6 +160,7 @@ func TestFAQBoundary_InternalErrorDoesNotLeakRawMessage(t *testing.T) {
 		Tokens:         tokens,
 		FrontendOrigin: "http://localhost:3000",
 		FAQ:            service.NewFAQService(repo),
+		AdminUser:      newTestAdminUserService(),
 	}
 	srv := httptest.NewServer(httpserver.NewRouter(services))
 	defer srv.Close()
