@@ -26,10 +26,12 @@ func newBlogPostHandler(svc *service.BlogPostService, tokens *auth.TokenManager,
 
 func (h *blogPostHandler) routes(r chi.Router) {
 	r.Get("/", h.list)
-	// Public detail lookup by slug (published posts only), shares the
-	// "/{id}" pattern with the admin-only Put/Delete below — same route
-	// node, dispatched by method.
-	r.Get("/{id}", h.getPublishedBySlug)
+	// Public detail lookup by slug (published posts only), admin mutations
+	// by numeric id — same URL shape ("/{something}"), dispatched by
+	// method, so the path itself is unchanged for clients; only the chi
+	// param name here reflects what each method actually expects, instead
+	// of both being called "id".
+	r.Get("/{slug}", h.getPublishedBySlug)
 	r.With(h.admin).Post("/", h.create)
 	r.With(h.admin).Put("/{id}", h.update)
 	r.With(h.admin).Delete("/{id}", h.delete)
@@ -71,7 +73,7 @@ func (h *blogPostHandler) list(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *blogPostHandler) getPublishedBySlug(w http.ResponseWriter, r *http.Request) {
-	slug := chi.URLParam(r, "id")
+	slug := chi.URLParam(r, "slug")
 
 	item, err := h.svc.GetPublishedBySlug(r.Context(), slug)
 	if err != nil {
