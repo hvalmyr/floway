@@ -49,6 +49,21 @@ type Lesson struct {
 	UpdatedAt     time.Time `db:"updated_at" json:"updatedAt"`
 }
 
+// CourseModule and CourseDetail are the shape of the public "course page"
+// aggregation (GET /api/v1/courses/{slug}/full) — Course/CourseBlock embed
+// so their fields stay inline in the JSON object, matching the frontend's
+// CourseModule/CourseDetail types (see frontend/app/types/api.ts). Assembled
+// by CourseDetailService, not stored directly.
+type CourseModule struct {
+	CourseBlock
+	Lessons []Lesson `json:"lessons"`
+}
+
+type CourseDetail struct {
+	Course
+	Modules []CourseModule `json:"modules"`
+}
+
 type MasterclassStatus string
 
 const (

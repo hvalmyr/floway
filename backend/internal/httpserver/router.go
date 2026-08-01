@@ -30,19 +30,20 @@ func limitBodySize(next http.Handler) http.Handler {
 }
 
 type Services struct {
-	FAQ         *service.FAQService
-	Teacher     *service.TeacherService
-	BlogPost    *service.BlogPostService
-	Masterclass *service.MasterclassService
-	Course      *service.CourseService
-	CourseBlock *service.CourseBlockService
-	Lesson      *service.LessonService
-	Lead        *service.LeadService
-	AdminUser   *service.AdminUserService
-	PageContent *service.PageContentService
-	Feature     *service.FeatureService
-	AboutItem   *service.AboutItemService
-	SocialLink  *service.SocialLinkService
+	FAQ          *service.FAQService
+	Teacher      *service.TeacherService
+	BlogPost     *service.BlogPostService
+	Masterclass  *service.MasterclassService
+	Course       *service.CourseService
+	CourseDetail *service.CourseDetailService
+	CourseBlock  *service.CourseBlockService
+	Lesson       *service.LessonService
+	Lead         *service.LeadService
+	AdminUser    *service.AdminUserService
+	PageContent  *service.PageContentService
+	Feature      *service.FeatureService
+	AboutItem    *service.AboutItemService
+	SocialLink   *service.SocialLinkService
 
 	Storage *storage.Client
 	// DB is used only by /readyz. Reaching into the pool directly here (not
@@ -99,7 +100,7 @@ func NewRouter(services Services) http.Handler {
 		r.Route("/blog-posts", newBlogPostHandler(services.BlogPost, services.Tokens, admin).routes)
 		r.Route("/masterclasses", newMasterclassHandler(services.Masterclass, admin).routes)
 		r.Route("/courses", func(r chi.Router) {
-			newCourseHandler(services.Course, services.CourseBlock, services.Lesson, admin).routes(r)
+			newCourseHandler(services.Course, services.CourseDetail, admin).routes(r)
 			r.Route("/{courseId}/blocks", newCourseBlockHandler(services.CourseBlock, admin).routes)
 		})
 		r.Route("/course-blocks/{blockId}/lessons", newLessonHandler(services.Lesson, admin).routes)

@@ -13,13 +13,12 @@ import (
 
 type courseHandler struct {
 	svc       *service.CourseService
-	blockSvc  *service.CourseBlockService
-	lessonSvc *service.LessonService
+	detailSvc *service.CourseDetailService
 	admin     func(http.Handler) http.Handler
 }
 
-func newCourseHandler(svc *service.CourseService, blockSvc *service.CourseBlockService, lessonSvc *service.LessonService, admin func(http.Handler) http.Handler) *courseHandler {
-	return &courseHandler{svc: svc, blockSvc: blockSvc, lessonSvc: lessonSvc, admin: admin}
+func newCourseHandler(svc *service.CourseService, detailSvc *service.CourseDetailService, admin func(http.Handler) http.Handler) *courseHandler {
+	return &courseHandler{svc: svc, detailSvc: detailSvc, admin: admin}
 }
 
 func (h *courseHandler) routes(r chi.Router) {
@@ -30,50 +29,20 @@ func (h *courseHandler) routes(r chi.Router) {
 	r.With(h.admin).Delete("/{id}", h.delete)
 }
 
-// courseModuleResponse embeds CourseBlock so its JSON fields (id, courseId,
-// title, ...) stay inline, plus the block's lessons nested under it —
-// matches the frontend's CourseModule shape (see app/types/api.ts).
-type courseModuleResponse struct {
-	model.CourseBlock
-	Lessons []model.Lesson `json:"lessons"`
-}
-
-// courseDetailResponse embeds Course the same way, plus its blocks (as
-// "modules") each with their own nested lessons — matches CourseDetail.
-type courseDetailResponse struct {
-	model.Course
-	Modules []courseModuleResponse `json:"modules"`
-}
-
 // getFullBySlug is the public "course page" endpoint: one course, with its
-// blocks and each block's lessons, aggregated from three repositories so the
-// frontend doesn't have to make a waterfall of requests.
+// blocks and each block's lessons. Aggregation lives in CourseDetailService
+// (three queries total, not one-per-block) — the handler just fetches and
+// encodes, like every other handler.
 func (h *courseHandler) getFullBySlug(w http.ResponseWriter, r *http.Request) {
 	slug := chi.URLParam(r, "slug")
 
-	course, err := h.svc.GetBySlug(r.Context(), slug)
+	detail, err := h.detailSvc.GetFullBySlug(r.Context(), slug)
 	if err != nil {
 		writeServiceError(w, r, err)
 		return
 	}
 
-	blocks, err := h.blockSvc.ListByCourseID(r.Context(), course.ID)
-	if err != nil {
-		writeInternalError(w, r, err)
-		return
-	}
-
-	modules := make([]courseModuleResponse, 0, len(blocks))
-	for _, block := range blocks {
-		lessons, err := h.lessonSvc.ListByCourseBlockID(r.Context(), block.ID)
-		if err != nil {
-			writeInternalError(w, r, err)
-			return
-		}
-		modules = append(modules, courseModuleResponse{CourseBlock: block, Lessons: lessons})
-	}
-
-	writeJSON(w, http.StatusOK, courseDetailResponse{Course: course, Modules: modules})
+	writeJSON(w, http.StatusOK, detail)
 }
 
 type courseRequest struct {

@@ -39,6 +39,32 @@ func (r *LessonRepository) ListByCourseBlockID(ctx context.Context, courseBlockI
 	return items, rows.Err()
 }
 
+// ListByCourseBlockIDs fetches lessons for several blocks in one query —
+// used by CourseDetailService to avoid a per-block round trip when
+// assembling a full course page (architecture review finding #2).
+func (r *LessonRepository) ListByCourseBlockIDs(ctx context.Context, courseBlockIDs []int64) ([]model.Lesson, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT id, course_block_id, number, title, topics, outcomes, duration_hours, created_at, updated_at
+		FROM lessons
+		WHERE course_block_id = ANY($1)
+		ORDER BY course_block_id, number, id
+	`, courseBlockIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	items := []model.Lesson{}
+	for rows.Next() {
+		var item model.Lesson
+		if err := rows.Scan(&item.ID, &item.CourseBlockID, &item.Number, &item.Title, &item.Topics, &item.Outcomes, &item.DurationHours, &item.CreatedAt, &item.UpdatedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
 func (r *LessonRepository) Create(ctx context.Context, item model.Lesson) (model.Lesson, error) {
 	err := r.db.QueryRow(ctx, `
 		INSERT INTO lessons (course_block_id, number, title, topics, outcomes, duration_hours)
