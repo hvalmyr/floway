@@ -111,6 +111,54 @@ docker compose exec backend ./create-admin -login admin
 
 UI-админка живёт на `/admin` (Nuxt, client-side): `/admin/login` — форма входа, `admin-auth` route middleware проверяет сессию через `/me` и редиректит на логин, если её нет.
 
+## Уведомления о заявках (email/Telegram)
+
+Каждый `POST /api/v1/leads` (публичная форма) пытается уведомить менеджера — email через SMTP и/или Telegram. Оба канала независимы и опциональны: канал включается наличием его переменных в env, отсутствие обеих пар — не ошибка, просто в логе при старте `lead notifications disabled: no SMTP or Telegram channel configured`. Сбой отправки (SMTP недоступен, неверный токен бота) никогда не валит саму заявку — она уже сохранена в БД, ошибка уведомления только логируется (`lead notification failed`, см. `internal/service/lead_service.go`).
+
+### Email
+
+Локально уже работает из коробки — backend внутри docker-compose всегда шлёт на `mailhog:1025` (см. `SMTP_HOST` в `docker-compose.yml`, `.env`-значение `localhost` там переопределяется). Просто заполни `NOTIFY_EMAIL_TO` в `.env` (любой адрес, реальная доставка не нужна):
+
+```bash
+NOTIFY_EMAIL_TO=manager@floway.local
+```
+
+и пересобери backend: `docker compose up -d --build backend`. Письма смотреть в Mailhog UI — http://localhost:8025.
+
+В проде (`docker-compose.prod.yml`, без Mailhog) нужен настоящий SMTP-relay: `SMTP_HOST`/`SMTP_PORT`/`SMTP_FROM` — реквизиты relay'я, `NOTIFY_EMAIL_TO` — адрес менеджера. Аутентификации на SMTP сейчас нет (`internal/notify/email.go` вызывает `smtp.SendMail` без auth) — подходит для relay, доверяющего по IP/сети (типичная настройка для VPS-инстансов у большинства провайдеров), либо для локальной пересылки через `sendmail`-совместимый relay на самом хосте. Если понадобится relay с логином/паролем (например, внешний SMTP-сервис) — потребуется доработка `EmailNotifier` под `smtp.PlainAuth` и новые `SMTP_USER`/`SMTP_PASSWORD` в конфиге, сейчас их нет.
+
+### Telegram
+
+1. В Telegram открой [@BotFather](https://t.me/BotFather) → `/newbot` → задай имя и username (должен оканчиваться на `bot`). BotFather пришлёт токен вида `123456789:ABCdefGHIjklMNOpqrsTUVwxyz` — это `TELEGRAM_BOT_TOKEN`.
+2. Бот не может писать первым — напиши ему (или добавь в группу и напиши там) любое сообщение, иначе `chat_id` неоткуда взять.
+3. Узнать `chat_id`:
+
+   ```bash
+   curl https://api.telegram.org/bot<TOKEN>/getUpdates
+   ```
+
+   В ответе — `result[].message.chat.id`. Для личного чата с ботом это твой `user id`; для группы — отрицательное число.
+
+4. Прописать в `.env`:
+
+   ```bash
+   TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz
+   TELEGRAM_CHAT_ID=987654321
+   ```
+
+5. Пересобрать backend и отправить тестовую заявку:
+
+   ```bash
+   docker compose up -d --build backend
+   curl -X POST http://localhost:8080/api/v1/leads \
+     -H "Content-Type: application/json" \
+     -d '{"name":"Тест","phone":"+79001112233","contactMethod":"telegram","source":"internet","requestType":"trial_lesson"}'
+   ```
+
+   Сообщение должно прийти в тот чат/группу, где боту писали на шаге 2.
+
+Отсутствие `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` (или пустая строка хотя бы у одного) отключает канал целиком — частичная конфигурация не пытается угадать недостающее.
+
 ## Тесты, линт, форматирование
 
 ```bash
