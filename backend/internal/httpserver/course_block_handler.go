@@ -85,6 +85,12 @@ func (h *courseBlockHandler) create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *courseBlockHandler) update(w http.ResponseWriter, r *http.Request) {
+	courseID, err := strconv.ParseInt(chi.URLParam(r, "courseId"), 10, 64)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err)
@@ -99,6 +105,7 @@ func (h *courseBlockHandler) update(w http.ResponseWriter, r *http.Request) {
 
 	item, err := h.svc.Update(r.Context(), model.CourseBlock{
 		ID:           id,
+		CourseID:     courseID,
 		Title:        req.Title,
 		LessonsCount: req.LessonsCount,
 		Hours:        req.Hours,
@@ -114,13 +121,19 @@ func (h *courseBlockHandler) update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *courseBlockHandler) delete(w http.ResponseWriter, r *http.Request) {
+	courseID, err := strconv.ParseInt(chi.URLParam(r, "courseId"), 10, 64)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err)
 		return
 	}
 
-	if err := h.svc.Delete(r.Context(), id); err != nil {
+	if err := h.svc.Delete(r.Context(), courseID, id); err != nil {
 		writeServiceError(w, r, err)
 		return
 	}

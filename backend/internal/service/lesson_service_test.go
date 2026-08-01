@@ -45,30 +45,34 @@ func (f *fakeLessonRepository) Create(ctx context.Context, item model.Lesson) (m
 	return item, nil
 }
 
+// Update and Delete only match a row that belongs to the given block —
+// mirrors the real repository's WHERE id = $x AND course_block_id = $y
+// (architecture review finding #3).
 func (f *fakeLessonRepository) Update(ctx context.Context, item model.Lesson) (model.Lesson, error) {
 	if f.err != nil {
 		return model.Lesson{}, f.err
 	}
 	for i, existing := range f.items {
-		if existing.ID == item.ID {
+		if existing.ID == item.ID && existing.CourseBlockID == item.CourseBlockID {
+			item.CourseBlockID = existing.CourseBlockID
 			f.items[i] = item
 			return item, nil
 		}
 	}
-	return model.Lesson{}, errors.New("not found")
+	return model.Lesson{}, service.ErrNotFound
 }
 
-func (f *fakeLessonRepository) Delete(ctx context.Context, id int64) error {
+func (f *fakeLessonRepository) Delete(ctx context.Context, courseBlockID, id int64) error {
 	if f.err != nil {
 		return f.err
 	}
 	for i, existing := range f.items {
-		if existing.ID == id {
+		if existing.ID == id && existing.CourseBlockID == courseBlockID {
 			f.items = append(f.items[:i], f.items[i+1:]...)
 			return nil
 		}
 	}
-	return errors.New("not found")
+	return service.ErrNotFound
 }
 
 func TestLessonService_Create(t *testing.T) {
@@ -129,10 +133,28 @@ func TestLessonService_Update(t *testing.T) {
 	})
 
 	t.Run("rejects a missing id", func(t *testing.T) {
-		_, err := svc.Update(context.Background(), model.Lesson{Title: "title"})
+		_, err := svc.Update(context.Background(), model.Lesson{CourseBlockID: 1, Title: "title"})
 
 		require.Error(t, err)
 		assert.ErrorIs(t, err, service.ErrValidation)
+	})
+
+	t.Run("rejects a missing courseBlockId", func(t *testing.T) {
+		_, err := svc.Update(context.Background(), model.Lesson{ID: created.ID, Title: "title"})
+
+		require.Error(t, err)
+		assert.ErrorIs(t, err, service.ErrValidation)
+	})
+
+	t.Run("does not update a lesson belonging to a different block", func(t *testing.T) {
+		other, err := svc.Create(context.Background(), model.Lesson{CourseBlockID: 2, Title: "block 2 lesson"})
+		require.NoError(t, err)
+
+		// Simulates PUT /course-blocks/1/lessons/{other.ID}.
+		_, err = svc.Update(context.Background(), model.Lesson{ID: other.ID, CourseBlockID: 1, Title: "hijacked"})
+
+		require.Error(t, err)
+		assert.ErrorIs(t, err, service.ErrNotFound)
 	})
 }
 
@@ -143,16 +165,30 @@ func TestLessonService_Delete(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("deletes an existing item", func(t *testing.T) {
-		require.NoError(t, svc.Delete(context.Background(), created.ID))
+		require.NoError(t, svc.Delete(context.Background(), created.CourseBlockID, created.ID))
 		items, err := svc.ListByCourseBlockID(context.Background(), created.CourseBlockID)
 		require.NoError(t, err)
 		assert.Empty(t, items)
 	})
 
 	t.Run("rejects a zero id", func(t *testing.T) {
-		err := svc.Delete(context.Background(), 0)
+		err := svc.Delete(context.Background(), 1, 0)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, service.ErrValidation)
+	})
+
+	t.Run("does not delete a lesson belonging to a different block", func(t *testing.T) {
+		lesson, err := svc.Create(context.Background(), model.Lesson{CourseBlockID: 2, Title: "block 2 lesson"})
+		require.NoError(t, err)
+
+		err = svc.Delete(context.Background(), 1, lesson.ID) // wrong courseBlockId (1, not 2)
+
+		require.Error(t, err)
+		assert.ErrorIs(t, err, service.ErrNotFound)
+
+		items, err := svc.ListByCourseBlockID(context.Background(), 2)
+		require.NoError(t, err)
+		assert.Len(t, items, 1, "the lesson must still exist under its real block")
 	})
 }
 

@@ -116,13 +116,19 @@ func (h *lessonHandler) update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *lessonHandler) delete(w http.ResponseWriter, r *http.Request) {
+	blockID, err := strconv.ParseInt(chi.URLParam(r, "blockId"), 10, 64)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err)
 		return
 	}
 
-	if err := h.svc.Delete(r.Context(), id); err != nil {
+	if err := h.svc.Delete(r.Context(), blockID, id); err != nil {
 		writeServiceError(w, r, err)
 		return
 	}

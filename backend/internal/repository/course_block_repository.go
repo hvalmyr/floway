@@ -48,17 +48,21 @@ func (r *CourseBlockRepository) Create(ctx context.Context, item model.CourseBlo
 	return item, err
 }
 
+// Update matches on id AND course_id — a URL like /courses/7/blocks/42
+// can't touch a block that actually belongs to a different course
+// (architecture review finding #3: the nesting used to be decorative,
+// this makes it real).
 func (r *CourseBlockRepository) Update(ctx context.Context, item model.CourseBlock) (model.CourseBlock, error) {
 	err := r.db.QueryRow(ctx, `
 		UPDATE course_blocks
 		SET title = $1, lessons_count = $2, hours = $3, price = $4, old_price = $5, sort_order = $6, updated_at = now()
-		WHERE id = $7
+		WHERE id = $7 AND course_id = $8
 		RETURNING course_id, updated_at
-	`, item.Title, item.LessonsCount, item.Hours, item.Price, item.OldPrice, item.SortOrder, item.ID).Scan(&item.CourseID, &item.UpdatedAt)
+	`, item.Title, item.LessonsCount, item.Hours, item.Price, item.OldPrice, item.SortOrder, item.ID, item.CourseID).Scan(&item.CourseID, &item.UpdatedAt)
 	return item, translateNotFound(err)
 }
 
-func (r *CourseBlockRepository) Delete(ctx context.Context, id int64) error {
-	tag, err := r.db.Exec(ctx, `DELETE FROM course_blocks WHERE id = $1`, id)
+func (r *CourseBlockRepository) Delete(ctx context.Context, courseID, id int64) error {
+	tag, err := r.db.Exec(ctx, `DELETE FROM course_blocks WHERE id = $1 AND course_id = $2`, id, courseID)
 	return checkDeleted(tag, err)
 }

@@ -12,7 +12,7 @@ type CourseBlockRepository interface {
 	ListByCourseID(ctx context.Context, courseID int64) ([]model.CourseBlock, error)
 	Create(ctx context.Context, item model.CourseBlock) (model.CourseBlock, error)
 	Update(ctx context.Context, item model.CourseBlock) (model.CourseBlock, error)
-	Delete(ctx context.Context, id int64) error
+	Delete(ctx context.Context, courseID, id int64) error
 }
 
 type CourseBlockService struct {
@@ -47,6 +47,13 @@ func (s *CourseBlockService) Update(ctx context.Context, item model.CourseBlock)
 	if item.ID == 0 {
 		return model.CourseBlock{}, errors.Join(ErrValidation, errors.New("id is required"))
 	}
+	// Load-bearing, not just documentation: the repository matches on
+	// id AND course_id, so a wrong/missing courseId here means the update
+	// silently (well, loudly — ErrNotFound) touches nothing rather than
+	// accidentally hitting a same-id block under a different course.
+	if item.CourseID == 0 {
+		return model.CourseBlock{}, errors.Join(ErrValidation, errors.New("courseId is required"))
+	}
 	if item.Title == "" {
 		return model.CourseBlock{}, errors.Join(ErrValidation, errors.New("title is required"))
 	}
@@ -66,9 +73,9 @@ func validateOldPrice(item model.CourseBlock) error {
 	return nil
 }
 
-func (s *CourseBlockService) Delete(ctx context.Context, id int64) error {
-	if id == 0 {
-		return errors.Join(ErrValidation, errors.New("id is required"))
+func (s *CourseBlockService) Delete(ctx context.Context, courseID, id int64) error {
+	if courseID == 0 || id == 0 {
+		return errors.Join(ErrValidation, errors.New("courseId and id are required"))
 	}
-	return s.repo.Delete(ctx, id)
+	return s.repo.Delete(ctx, courseID, id)
 }

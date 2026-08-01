@@ -74,17 +74,21 @@ func (r *LessonRepository) Create(ctx context.Context, item model.Lesson) (model
 	return item, err
 }
 
+// Update matches on id AND course_block_id — a URL like
+// /course-blocks/999/lessons/5 can't touch (or, previously, silently claim
+// in its response to have moved) a lesson that actually belongs to a
+// different block (architecture review finding #3).
 func (r *LessonRepository) Update(ctx context.Context, item model.Lesson) (model.Lesson, error) {
 	err := r.db.QueryRow(ctx, `
 		UPDATE lessons
 		SET number = $1, title = $2, topics = $3, outcomes = $4, duration_hours = $5, updated_at = now()
-		WHERE id = $6
+		WHERE id = $6 AND course_block_id = $7
 		RETURNING updated_at
-	`, item.Number, item.Title, item.Topics, item.Outcomes, item.DurationHours, item.ID).Scan(&item.UpdatedAt)
+	`, item.Number, item.Title, item.Topics, item.Outcomes, item.DurationHours, item.ID, item.CourseBlockID).Scan(&item.UpdatedAt)
 	return item, translateNotFound(err)
 }
 
-func (r *LessonRepository) Delete(ctx context.Context, id int64) error {
-	tag, err := r.db.Exec(ctx, `DELETE FROM lessons WHERE id = $1`, id)
+func (r *LessonRepository) Delete(ctx context.Context, courseBlockID, id int64) error {
+	tag, err := r.db.Exec(ctx, `DELETE FROM lessons WHERE id = $1 AND course_block_id = $2`, id, courseBlockID)
 	return checkDeleted(tag, err)
 }
