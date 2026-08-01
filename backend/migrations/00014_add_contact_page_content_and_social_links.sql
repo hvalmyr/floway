@@ -1,9 +1,11 @@
 -- +goose Up
 -- Контакты/реквизиты были хардкодом во фронтенде (constants/contact-info.ts)
--- — переносим в page_content (одиночные поля) и новую таблицу social_links
--- (повторяющийся список, тот же паттерн, что features/about_items).
--- Реальные значения — из того же constants/contact-info.ts, 1-в-1, не
--- придумано заново.
+-- — переносим в page_content (одиночные поля, ключи здесь неизбежно
+-- migration-only — у page_content нет API для создания новых ключей, см.
+-- page_content_repository.go) и новую таблицу social_links (повторяющийся
+-- список, тот же паттерн, что features/about_items). social_links — только
+-- схема: как и у features/about_items, записи туда добавляет админ через
+-- панель (Create уже есть в API), а не эта миграция.
 INSERT INTO page_content (key, label, value, type) VALUES
     ('contact_phone', 'Контакты — телефон', '+7 985 226 19 48', 'text'),
     ('contact_email', 'Контакты — почта', 'floway-mos@mail.ru', 'text'),
@@ -30,11 +32,6 @@ CREATE TABLE social_links (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-INSERT INTO social_links (label, href, disclaimer, sort_order) VALUES
-    ('Telegram', 'https://t.me/floway', '', 1),
-    ('VK', 'https://vk.com/floway', '', 2),
-    ('Instagram', 'https://instagram.com/floway', 'Instagram принадлежит компании Meta, признанной экстремистской организацией и запрещённой на территории РФ.', 3);
 
 -- +goose Down
 DROP TABLE social_links;
