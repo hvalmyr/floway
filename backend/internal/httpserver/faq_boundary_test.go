@@ -2,6 +2,8 @@ package httpserver_test
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -23,7 +25,8 @@ import (
 // repository interface, so it must speak the same boundary language the
 // real repository does, not raw driver errors.
 type fakeFAQRepository struct {
-	items map[int64]model.FAQItem
+	items   map[int64]model.FAQItem
+	listErr error
 }
 
 func newFakeFAQRepository(seed ...model.FAQItem) *fakeFAQRepository {
@@ -34,7 +37,9 @@ func newFakeFAQRepository(seed ...model.FAQItem) *fakeFAQRepository {
 	return &fakeFAQRepository{items: items}
 }
 
-func (f *fakeFAQRepository) List(ctx context.Context) ([]model.FAQItem, error) { return nil, nil }
+func (f *fakeFAQRepository) List(ctx context.Context) ([]model.FAQItem, error) {
+	return nil, f.listErr
+}
 
 func (f *fakeFAQRepository) Create(ctx context.Context, item model.FAQItem) (model.FAQItem, error) {
 	return item, nil
@@ -110,5 +115,37 @@ func TestFAQBoundary_DeleteMissingID_Returns404NotSilent204(t *testing.T) {
 
 	if resp.StatusCode != http.StatusNotFound {
 		t.Errorf("DELETE of a nonexistent FAQ item: want 404, got %d — deleting nothing must not report success", resp.StatusCode)
+	}
+}
+
+// A genuine internal failure (DB down, driver error, whatever) must never
+// leak its raw text to the client — architecture review finding #5. The
+// client gets a fixed message plus a request ID; the real error is only
+// ever logged server-side.
+func TestFAQBoundary_InternalErrorDoesNotLeakRawMessage(t *testing.T) {
+	tokens := auth.NewTokenManager("test-secret", time.Hour)
+	repo := newFakeFAQRepository()
+	repo.listErr = errors.New("dial tcp 10.0.4.7:5432: connect: connection refused")
+	services := httpserver.Services{
+		Tokens:         tokens,
+		FrontendOrigin: "http://localhost:3000",
+		FAQ:            service.NewFAQService(repo),
+	}
+	srv := httptest.NewServer(httpserver.NewRouter(services))
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/api/v1/faq")
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+	require.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+
+	var body map[string]string
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&body))
+
+	if strings.Contains(body["error"], "10.0.4.7") || strings.Contains(body["error"], "connection refused") {
+		t.Fatalf("500 response leaked the raw internal error to the client: %q", body["error"])
+	}
+	if body["requestId"] == "" {
+		t.Error("500 response should carry a requestId so the real error can be correlated server-side")
 	}
 }

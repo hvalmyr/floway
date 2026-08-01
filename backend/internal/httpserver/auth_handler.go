@@ -17,14 +17,18 @@ type authHandler struct {
 	tokens        *auth.TokenManager
 	secureCookies bool
 	admin         func(http.Handler) http.Handler
+	limiter       func(http.Handler) http.Handler
 }
 
-func newAuthHandler(svc *service.AdminUserService, tokens *auth.TokenManager, secureCookies bool, admin func(http.Handler) http.Handler) *authHandler {
-	return &authHandler{svc: svc, tokens: tokens, secureCookies: secureCookies, admin: admin}
+func newAuthHandler(svc *service.AdminUserService, tokens *auth.TokenManager, secureCookies bool, admin, limiter func(http.Handler) http.Handler) *authHandler {
+	return &authHandler{svc: svc, tokens: tokens, secureCookies: secureCookies, admin: admin, limiter: limiter}
 }
 
 func (h *authHandler) routes(r chi.Router) {
-	r.Post("/login", h.login)
+	// Rate-limited per IP (architecture review finding #8) — unlimited
+	// login attempts plus bcrypt's ~100ms/attempt cost is both a
+	// brute-force vector and a self-inflicted CPU DoS.
+	r.With(h.limiter).Post("/login", h.login)
 	r.Post("/logout", h.logout)
 	r.With(h.admin).Get("/me", h.me)
 }
@@ -47,13 +51,13 @@ func (h *authHandler) login(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusUnauthorized, err)
 			return
 		}
-		writeError(w, http.StatusInternalServerError, err)
+		writeInternalError(w, r, err)
 		return
 	}
 
 	token, expiresAt, err := h.tokens.Issue(user.ID, user.Login)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err)
+		writeInternalError(w, r, err)
 		return
 	}
 

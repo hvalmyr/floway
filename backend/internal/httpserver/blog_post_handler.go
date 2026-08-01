@@ -63,7 +63,7 @@ func (h *blogPostHandler) list(w http.ResponseWriter, r *http.Request) {
 		items, err = h.svc.ListPublished(r.Context())
 	}
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err)
+		writeInternalError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, items)
@@ -74,7 +74,7 @@ func (h *blogPostHandler) getPublishedBySlug(w http.ResponseWriter, r *http.Requ
 
 	item, err := h.svc.GetPublishedBySlug(r.Context(), slug)
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, item)
@@ -103,7 +103,7 @@ func (h *blogPostHandler) create(w http.ResponseWriter, r *http.Request) {
 
 	item, err := h.svc.Create(r.Context(), h.toModel(req))
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, item)
@@ -126,7 +126,7 @@ func (h *blogPostHandler) update(w http.ResponseWriter, r *http.Request) {
 	item.ID = id
 	item, err = h.svc.Update(r.Context(), item)
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, item)
@@ -140,7 +140,7 @@ func (h *blogPostHandler) delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.svc.Delete(r.Context(), id); err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, r, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

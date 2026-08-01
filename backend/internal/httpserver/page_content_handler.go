@@ -30,7 +30,7 @@ type pageContentUpdateRequest struct {
 func (h *pageContentHandler) list(w http.ResponseWriter, r *http.Request) {
 	items, err := h.svc.List(r.Context())
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err)
+		writeInternalError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, items)
@@ -47,7 +47,7 @@ func (h *pageContentHandler) update(w http.ResponseWriter, r *http.Request) {
 
 	item, err := h.svc.Update(r.Context(), key, req.Value)
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, item)

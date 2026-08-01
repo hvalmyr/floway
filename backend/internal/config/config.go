@@ -27,9 +27,11 @@ type Config struct {
 	GarageBucket    string
 }
 
+var validEnvs = map[string]bool{"local": true, "production": true}
+
 func Load() (Config, error) {
 	cfg := Config{
-		Env:            getenv("APP_ENV", "local"),
+		Env:            os.Getenv("APP_ENV"),
 		HTTPPort:       getenv("HTTP_PORT", "8080"),
 		DatabaseURL:    os.Getenv("DATABASE_URL"),
 		JWTSecret:      os.Getenv("JWT_SECRET"),
@@ -50,6 +52,12 @@ func Load() (Config, error) {
 		GarageBucket:    os.Getenv("GARAGE_BUCKET"),
 	}
 
+	if cfg.Env == "" {
+		return Config{}, fmt.Errorf("APP_ENV is required")
+	}
+	if !validEnvs[cfg.Env] {
+		return Config{}, fmt.Errorf("APP_ENV must be one of: local, production")
+	}
 	if cfg.DatabaseURL == "" {
 		return Config{}, fmt.Errorf("DATABASE_URL is required")
 	}

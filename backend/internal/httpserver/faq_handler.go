@@ -2,7 +2,6 @@ package httpserver
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strconv"
 
@@ -37,7 +36,7 @@ type faqCreateRequest struct {
 func (h *faqHandler) list(w http.ResponseWriter, r *http.Request) {
 	items, err := h.svc.List(r.Context())
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err)
+		writeInternalError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, items)
@@ -52,7 +51,7 @@ func (h *faqHandler) create(w http.ResponseWriter, r *http.Request) {
 
 	item, err := h.svc.Create(r.Context(), req.Question, req.Answer, req.SortOrder)
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, item)
@@ -78,7 +77,7 @@ func (h *faqHandler) update(w http.ResponseWriter, r *http.Request) {
 		SortOrder: req.SortOrder,
 	})
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, item)
@@ -92,30 +91,8 @@ func (h *faqHandler) delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.svc.Delete(r.Context(), id); err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, r, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func writeServiceError(w http.ResponseWriter, err error) {
-	if errors.Is(err, service.ErrValidation) {
-		writeError(w, http.StatusBadRequest, err)
-		return
-	}
-	if errors.Is(err, service.ErrNotFound) {
-		writeError(w, http.StatusNotFound, err)
-		return
-	}
-	writeError(w, http.StatusInternalServerError, err)
-}
-
-func writeJSON(w http.ResponseWriter, status int, payload any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(payload)
-}
-
-func writeError(w http.ResponseWriter, status int, err error) {
-	writeJSON(w, status, map[string]string{"error": err.Error()})
 }

@@ -33,6 +33,23 @@ func NewClient(endpoint, region, accessKey, secretKey, bucket string) (*Client, 
 	return &Client{mc: mc, bucket: bucket}, nil
 }
 
+// EnsureBucket confirms the configured bucket actually exists and is
+// reachable — NewClient/minio.New never make a network call (pure
+// constructor), so a wrong bucket name or an unreachable Garage would
+// otherwise only surface on the first admin upload, as a 500 with a raw S3
+// error (architecture review finding #6). Call this once at startup to fail
+// fast instead.
+func (c *Client) EnsureBucket(ctx context.Context) error {
+	ok, err := c.mc.BucketExists(ctx, c.bucket)
+	if err != nil {
+		return fmt.Errorf("check garage bucket %q: %w", c.bucket, err)
+	}
+	if !ok {
+		return fmt.Errorf("garage bucket %q does not exist", c.bucket)
+	}
+	return nil
+}
+
 func (c *Client) Upload(ctx context.Context, key string, r io.Reader, size int64, contentType string) error {
 	_, err := c.mc.PutObject(ctx, c.bucket, key, r, size, minio.PutObjectOptions{ContentType: contentType})
 	if err != nil {

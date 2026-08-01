@@ -52,7 +52,7 @@ func (h *uploadHandler) upload(w http.ResponseWriter, r *http.Request) {
 
 	key := uuid.NewString() + ext
 	if err := h.storage.Upload(r.Context(), key, file, header.Size, contentType); err != nil {
-		writeError(w, http.StatusInternalServerError, err)
+		writeInternalError(w, r, err)
 		return
 	}
 
@@ -64,7 +64,7 @@ func (h *uploadHandler) serve(w http.ResponseWriter, r *http.Request) {
 
 	obj, err := h.storage.Download(r.Context(), key)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err)
+		writeInternalError(w, r, err)
 		return
 	}
 	defer func() { _ = obj.Close() }()
@@ -75,7 +75,7 @@ func (h *uploadHandler) serve(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, errors.New("not found"))
 			return
 		}
-		writeError(w, http.StatusInternalServerError, err)
+		writeInternalError(w, r, err)
 		return
 	}
 

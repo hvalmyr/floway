@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os/signal"
@@ -40,10 +41,20 @@ func run() error {
 		return err
 	}
 	defer pool.Close()
+	// pgxpool.New never connects (it's a lazy pool) — Ping so a bad
+	// DATABASE_URL or an unreachable Postgres fails loudly at startup
+	// instead of surfacing as a 500 on the first real request (architecture
+	// review finding #6).
+	if err := pool.Ping(ctx); err != nil {
+		return fmt.Errorf("connect to database: %w", err)
+	}
 
 	garageClient, err := storage.NewClient(cfg.GarageEndpoint, cfg.GarageRegion, cfg.GarageAccessKey, cfg.GarageSecretKey, cfg.GarageBucket)
 	if err != nil {
 		return err
+	}
+	if err := garageClient.EnsureBucket(ctx); err != nil {
+		return fmt.Errorf("connect to garage: %w", err)
 	}
 
 	services := httpserver.Services{
@@ -62,6 +73,7 @@ func run() error {
 		SocialLink:  service.NewSocialLinkService(repository.NewSocialLinkRepository(pool)),
 
 		Storage: garageClient,
+		DB:      pool,
 
 		Tokens:         auth.NewTokenManager(cfg.JWTSecret, adminSessionTTL),
 		SecureCookies:  cfg.Env != "local",
@@ -74,16 +86,27 @@ func run() error {
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
+	// shutdownDone is closed only once Shutdown() has actually finished
+	// draining in-flight requests. Without waiting on it, ListenAndServe()
+	// returning ErrServerClosed (which happens as soon as Shutdown closes
+	// the listener, not when draining completes) would let run() return
+	// immediately and fire the deferred pool.Close() out from under
+	// requests still being handled (architecture review finding #7).
+	shutdownDone := make(chan struct{})
 	go func() {
 		<-ctx.Done()
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		_ = srv.Shutdown(shutdownCtx)
+		if err := srv.Shutdown(shutdownCtx); err != nil {
+			log.Printf("graceful shutdown error: %v", err)
+		}
+		close(shutdownDone)
 	}()
 
 	log.Printf("floway-backend listening on :%s (env=%s)", cfg.HTTPPort, cfg.Env)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return err
 	}
+	<-shutdownDone
 	return nil
 }

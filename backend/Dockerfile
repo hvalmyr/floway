@@ -23,7 +23,10 @@ COPY --from=builder /out/goose ./goose
 COPY migrations ./migrations
 
 EXPOSE 8080
+# /readyz (not /healthz) — actually pings the DB, so depends_on/
+# service_healthy in docker-compose doesn't report green with a dead
+# database (see internal/httpserver/router.go).
 HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=5 \
-    CMD wget -qO- "http://localhost:${HTTP_PORT:-8080}/healthz" || exit 1
+    CMD wget -qO- "http://localhost:${HTTP_PORT:-8080}/readyz" || exit 1
 
 ENTRYPOINT ["./api"]

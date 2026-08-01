@@ -12,17 +12,20 @@ import (
 )
 
 type leadHandler struct {
-	svc   *service.LeadService
-	admin func(http.Handler) http.Handler
+	svc     *service.LeadService
+	admin   func(http.Handler) http.Handler
+	limiter func(http.Handler) http.Handler
 }
 
-func newLeadHandler(svc *service.LeadService, admin func(http.Handler) http.Handler) *leadHandler {
-	return &leadHandler{svc: svc, admin: admin}
+func newLeadHandler(svc *service.LeadService, admin, limiter func(http.Handler) http.Handler) *leadHandler {
+	return &leadHandler{svc: svc, admin: admin, limiter: limiter}
 }
 
 func (h *leadHandler) routes(r chi.Router) {
 	r.With(h.admin).Get("/", h.list)
-	r.Post("/", h.create)
+	// Public and free to hit — rate-limited per IP (architecture review
+	// finding #8), otherwise it's an open spam sink.
+	r.With(h.limiter).Post("/", h.create)
 	r.With(h.admin).Patch("/{id}/status", h.updateStatus)
 	r.With(h.admin).Delete("/{id}", h.delete)
 }
@@ -44,7 +47,7 @@ type leadUpdateStatusRequest struct {
 func (h *leadHandler) list(w http.ResponseWriter, r *http.Request) {
 	items, err := h.svc.List(r.Context())
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err)
+		writeInternalError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, items)
@@ -67,7 +70,7 @@ func (h *leadHandler) create(w http.ResponseWriter, r *http.Request) {
 		RelatedID:     req.RelatedID,
 	})
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, item)
@@ -88,7 +91,7 @@ func (h *leadHandler) updateStatus(w http.ResponseWriter, r *http.Request) {
 
 	item, err := h.svc.UpdateStatus(r.Context(), id, req.Status)
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, item)
@@ -102,7 +105,7 @@ func (h *leadHandler) delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.svc.Delete(r.Context(), id); err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, r, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

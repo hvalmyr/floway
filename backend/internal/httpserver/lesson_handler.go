@@ -46,7 +46,7 @@ func (h *lessonHandler) list(w http.ResponseWriter, r *http.Request) {
 
 	items, err := h.svc.ListByCourseBlockID(r.Context(), blockID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err)
+		writeInternalError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, items)
@@ -74,7 +74,7 @@ func (h *lessonHandler) create(w http.ResponseWriter, r *http.Request) {
 		DurationHours: req.DurationHours,
 	})
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, item)
@@ -109,7 +109,7 @@ func (h *lessonHandler) update(w http.ResponseWriter, r *http.Request) {
 		DurationHours: req.DurationHours,
 	})
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, item)
@@ -123,7 +123,7 @@ func (h *lessonHandler) delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.svc.Delete(r.Context(), id); err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, r, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

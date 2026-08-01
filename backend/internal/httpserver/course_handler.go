@@ -53,13 +53,13 @@ func (h *courseHandler) getFullBySlug(w http.ResponseWriter, r *http.Request) {
 
 	course, err := h.svc.GetBySlug(r.Context(), slug)
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, r, err)
 		return
 	}
 
 	blocks, err := h.blockSvc.ListByCourseID(r.Context(), course.ID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err)
+		writeInternalError(w, r, err)
 		return
 	}
 
@@ -67,7 +67,7 @@ func (h *courseHandler) getFullBySlug(w http.ResponseWriter, r *http.Request) {
 	for _, block := range blocks {
 		lessons, err := h.lessonSvc.ListByCourseBlockID(r.Context(), block.ID)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, err)
+			writeInternalError(w, r, err)
 			return
 		}
 		modules = append(modules, courseModuleResponse{CourseBlock: block, Lessons: lessons})
@@ -90,7 +90,7 @@ type courseRequest struct {
 func (h *courseHandler) list(w http.ResponseWriter, r *http.Request) {
 	items, err := h.svc.List(r.Context())
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err)
+		writeInternalError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, items)
@@ -114,7 +114,7 @@ func (h *courseHandler) create(w http.ResponseWriter, r *http.Request) {
 		SortOrder:  req.SortOrder,
 	})
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, item)
@@ -145,7 +145,7 @@ func (h *courseHandler) update(w http.ResponseWriter, r *http.Request) {
 		SortOrder:  req.SortOrder,
 	})
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, item)
@@ -159,7 +159,7 @@ func (h *courseHandler) delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.svc.Delete(r.Context(), id); err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, r, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
