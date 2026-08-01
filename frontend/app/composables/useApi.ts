@@ -7,8 +7,10 @@ import type {
   BlogPost,
   Course,
   CourseDetail,
+  FAQItem,
   Lead,
   Masterclass,
+  Teacher,
 } from "~/types/api";
 
 function toApiError(err: unknown): ApiError {
@@ -79,6 +81,33 @@ export function useApi() {
   }
 
   /**
+   * GET /api/v1/teachers — public, no auth (teacher_handler.go's list route
+   * has no admin middleware). No mocks fallback: there's no design brief for
+   * this data shape (the homepage section was hardcoded name+accent-color
+   * placeholders), same reasoning as blog posts below.
+   */
+  async function getTeachers(): Promise<Teacher[]> {
+    try {
+      return await client<Teacher[]>("/api/v1/teachers");
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/faq — public, no auth (faq_handler.go's list route has no
+   * admin middleware). Already sorted by sortOrder on the backend. No mocks
+   * fallback, same reasoning as teachers above.
+   */
+  async function getFAQItems(): Promise<FAQItem[]> {
+    try {
+      return await client<FAQItem[]>("/api/v1/faq");
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
    * GET /api/v1/blog-posts?status=published — draft posts are never
    * returned (see blog_post_handler.go). No mocks fallback: there's no
    * design brief for the blog yet, so this always hits the real backend.
@@ -113,6 +142,8 @@ export function useApi() {
     getCourse,
     getMasterClasses,
     getMasterClass,
+    getTeachers,
+    getFAQItems,
     getBlogPosts,
     getBlogPost,
     submitApplication,

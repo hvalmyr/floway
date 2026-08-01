@@ -97,45 +97,13 @@ const aboutItems = [
   },
 ];
 
-const teachers = [
-  { name: "Алёна Рыбкина", accent: true },
-  { name: "Елена Зайцева", accent: false },
-  { name: "Анна Лобус", accent: true },
-];
+const { data: teachersData } = await useAsyncData("home-teachers", () => api.getTeachers());
+const teachers = computed(
+  () => teachersData.value?.slice().sort((a, b) => a.sortOrder - b.sortOrder) ?? [],
+);
 
-// TODO: реальные ответы согласованы только для первого вопроса (текст с
-// макета); остальные — по смыслу вопроса, требуют подтверждения школы перед
-// публикацией.
-const faqItems = [
-  {
-    question: "Как проходит обучение?",
-    answer:
-      "Обучение состоит из теоретической и практической частей, при этом 80% времени занимают занятия с живыми цветами. Все курсы доступны как в группе, так и в формате свободного посещения.",
-  },
-  {
-    question: "Что такое свободное посещение?",
-    answer:
-      "Формат, при котором вы сами выбираете даты и время занятий, не дожидаясь набора группы.",
-  },
-  {
-    question: "Проводите ли вы мастер-классы?",
-    answer:
-      "Да — разовые мастер-классы по букетам и композициям, подробности на странице «Мастер-классы».",
-  },
-  {
-    question: "Как записаться на обучение?",
-    answer:
-      "Оставьте заявку в форме на сайте — мы свяжемся с вами и поможем выбрать курс или мастер-класс.",
-  },
-  {
-    question: "Нужно ли покупать цветы и инструменты?",
-    answer: "Нет, все материалы и инструменты предоставляет школа — приходите налегке.",
-  },
-  {
-    question: "Подойдет ли обучение, если у меня совсем нет опыта?",
-    answer: "Да, мы обучаем с нуля — программа рассчитана в том числе на новичков.",
-  },
-];
+const { data: faqData } = await useAsyncData("home-faq", () => api.getFAQItems());
+const faqItems = computed(() => faqData.value ?? []);
 const openFaqIds = ref<Array<string | number>>([0]);
 </script>
 
@@ -222,6 +190,7 @@ const openFaqIds = ref<Array<string | number>>([0]);
             :key="course.id"
             :title="course.title"
             :variant="profileVariants[i % profileVariants.length]"
+            :cover-image="course.coverImage"
             :to="`/courses/${course.slug}`"
           />
         </div>
@@ -261,15 +230,22 @@ const openFaqIds = ref<Array<string | number>>([0]);
         <SectionHeading>Педагоги</SectionHeading>
         <div class="grid grid-cols-1 gap-24 md:grid-cols-3">
           <div
-            v-for="teacher in teachers"
-            :key="teacher.name"
+            v-for="(teacher, index) in teachers"
+            :key="teacher.id"
             class="flex flex-col items-center gap-16"
           >
-            <div
-              class="aspect-square w-full rounded-lg"
-              :class="teacher.accent ? 'bg-primary' : 'bg-surface'"
+            <img
+              v-if="teacher.photo"
+              :src="resolveMediaUrl(teacher.photo)"
+              :alt="teacher.name"
+              class="aspect-square w-full rounded-lg object-cover"
             />
-            <p class="font-display text-h4" :class="teacher.accent ? 'text-primary' : 'text-ink'">
+            <div
+              v-else
+              class="aspect-square w-full rounded-lg"
+              :class="index % 2 === 0 ? 'bg-primary' : 'bg-surface'"
+            />
+            <p class="font-display text-h4" :class="index % 2 === 0 ? 'text-primary' : 'text-ink'">
               {{ teacher.name }}
             </p>
           </div>

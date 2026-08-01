@@ -1,0 +1,27 @@
+# Single-node Garage config. rpc_secret/admin_token below are committed
+# on purpose and are NOT sensitive: Garage's RPC (3901) and admin (3903)
+# ports are never published outside the docker-compose network (see
+# docker-compose.yml / docker-compose.prod.yml) — nothing outside this
+# container/network can ever reach them. The actual secrets that matter
+# (S3 access/secret key gating bucket read/write) come from the
+# GARAGE_ACCESS_KEY / GARAGE_SECRET_KEY env vars, kept in .env / vault like
+# every other credential in this project.
+metadata_dir = "/var/lib/garage/meta"
+data_dir = "/var/lib/garage/data"
+
+db_engine = "lmdb"
+replication_factor = 1
+compression_level = 1
+
+rpc_bind_addr = "[::]:3901"
+rpc_public_addr = "127.0.0.1:3901"
+rpc_secret = "29bc413829bbbabbd7fa914e6fa514e5899a731981e1b5c02ae6fe88fff72876"
+
+[s3_api]
+s3_region = "garage"
+api_bind_addr = "[::]:3900"
+root_domain = ".s3.garage.local"
+
+[admin]
+api_bind_addr = "[::]:3903"
+admin_token = "4b70dc9e391beb5600a979a52838e09612461c3d54874c6a4af35c5d0527d9b6"

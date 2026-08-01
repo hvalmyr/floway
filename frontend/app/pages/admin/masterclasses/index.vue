@@ -114,12 +114,7 @@ async function onDelete(id: number) {
         placeholder="Длительность"
         class="rounded border border-gray-300 px-3 py-2"
       />
-      <input
-        v-model="form.coverImage"
-        type="text"
-        placeholder="URL обложки"
-        class="rounded border border-gray-300 px-3 py-2 sm:col-span-2"
-      />
+      <AdminImageUpload v-model="form.coverImage" label="Обложка" class="sm:col-span-2" />
 
       <textarea
         v-model="form.shortDescription"

@@ -25,7 +25,7 @@ const emptyForm = () => ({
   fullDescription: "",
   status: "active" as Course["status"],
   coverImage: "",
-  galleryText: "",
+  gallery: [] as string[],
   sortOrder: 0,
 });
 
@@ -48,9 +48,17 @@ function startEdit(course: Course) {
     fullDescription: course.fullDescription,
     status: course.status,
     coverImage: course.coverImage,
-    galleryText: course.gallery.join(", "),
+    gallery: [...course.gallery],
     sortOrder: course.sortOrder,
   };
+}
+
+function addGalleryImage(url: string) {
+  form.value.gallery = [...form.value.gallery, url];
+}
+
+function removeGalleryImage(index: number) {
+  form.value.gallery = form.value.gallery.filter((_, i) => i !== index);
 }
 
 function cancelEdit() {
@@ -69,10 +77,7 @@ async function onSubmit() {
       fullDescription: form.value.fullDescription,
       status: form.value.status,
       coverImage: form.value.coverImage,
-      gallery: form.value.galleryText
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
+      gallery: form.value.gallery.filter(Boolean),
       sortOrder: form.value.sortOrder,
     };
     if (editingId.value === null) {
@@ -129,18 +134,34 @@ async function onDelete(id: number) {
         rows="4"
         class="rounded border border-gray-300 px-3 py-2 sm:col-span-2"
       />
-      <input
-        v-model="form.coverImage"
-        type="text"
-        placeholder="URL обложки"
-        class="rounded border border-gray-300 px-3 py-2"
-      />
-      <input
-        v-model="form.galleryText"
-        type="text"
-        placeholder="Галерея: URL через запятую"
-        class="rounded border border-gray-300 px-3 py-2"
-      />
+      <AdminImageUpload v-model="form.coverImage" label="Обложка" />
+
+      <div class="flex flex-col gap-2 sm:col-span-2">
+        <span class="text-sm text-[var(--color-text-muted)]">Галерея</span>
+        <div
+          v-for="(url, index) in form.gallery"
+          :key="index"
+          class="flex items-center gap-3 rounded border border-gray-300 px-3 py-2"
+        >
+          <img :src="resolveMediaUrl(url)" alt="" class="size-12 shrink-0 rounded object-cover" />
+          <span class="min-w-0 flex-1 truncate text-sm text-[var(--color-text-muted)]">{{
+            url
+          }}</span>
+          <button
+            type="button"
+            class="shrink-0 rounded border border-gray-300 px-2 py-1 text-sm text-red-600"
+            @click="removeGalleryImage(index)"
+          >
+            Убрать
+          </button>
+        </div>
+        <AdminImageUpload
+          model-value=""
+          label="Добавить фото в галерею"
+          @update:model-value="addGalleryImage"
+        />
+      </div>
+
       <select v-model="form.status" class="rounded border border-gray-300 px-3 py-2">
         <option value="active">Активен</option>
         <option value="archived">В архиве</option>

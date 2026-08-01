@@ -31,6 +31,14 @@ vault_notify_email_to: ""
 vault_telegram_bot_token: ""
 vault_telegram_chat_id: ""
 
+# Garage (self-hosted S3-хранилище картинок) — ключи нужны и самому Garage
+# (bootstrap в garage/entrypoint.sh), и бэкенду (S3-клиент), поэтому храним
+# их здесь и подставляем в оба места из одного источника.
+# Генерируй: access key — openssl rand -hex 12, secret key — openssl rand -hex 25
+vault_garage_access_key: "CHANGE_ME_RANDOM_ACCESS_KEY"
+vault_garage_secret_key: "CHANGE_ME_LONG_RANDOM_SECRET_KEY"
+vault_garage_bucket: floway-uploads
+
 # Нужны только если ghcr_login_required: true в group_vars
 vault_ghcr_username: ""
 vault_ghcr_token: ""

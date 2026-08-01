@@ -37,6 +37,18 @@ services:
       postgres:
         condition: service_healthy
 
+  garage:
+    build:
+      context: ./garage
+    restart: unless-stopped
+    environment:
+      GARAGE_ACCESS_KEY: ${GARAGE_ACCESS_KEY:-GKdev00000000000000000}
+      GARAGE_SECRET_KEY: ${GARAGE_SECRET_KEY:-devsecretkeydevsecretkeydevsecretkeydevsecretkey0}
+      GARAGE_BUCKET: ${GARAGE_BUCKET:-floway-uploads}
+    volumes:
+      - garage_meta:/var/lib/garage/meta
+      - garage_data:/var/lib/garage/data
+
   backend:
     build:
       context: ./backend
@@ -47,11 +59,18 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-floway}:${POSTGRES_PASSWORD:-floway}@postgres:5432/${POSTGRES_DB:-floway}?sslmode=disable
       SMTP_HOST: mailhog
       FRONTEND_ORIGIN: http://localhost:${FRONTEND_PORT:-3000}
+      GARAGE_ENDPOINT: http://garage:3900
+      GARAGE_REGION: garage
+      GARAGE_ACCESS_KEY: ${GARAGE_ACCESS_KEY:-GKdev00000000000000000}
+      GARAGE_SECRET_KEY: ${GARAGE_SECRET_KEY:-devsecretkeydevsecretkeydevsecretkeydevsecretkey0}
+      GARAGE_BUCKET: ${GARAGE_BUCKET:-floway-uploads}
     ports:
       - "${HTTP_PORT:-8080}:${HTTP_PORT:-8080}"
     depends_on:
       migrate:
         condition: service_completed_successfully
+      garage:
+        condition: service_healthy
 
   frontend:
     build:
@@ -72,3 +91,5 @@ services:
 
 volumes:
   postgres_data:
+  garage_meta:
+  garage_data:

@@ -39,8 +39,13 @@ const infoItems = computed(() => {
 
 <template>
   <article class="grid grid-cols-1 gap-24 lg:grid-cols-[38%_1fr] lg:gap-40">
-    <!-- TODO: заменить на <NuxtImg> с реальным фото, когда появятся ассеты. -->
-    <div class="aspect-[4/3] rounded-lg bg-surface lg:aspect-[3/4]" />
+    <img
+      v-if="masterclass.coverImage"
+      :src="resolveMediaUrl(masterclass.coverImage)"
+      :alt="masterclass.title"
+      class="aspect-[4/3] w-full rounded-lg object-cover lg:aspect-[3/4]"
+    />
+    <UiMediaPlaceholder v-else aspect="4/3" class="lg:aspect-[3/4]" />
 
     <div class="flex flex-col items-start gap-16">
       <h2 class="font-display text-h2" :class="accent ? 'text-primary' : 'text-ink'">

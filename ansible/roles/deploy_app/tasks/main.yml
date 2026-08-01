@@ -23,6 +23,19 @@
     group: "{{ deploy_user }}"
     mode: "0644"
 
+# Garage не собирается в CI и не публикуется в GHCR (в отличие от
+# backend/frontend) — это лёгкая обвязка вокруг стороннего бинаря, поэтому
+# докер-compose собирает её прямо на VPS (build: ./garage). Значит сама
+# директория со сборочным контекстом должна физически там оказаться.
+- name: Copy Garage build context (Dockerfile, entrypoint, config)
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../garage/"
+    dest: "{{ deploy_path }}/garage/"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: "0644"
+    directory_mode: "0755"
+
 - name: Template Caddyfile
   ansible.builtin.template:
     src: Caddyfile.j2
@@ -46,6 +59,7 @@
   community.docker.docker_compose_v2:
     project_src: "{{ deploy_path }}"
     pull: always
+    build: always
     state: present
     remove_orphans: true
 

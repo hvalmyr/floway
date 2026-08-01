@@ -19,6 +19,12 @@ type Config struct {
 
 	TelegramBotToken string
 	TelegramChatID   string
+
+	GarageEndpoint  string
+	GarageRegion    string
+	GarageAccessKey string
+	GarageSecretKey string
+	GarageBucket    string
 }
 
 func Load() (Config, error) {
@@ -36,6 +42,12 @@ func Load() (Config, error) {
 
 		TelegramBotToken: os.Getenv("TELEGRAM_BOT_TOKEN"),
 		TelegramChatID:   os.Getenv("TELEGRAM_CHAT_ID"),
+
+		GarageEndpoint:  os.Getenv("GARAGE_ENDPOINT"),
+		GarageRegion:    os.Getenv("GARAGE_REGION"),
+		GarageAccessKey: os.Getenv("GARAGE_ACCESS_KEY"),
+		GarageSecretKey: os.Getenv("GARAGE_SECRET_KEY"),
+		GarageBucket:    os.Getenv("GARAGE_BUCKET"),
 	}
 
 	if cfg.DatabaseURL == "" {
@@ -43,6 +55,15 @@ func Load() (Config, error) {
 	}
 	if cfg.JWTSecret == "" {
 		return Config{}, fmt.Errorf("JWT_SECRET is required")
+	}
+	if cfg.GarageEndpoint == "" {
+		return Config{}, fmt.Errorf("GARAGE_ENDPOINT is required")
+	}
+	if cfg.GarageAccessKey == "" || cfg.GarageSecretKey == "" {
+		return Config{}, fmt.Errorf("GARAGE_ACCESS_KEY and GARAGE_SECRET_KEY are required")
+	}
+	if cfg.GarageBucket == "" {
+		return Config{}, fmt.Errorf("GARAGE_BUCKET is required")
 	}
 
 	return cfg, nil

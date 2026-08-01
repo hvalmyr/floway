@@ -15,6 +15,7 @@ import (
 	"floway-backend/internal/httpserver"
 	"floway-backend/internal/repository"
 	"floway-backend/internal/service"
+	"floway-backend/internal/storage"
 )
 
 const adminSessionTTL = 12 * time.Hour
@@ -40,6 +41,11 @@ func run() error {
 	}
 	defer pool.Close()
 
+	garageClient, err := storage.NewClient(cfg.GarageEndpoint, cfg.GarageRegion, cfg.GarageAccessKey, cfg.GarageSecretKey, cfg.GarageBucket)
+	if err != nil {
+		return err
+	}
+
 	services := httpserver.Services{
 		FAQ:         service.NewFAQService(repository.NewFAQRepository(pool)),
 		Teacher:     service.NewTeacherService(repository.NewTeacherRepository(pool)),
@@ -50,6 +56,8 @@ func run() error {
 		Lesson:      service.NewLessonService(repository.NewLessonRepository(pool)),
 		Lead:        service.NewLeadService(repository.NewLeadRepository(pool)),
 		AdminUser:   service.NewAdminUserService(repository.NewAdminUserRepository(pool)),
+
+		Storage: garageClient,
 
 		Tokens:         auth.NewTokenManager(cfg.JWTSecret, adminSessionTTL),
 		SecureCookies:  cfg.Env != "local",

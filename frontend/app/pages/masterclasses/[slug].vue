@@ -48,6 +48,13 @@ const infoItems = computed(() => {
           >Оставить заявку</UiButton
         >
       </template>
+      <template v-if="masterclass.coverImage" #media>
+        <img
+          :src="resolveMediaUrl(masterclass.coverImage)"
+          :alt="masterclass.title"
+          class="aspect-[4/3] w-full rounded-lg object-cover"
+        />
+      </template>
     </Hero>
 
     <section class="py-64 sm:py-96 lg:py-120">

@@ -80,12 +80,7 @@ async function onDelete(id: number) {
         required
         class="rounded border border-gray-300 px-3 py-2 sm:col-span-2"
       />
-      <input
-        v-model="form.photo"
-        type="text"
-        placeholder="URL фото"
-        class="rounded border border-gray-300 px-3 py-2"
-      />
+      <AdminImageUpload v-model="form.photo" label="Фото" />
       <input
         v-model.number="form.sortOrder"
         type="number"

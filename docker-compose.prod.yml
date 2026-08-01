@@ -42,6 +42,18 @@ services:
       postgres:
         condition: service_healthy
 
+  garage:
+    build:
+      context: ./garage
+    restart: unless-stopped
+    environment:
+      GARAGE_ACCESS_KEY: ${GARAGE_ACCESS_KEY}
+      GARAGE_SECRET_KEY: ${GARAGE_SECRET_KEY}
+      GARAGE_BUCKET: ${GARAGE_BUCKET}
+    volumes:
+      - garage_meta:/var/lib/garage/meta
+      - garage_data:/var/lib/garage/data
+
   backend:
     image: ${BACKEND_IMAGE}:${IMAGE_TAG:-latest}
     restart: unless-stopped
@@ -57,9 +69,16 @@ services:
       NOTIFY_EMAIL_TO: ${NOTIFY_EMAIL_TO}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+      GARAGE_ENDPOINT: http://garage:3900
+      GARAGE_REGION: garage
+      GARAGE_ACCESS_KEY: ${GARAGE_ACCESS_KEY}
+      GARAGE_SECRET_KEY: ${GARAGE_SECRET_KEY}
+      GARAGE_BUCKET: ${GARAGE_BUCKET}
     depends_on:
       migrate:
         condition: service_completed_successfully
+      garage:
+        condition: service_healthy
 
   frontend:
     image: ${FRONTEND_IMAGE}:${IMAGE_TAG:-latest}
@@ -90,5 +109,7 @@ services:
 
 volumes:
   postgres_data:
+  garage_meta:
+  garage_data:
   caddy_data:
   caddy_config:

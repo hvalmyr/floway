@@ -78,6 +78,23 @@ export interface Masterclass {
   status: MasterclassStatus;
 }
 
+/** Shape returned by the public GET /api/v1/faq (list, no auth, pre-sorted by sortOrder). */
+export interface FAQItem {
+  id: number;
+  question: string;
+  answer: string;
+  sortOrder: number;
+}
+
+/** Shape returned by the public GET /api/v1/teachers (list, no auth). */
+export interface Teacher {
+  id: number;
+  name: string;
+  photo: string;
+  description: string;
+  sortOrder: number;
+}
+
 export type BlogPostStatus = "draft" | "published";
 
 /**

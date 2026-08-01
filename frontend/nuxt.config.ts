@@ -15,6 +15,9 @@ export default defineNuxtConfig({
     { path: "~/components/ui", pathPrefix: false },
     { path: "~/components/sections", pathPrefix: false },
     { path: "~/components/layout", pathPrefix: false },
+    // Админ-панель — отдельная зона (не дизайн-система), поэтому свой
+    // каталог вместо смешивания с components/ui.
+    { path: "~/components/admin", pathPrefix: false },
   ],
 
   // Публичные контентные страницы рендерятся на сервере (SSR) для SEO.

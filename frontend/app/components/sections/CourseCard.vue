@@ -20,6 +20,7 @@ const props = withDefaults(
     title: string;
     description?: string;
     variant?: "surface-primary" | "surface-ink" | "surface-white";
+    coverImage?: string;
     lessonsCount?: number;
     hours?: number;
     price?: number;
@@ -40,7 +41,16 @@ const ctaVariant = computed(() =>
 <template>
   <UiCard :variant="variant" class="flex h-full flex-col">
     <template #media>
-      <div class="mx-auto aspect-square w-full max-w-[200px] rounded-sm border-2 border-current" />
+      <img
+        v-if="coverImage"
+        :src="resolveMediaUrl(coverImage)"
+        :alt="title"
+        class="mx-auto aspect-square w-full max-w-[200px] rounded-sm object-cover"
+      />
+      <div
+        v-else
+        class="mx-auto aspect-square w-full max-w-[200px] rounded-sm border-2 border-current"
+      />
     </template>
     <template #title>{{ title }}</template>
 

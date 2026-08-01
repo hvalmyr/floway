@@ -43,6 +43,13 @@ function priceRow(module: (typeof course.value.modules)[number]) {
           >Оставить заявку</UiButton
         >
       </template>
+      <template v-if="course.coverImage" #media>
+        <img
+          :src="resolveMediaUrl(course.coverImage)"
+          :alt="course.title"
+          class="aspect-[4/3] w-full rounded-lg object-cover"
+        />
+      </template>
     </Hero>
 
     <section v-if="course.modules.length" class="py-64 sm:py-96 lg:py-120">
