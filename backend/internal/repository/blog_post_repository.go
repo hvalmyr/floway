@@ -38,6 +38,41 @@ func (r *BlogPostRepository) List(ctx context.Context) ([]model.BlogPost, error)
 	return items, rows.Err()
 }
 
+func (r *BlogPostRepository) ListPublished(ctx context.Context) ([]model.BlogPost, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT id, slug, title, cover_image, category, tags, author, published_at, content, status, created_at, updated_at
+		FROM blog_posts
+		WHERE status = $1
+		ORDER BY published_at DESC NULLS LAST, id DESC
+	`, model.BlogPostStatusPublished)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	items := []model.BlogPost{}
+	for rows.Next() {
+		var item model.BlogPost
+		if err := rows.Scan(&item.ID, &item.Slug, &item.Title, &item.CoverImage, &item.Category, &item.Tags, &item.Author, &item.PublishedAt, &item.Content, &item.Status, &item.CreatedAt, &item.UpdatedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
+func (r *BlogPostRepository) FindPublishedBySlug(ctx context.Context, slug string) (model.BlogPost, error) {
+	var item model.BlogPost
+	err := r.db.QueryRow(ctx, `
+		SELECT id, slug, title, cover_image, category, tags, author, published_at, content, status, created_at, updated_at
+		FROM blog_posts
+		WHERE slug = $1 AND status = $2
+	`, slug, model.BlogPostStatusPublished).Scan(
+		&item.ID, &item.Slug, &item.Title, &item.CoverImage, &item.Category, &item.Tags, &item.Author, &item.PublishedAt, &item.Content, &item.Status, &item.CreatedAt, &item.UpdatedAt,
+	)
+	return item, err
+}
+
 func (r *BlogPostRepository) Create(ctx context.Context, item model.BlogPost) (model.BlogPost, error) {
 	err := r.db.QueryRow(ctx, `
 		INSERT INTO blog_posts (slug, title, cover_image, category, tags, author, published_at, content, status)

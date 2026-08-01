@@ -78,6 +78,25 @@ export interface Masterclass {
   status: MasterclassStatus;
 }
 
+export type BlogPostStatus = "draft" | "published";
+
+/**
+ * Shape returned by GET /api/v1/blog-posts?status=published (list) and
+ * GET /api/v1/blog-posts/{slug} (single post) — both public, published-only.
+ */
+export interface BlogPost {
+  id: number;
+  slug: string;
+  title: string;
+  coverImage: string;
+  category: string;
+  tags: string[];
+  author: string;
+  publishedAt: string | null;
+  content: string;
+  status: BlogPostStatus;
+}
+
 export type ContactMethod = "call" | "telegram" | "whatsapp" | "max";
 export type LeadSource = "referral" | "ads" | "internet" | "social" | "maps";
 export type LeadRequestType = "course" | "masterclass" | "trial_lesson";

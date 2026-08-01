@@ -4,6 +4,7 @@ import { mockGetMasterClass, mockGetMasterClasses } from "~/mocks/masterclasses"
 import type {
   ApiError,
   ApplicationPayload,
+  BlogPost,
   Course,
   CourseDetail,
   Lead,
@@ -77,6 +78,27 @@ export function useApi() {
     }
   }
 
+  /**
+   * GET /api/v1/blog-posts?status=published — draft posts are never
+   * returned (see blog_post_handler.go). No mocks fallback: there's no
+   * design brief for the blog yet, so this always hits the real backend.
+   */
+  async function getBlogPosts(): Promise<BlogPost[]> {
+    try {
+      return await client<BlogPost[]>("/api/v1/blog-posts", { query: { status: "published" } });
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  async function getBlogPost(slug: string): Promise<BlogPost | null> {
+    try {
+      return await client<BlogPost>(`/api/v1/blog-posts/${slug}`);
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
   /** POST /api/v1/leads — this route is real and public (see lead_handler.go). */
   async function submitApplication(payload: ApplicationPayload): Promise<Lead> {
     try {
@@ -86,5 +108,13 @@ export function useApi() {
     }
   }
 
-  return { getCourses, getCourse, getMasterClasses, getMasterClass, submitApplication };
+  return {
+    getCourses,
+    getCourse,
+    getMasterClasses,
+    getMasterClass,
+    getBlogPosts,
+    getBlogPost,
+    submitApplication,
+  };
 }

@@ -152,6 +152,17 @@ func TestCourseService_Create(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, []string{"one.jpg", "two.jpg"}, course.Gallery)
 	})
+
+	t.Run("normalizes a nil gallery slice to empty instead of leaving it nil", func(t *testing.T) {
+		repo := newFakeCourseRepository()
+		svc := service.NewCourseService(repo)
+
+		course, err := svc.Create(context.Background(), model.Course{Slug: "slug", Title: "Title", Gallery: nil})
+
+		require.NoError(t, err)
+		assert.NotNil(t, course.Gallery)
+		assert.Empty(t, course.Gallery)
+	})
 }
 
 func TestCourseService_Update(t *testing.T) {

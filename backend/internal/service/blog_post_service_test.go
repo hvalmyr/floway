@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -27,6 +28,31 @@ func (f *fakeBlogPostRepository) List(ctx context.Context) ([]model.BlogPost, er
 		return nil, f.err
 	}
 	return f.items, nil
+}
+
+func (f *fakeBlogPostRepository) ListPublished(ctx context.Context) ([]model.BlogPost, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	var published []model.BlogPost
+	for _, item := range f.items {
+		if item.Status == model.BlogPostStatusPublished {
+			published = append(published, item)
+		}
+	}
+	return published, nil
+}
+
+func (f *fakeBlogPostRepository) FindPublishedBySlug(ctx context.Context, slug string) (model.BlogPost, error) {
+	if f.err != nil {
+		return model.BlogPost{}, f.err
+	}
+	for _, item := range f.items {
+		if item.Slug == slug && item.Status == model.BlogPostStatusPublished {
+			return item, nil
+		}
+	}
+	return model.BlogPost{}, pgx.ErrNoRows
 }
 
 func (f *fakeBlogPostRepository) Create(ctx context.Context, item model.BlogPost) (model.BlogPost, error) {
@@ -99,6 +125,17 @@ func TestBlogPostService_Create(t *testing.T) {
 		require.Error(t, err)
 		assert.ErrorIs(t, err, service.ErrValidation)
 	})
+
+	t.Run("normalizes a nil tags slice to empty instead of leaving it nil", func(t *testing.T) {
+		repo := newFakeBlogPostRepository()
+		svc := service.NewBlogPostService(repo)
+
+		item, err := svc.Create(context.Background(), model.BlogPost{Slug: "a", Title: "b", Tags: nil})
+
+		require.NoError(t, err)
+		assert.NotNil(t, item.Tags)
+		assert.Empty(t, item.Tags)
+	})
 }
 
 func TestBlogPostService_Update(t *testing.T) {
@@ -140,6 +177,51 @@ func TestBlogPostService_Delete(t *testing.T) {
 		err := svc.Delete(context.Background(), 0)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, service.ErrValidation)
+	})
+}
+
+func TestBlogPostService_ListPublished(t *testing.T) {
+	repo := newFakeBlogPostRepository()
+	svc := service.NewBlogPostService(repo)
+	_, err := svc.Create(context.Background(), model.BlogPost{Slug: "draft-post", Title: "Draft"})
+	require.NoError(t, err)
+	published, err := svc.Create(context.Background(), model.BlogPost{Slug: "published-post", Title: "Published", Status: model.BlogPostStatusPublished})
+	require.NoError(t, err)
+
+	items, err := svc.ListPublished(context.Background())
+
+	require.NoError(t, err)
+	require.Len(t, items, 1)
+	assert.Equal(t, published.ID, items[0].ID)
+}
+
+func TestBlogPostService_GetPublishedBySlug(t *testing.T) {
+	repo := newFakeBlogPostRepository()
+	svc := service.NewBlogPostService(repo)
+	_, err := svc.Create(context.Background(), model.BlogPost{Slug: "draft-post", Title: "Draft"})
+	require.NoError(t, err)
+	published, err := svc.Create(context.Background(), model.BlogPost{Slug: "published-post", Title: "Published", Status: model.BlogPostStatusPublished})
+	require.NoError(t, err)
+
+	t.Run("finds a published post", func(t *testing.T) {
+		found, err := svc.GetPublishedBySlug(context.Background(), "published-post")
+
+		require.NoError(t, err)
+		assert.Equal(t, published.ID, found.ID)
+	})
+
+	t.Run("does not leak an unpublished draft", func(t *testing.T) {
+		_, err := svc.GetPublishedBySlug(context.Background(), "draft-post")
+
+		require.Error(t, err)
+		assert.ErrorIs(t, err, service.ErrNotFound)
+	})
+
+	t.Run("returns ErrNotFound for an unknown slug", func(t *testing.T) {
+		_, err := svc.GetPublishedBySlug(context.Background(), "does-not-exist")
+
+		require.Error(t, err)
+		assert.ErrorIs(t, err, service.ErrNotFound)
 	})
 }
 

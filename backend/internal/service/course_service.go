@@ -55,6 +55,12 @@ func (s *CourseService) Create(ctx context.Context, item model.Course) (model.Co
 	if item.Status != model.CourseStatusActive && item.Status != model.CourseStatusArchived {
 		return model.Course{}, errors.Join(ErrValidation, errors.New("status must be active or archived"))
 	}
+	// gallery is NOT NULL DEFAULT '{}' in the DB, but a nil Go slice (an
+	// omitted or explicit-null "gallery" in the request JSON) is sent as
+	// SQL NULL, not "use the column default" — violates the constraint.
+	if item.Gallery == nil {
+		item.Gallery = []string{}
+	}
 
 	return s.repo.Create(ctx, item)
 }
@@ -74,6 +80,9 @@ func (s *CourseService) Update(ctx context.Context, item model.Course) (model.Co
 	}
 	if item.Status != model.CourseStatusActive && item.Status != model.CourseStatusArchived {
 		return model.Course{}, errors.Join(ErrValidation, errors.New("status must be active or archived"))
+	}
+	if item.Gallery == nil {
+		item.Gallery = []string{}
 	}
 
 	return s.repo.Update(ctx, item)

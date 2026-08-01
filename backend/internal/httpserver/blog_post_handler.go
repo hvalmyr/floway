@@ -23,6 +23,10 @@ func newBlogPostHandler(svc *service.BlogPostService, admin func(http.Handler) h
 
 func (h *blogPostHandler) routes(r chi.Router) {
 	r.Get("/", h.list)
+	// Public detail lookup by slug (published posts only), shares the
+	// "/{id}" pattern with the admin-only Put/Delete below — same route
+	// node, dispatched by method.
+	r.Get("/{id}", h.getPublishedBySlug)
 	r.With(h.admin).Post("/", h.create)
 	r.With(h.admin).Put("/{id}", h.update)
 	r.With(h.admin).Delete("/{id}", h.delete)
@@ -40,13 +44,33 @@ type blogPostRequest struct {
 	Status      string     `json:"status"`
 }
 
+// list returns every post (drafts included) by default, for the admin
+// panel. Public callers pass ?status=published to get only published posts,
+// which is what the public blog listing page uses.
 func (h *blogPostHandler) list(w http.ResponseWriter, r *http.Request) {
-	items, err := h.svc.List(r.Context())
+	var items []model.BlogPost
+	var err error
+	if r.URL.Query().Get("status") == string(model.BlogPostStatusPublished) {
+		items, err = h.svc.ListPublished(r.Context())
+	} else {
+		items, err = h.svc.List(r.Context())
+	}
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, items)
+}
+
+func (h *blogPostHandler) getPublishedBySlug(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "id")
+
+	item, err := h.svc.GetPublishedBySlug(r.Context(), slug)
+	if err != nil {
+		writeServiceError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, item)
 }
 
 func (h *blogPostHandler) toModel(req blogPostRequest) model.BlogPost {
