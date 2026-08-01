@@ -25,7 +25,7 @@ function priceRow(module: (typeof course.value.modules)[number]) {
   const lessonsWord = module.lessonsCount === 1 ? "занятие" : "занятий";
   const price = `${module.price.toLocaleString("ru-RU")} ₽`;
   return [
-    `Блок «${module.title}»`,
+    `Блок “${module.title}”`,
     `${module.lessonsCount} ${lessonsWord}`,
     `${module.hours} часов`,
     module.oldPrice ? `${module.oldPrice.toLocaleString("ru-RU")} ₽ → ${price}` : price,
@@ -36,10 +36,10 @@ function priceRow(module: (typeof course.value.modules)[number]) {
 <template>
   <div v-if="course">
     <Hero>
-      <template #title>Курс «{{ course.title }}»</template>
+      <template #title>Курс “{{ course.title }}”</template>
       <template #lead>{{ course.fullDescription }}</template>
       <template #actions>
-        <UiButton variant="primary" size="lg" to="#apply" class="w-full sm:w-auto"
+        <UiButton variant="primary" size="lg" to="#apply"
           >Оставить заявку</UiButton
         >
       </template>
@@ -69,7 +69,7 @@ function priceRow(module: (typeof course.value.modules)[number]) {
           <div class="flex flex-col gap-16">
             <h2 class="font-display text-h2">
               <span class="text-primary">Учебный план.</span>
-              <span class="text-ink">Блок «{{ module.title }}»</span>
+              <span class="text-ink">Блок “{{ module.title }}”</span>
             </h2>
             <p v-if="module.description" class="font-body text-body-l text-ink">
               {{ module.description }}
@@ -83,13 +83,13 @@ function priceRow(module: (typeof course.value.modules)[number]) {
               :title="lesson.title"
             >
               <p class="mb-8">
-                <strong class="font-display text-ink">Темы:</strong> {{ lesson.topics }}
+                <strong class="font-body text-ink">Темы:</strong> {{ lesson.topics }}
               </p>
               <p class="mb-8">
-                <strong class="font-display text-ink">Вы научитесь:</strong> {{ lesson.outcomes }}
+                <strong class="font-body text-ink">Вы научитесь:</strong> {{ lesson.outcomes }}
               </p>
               <p>
-                <strong class="font-display text-ink">Продолжительность:</strong>
+                <strong class="font-body text-ink">Продолжительность:</strong>
                 {{ lesson.durationHours }} часа.
               </p>
             </UiAccordionItem>

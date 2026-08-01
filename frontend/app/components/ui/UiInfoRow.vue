@@ -7,8 +7,8 @@
  * border treatment used for the second row in the course price table.
  *
  * @example
- * <UiInfoRow :items="['Блок «Букеты»', '7 занятий', '30 часов', '38 500 ₽']" />
- * <UiInfoRow :items="['Блок «Композиции»', '4 занятия', '17 часов', '22 000 ₽']" highlighted />
+ * <UiInfoRow :items="['Блок “Букеты”', '7 занятий', '30 часов', '38 500 ₽']" />
+ * <UiInfoRow :items="['Блок “Композиции”', '4 занятия', '17 часов', '22 000 ₽']" highlighted />
  */
 withDefaults(
   defineProps<{

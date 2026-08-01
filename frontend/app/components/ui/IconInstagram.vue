@@ -1,14 +1,11 @@
 <script setup lang="ts">
- /**
- * Simplified circle+dot mark matching the minimal Instagram glyph used in
- * the footer/contacts mockups (no Instagram SVG was supplied in
- * docs/icons — this reproduces the same minimal visual, not the official
- * multi-color logo).
- */
+/** docs/icons/footer-icons/instagram.svg — real asset supplied by the client. */
 </script>
 <template>
-  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="12" cy="12.5" r="7" stroke="currentColor" stroke-width="1.6" />
-    <circle cx="17.5" cy="6.5" r="1.4" fill="currentColor" />
+  <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M14.1818 0C6.36 0 0 6.36 0 14.1818V33.8182C0 41.64 6.36 48 14.1818 48H33.8182C41.64 48 48 41.64 48 33.8182V14.1818C48 6.36 41.64 0 33.8182 0H14.1818ZM37.0909 8.72727C38.2909 8.72727 39.2727 9.70909 39.2727 10.9091C39.2727 12.1091 38.2909 13.0909 37.0909 13.0909C35.8909 13.0909 34.9091 12.1091 34.9091 10.9091C34.9091 9.70909 35.8909 8.72727 37.0909 8.72727ZM24 12C30.6218 12 36 17.3782 36 24C36 30.6218 30.6218 36 24 36C17.3782 36 12 30.6218 12 24C12 17.3782 17.3782 12 24 12ZM24 14.1818C18.5891 14.1818 14.1818 18.5891 14.1818 24C14.1818 29.4109 18.5891 33.8182 24 33.8182C29.4109 33.8182 33.8182 29.4109 33.8182 24C33.8182 18.5891 29.4109 14.1818 24 14.1818Z"
+      fill="currentColor"
+    />
   </svg>
 </template>

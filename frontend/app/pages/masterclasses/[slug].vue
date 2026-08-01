@@ -41,10 +41,10 @@ const infoItems = computed(() => {
 <template>
   <div v-if="masterclass">
     <Hero>
-      <template #title>Мастер-класс «{{ masterclass.title }}»</template>
+      <template #title>Мастер-класс “{{ masterclass.title }}”</template>
       <template #lead>{{ masterclass.shortDescription }}</template>
       <template #actions>
-        <UiButton variant="primary" size="lg" to="#apply" class="w-full sm:w-auto"
+        <UiButton variant="primary" size="lg" to="#apply"
           >Оставить заявку</UiButton
         >
       </template>
@@ -78,7 +78,7 @@ const infoItems = computed(() => {
           <ApplyForm
             context="masterclass"
             :related-id="masterclass.id"
-            :title="`Записаться на «${masterclass.title}»`"
+            :title="`Записаться на “${masterclass.title}”`"
           />
         </div>
       </div>

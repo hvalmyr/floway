@@ -27,7 +27,7 @@ const errorId = useId();
 
 <template>
   <div class="flex flex-col gap-8">
-    <label :for="inputId" class="font-display text-small font-bold text-primary">
+    <label :for="inputId" class="font-body text-body-l font-bold text-primary">
       {{ label }}<span v-if="required" aria-hidden="true"> *</span>
     </label>
     <textarea
@@ -36,12 +36,11 @@ const errorId = useId();
       :rows="rows"
       :placeholder="placeholder"
       :aria-invalid="!!errorMessage"
-      :aria-describedby="errorMessage ? errorId : undefined"
+      :aria-describedby="errorId"
       class="resize-y rounded-lg border-2 border-primary bg-white px-24 py-16 font-body text-body text-ink outline-none placeholder:text-primary/50"
       @blur="handleBlur"
     />
-    <p v-if="errorMessage" :id="errorId" class="text-small font-bold text-ink">
-      {{ errorMessage }}
-    </p>
+    <!-- Всегда занимает место (даже без ошибки), чтобы форма не "прыгала" по высоте. -->
+    <p :id="errorId" class="min-h-[22px] text-small font-bold text-ink">{{ errorMessage }}</p>
   </div>
 </template>

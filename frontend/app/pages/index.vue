@@ -71,10 +71,10 @@ const openFaqIds = ref<Array<string | number>>([0]);
         }}
       </template>
       <template #actions>
-        <UiButton variant="primary" size="lg" to="/#courses" class="w-full sm:w-auto"
+        <UiButton variant="primary" size="lg" to="/#courses"
           >Курсы</UiButton
         >
-        <UiButton variant="outline" size="lg" to="/#about" class="w-full sm:w-auto"
+        <UiButton variant="outline" size="lg" to="/#about"
           >О школе</UiButton
         >
       </template>
@@ -87,10 +87,10 @@ const openFaqIds = ref<Array<string | number>>([0]);
       </template>
     </Hero>
 
-    <section class="py-64 sm:py-96 lg:py-120">
+    <section class="bg-surface py-64 sm:py-96 lg:py-120">
       <div class="container flex flex-col gap-48">
         <SectionHeading color="primary">
-          Почему стоит учиться в школе «ФлоВей»?
+          Почему стоит учиться в школе “ФлоВей”?
           <template #lead
             >Мы создали школу, в которой удобно учиться, легко развиваться и получать реальные
             практические навыки флористики.</template
@@ -100,7 +100,7 @@ const openFaqIds = ref<Array<string | number>>([0]);
       </div>
     </section>
 
-    <section id="about" class="scroll-mt-64 bg-surface py-64 sm:py-96 lg:scroll-mt-96 lg:py-120">
+    <section id="about" class="scroll-mt-64 bg-white py-64 sm:py-96 lg:scroll-mt-96 lg:py-120">
       <div class="container flex flex-col gap-48">
         <SectionHeading>О школе</SectionHeading>
         <!-- Список (flex-column), не грид: каждый пункт — отдельная строка на всю ширину. -->
@@ -108,7 +108,7 @@ const openFaqIds = ref<Array<string | number>>([0]);
           <div
             v-for="item in aboutItems"
             :key="item.id"
-            class="flex flex-col items-start gap-16 rounded-md bg-white p-32"
+            class="flex flex-col items-start gap-16 rounded-md bg-surface p-32"
           >
             <UiBadge>{{ item.badge }}</UiBadge>
             <p class="font-body text-body text-ink">{{ item.description }}</p>
@@ -120,14 +120,14 @@ const openFaqIds = ref<Array<string | number>>([0]);
     <section id="courses" class="scroll-mt-64 py-64 sm:py-96 lg:scroll-mt-96 lg:py-120">
       <div class="container flex flex-col gap-48">
         <SectionHeading color="primary">
-          Курс «Основы флористики»
+          Курс “Основы флористики”
           <template #lead>{{ mainCourse?.shortDescription }}</template>
         </SectionHeading>
         <div v-if="mainCourse" class="grid grid-cols-1 gap-24 md:grid-cols-2 lg:gap-32">
           <CourseCard
             v-for="module in mainCourse.modules"
             :key="module.id"
-            :title="`Блок «${module.title}»`"
+            :title="`Блок “${module.title}”`"
             :variant="module.title === 'Букеты' ? 'surface-primary' : 'surface-ink'"
             :lessons-count="module.lessonsCount"
             :hours="module.hours"
@@ -143,7 +143,7 @@ const openFaqIds = ref<Array<string | number>>([0]);
         <SectionHeading>
           Профильные курсы
           <template #lead
-            >После прохождения курса «Основы флористики» вы можете продолжить обучение по одному или
+            >После прохождения курса “Основы флористики” вы можете продолжить обучение по одному или
             сразу нескольким специализированным направлениям.</template
           >
         </SectionHeading>
@@ -162,24 +162,22 @@ const openFaqIds = ref<Array<string | number>>([0]);
 
     <section class="py-64 sm:py-96 lg:py-120">
       <div class="container flex flex-col gap-48">
-        <div class="flex flex-col gap-16">
-          <h2 class="font-display text-h2 text-primary">
-            {{ text("home_trial_heading", "Попробуйте флористику на практике") }}
-          </h2>
-          <p class="max-w-[760px] font-body text-body-l text-ink">
+        <SectionHeading color="primary">
+          {{ text("home_trial_heading", "Попробуйте флористику на практике") }}
+          <template #lead>
             {{
               text(
                 "home_trial_description",
                 "Вы научитесь собирать круглый букет в спиральной технике: поймёте принцип работы со спиралью, научитесь уверенно удерживать букет в руках во время сборки и правильно подвязывать букет. Кроме практики, вы сможете познакомиться с нашим педагогом, узнать, как проходят занятия в школе, задать все интересующие вопросы и понять, подходит ли вам обучение.",
               )
             }}
-          </p>
-        </div>
+          </template>
+        </SectionHeading>
 
         <div class="grid grid-cols-1 gap-32 lg:grid-cols-2 lg:gap-64">
           <div class="flex flex-col gap-24">
-            <div class="flex flex-col gap-8">
-              <h3 class="font-display text-h3 text-ink">
+            <div class="flex flex-col items-center gap-8 text-center">
+              <h3 class="font-display text-h2 text-ink">
                 {{ text("home_trial_lesson_title", "Пробное занятие") }}
               </h3>
               <p class="font-body text-body text-ink">
@@ -196,9 +194,9 @@ const openFaqIds = ref<Array<string | number>>([0]);
             v-if="text('home_trial_image')"
             :src="resolveMediaUrl(text('home_trial_image'))"
             alt=""
-            class="aspect-[4/3] w-full rounded-lg object-cover lg:aspect-auto"
+            class="aspect-[9/16] w-full rounded-lg object-cover"
           />
-          <div v-else class="aspect-[4/3] rounded-lg bg-primary lg:aspect-auto" />
+          <div v-else class="aspect-[9/16] rounded-lg bg-primary" />
         </div>
       </div>
     </section>
@@ -223,7 +221,10 @@ const openFaqIds = ref<Array<string | number>>([0]);
               class="aspect-square w-full rounded-lg"
               :class="index % 2 === 0 ? 'bg-primary' : 'bg-surface'"
             />
-            <p class="font-display text-h4" :class="index % 2 === 0 ? 'text-primary' : 'text-ink'">
+            <p
+              class="font-body text-h3 font-bold"
+              :class="index % 2 === 0 ? 'text-primary' : 'text-ink'"
+            >
               {{ teacher.name }}
             </p>
           </div>

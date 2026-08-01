@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { MessageCircle } from "lucide-vue-next";
 import type { Component } from "vue";
 import IconInstagram from "~/components/ui/IconInstagram.vue";
+import IconMax from "~/components/ui/IconMax.vue";
 import IconTelegram from "~/components/ui/IconTelegram.vue";
 import IconVk from "~/components/ui/IconVk.vue";
 import IconWhatsapp from "~/components/ui/IconWhatsapp.vue";
@@ -16,12 +16,11 @@ const socialIcons: Record<string, Component> = {
 };
 
 // "Связь со школой": те же мессенджеры, что и в форме заявки (contactMethod),
-// плюс Telegram уже есть в "соцсети" ниже — иконка для Max не была
-// предоставлена (docs/icons), поэтому используется общий значок сообщения.
+// плюс Telegram уже есть в "соцсети" ниже.
 const contactChannels = [
   { label: "Telegram", href: contactInfo.telegramUrl, icon: IconTelegram },
   { label: "Whatsapp", href: contactInfo.whatsappUrl, icon: IconWhatsapp },
-  { label: "Max", href: contactInfo.maxUrl || undefined, icon: MessageCircle },
+  { label: "Max", href: contactInfo.maxUrl || undefined, icon: IconMax },
 ];
 
 const schoolLinks = [
@@ -38,7 +37,9 @@ const schoolLinks = [
 <template>
   <footer class="mt-auto bg-primary text-white">
     <div class="container flex flex-col gap-32 py-64">
-      <NuxtLink to="/" class="font-display text-h3 text-white">фловей</NuxtLink>
+      <NuxtLink to="/">
+        <LogoFloway class="h-48 w-auto text-white" />
+      </NuxtLink>
 
       <div class="grid grid-cols-1 gap-32 md:grid-cols-3">
         <div class="flex flex-col gap-16">
@@ -51,7 +52,7 @@ const schoolLinks = [
               target="_blank"
               rel="noopener noreferrer"
               :aria-label="channel.label"
-              class="grid size-[44px] place-items-center rounded-full bg-white/15 text-white hover:bg-white/25"
+              class="grid size-[44px] place-items-center rounded-full bg-white text-primary hover:opacity-80"
             >
               <component :is="channel.icon" class="size-[20px]" aria-hidden="true" />
             </a>
@@ -66,7 +67,7 @@ const schoolLinks = [
               target="_blank"
               rel="noopener noreferrer"
               :aria-label="social.label"
-              class="grid size-[44px] place-items-center rounded-full bg-white/15 text-white hover:bg-white/25"
+              class="grid size-[44px] place-items-center rounded-full bg-white text-primary hover:opacity-80"
             >
               <component :is="socialIcons[social.label]" class="size-[20px]" aria-hidden="true" />
             </a>

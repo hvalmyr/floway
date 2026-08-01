@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { Plus } from "lucide-vue-next";
 import { computed, inject, useId } from "vue";
-import IconClose from "~/components/ui/IconClose.vue";
 
 /**
  * One row of a <UiAccordion>. Must be rendered inside <UiAccordion>. Uses a
  * CSS grid-template-rows 0fr→1fr transition (no JS height measurement); the
- * icon swaps from "+" to the provided close.svg (×) on open, per the FAQ and
- * course-syllabus mockups (blue title text, no circular icon frame).
+ * "+" icon itself rotates 45deg on open (turning into a "×"), per the FAQ
+ * and course-syllabus mockups (blue title text, no circular icon frame).
  *
  * @example
  * <UiAccordionItem id="lesson-1" title="Занятие 1. Введение в профессию">
@@ -45,10 +44,11 @@ const open = computed(() => accordion.isOpen(props.id));
         @click="accordion.toggle(id)"
       >
         <span>{{ title }}</span>
-        <span class="grid size-24 shrink-0 place-items-center text-primary" aria-hidden="true">
-          <IconClose v-if="open" class="size-24" />
-          <Plus v-else class="size-24" />
-        </span>
+        <Plus
+          class="size-24 shrink-0 text-primary transition-transform duration-200 motion-reduce:transition-none"
+          :class="open ? 'rotate-45' : ''"
+          aria-hidden="true"
+        />
       </button>
     </h3>
     <div

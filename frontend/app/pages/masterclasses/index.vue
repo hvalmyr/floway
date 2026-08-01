@@ -36,7 +36,7 @@ const features = computed(
     <Hero>
       <template #title>Мастер-классы по флористике в свободном графике</template>
       <template #actions>
-        <UiButton variant="primary" size="lg" to="#apply" class="w-full sm:w-auto"
+        <UiButton variant="primary" size="lg" to="#apply"
           >Оставить заявку</UiButton
         >
       </template>
@@ -49,14 +49,14 @@ const features = computed(
       </template>
     </Hero>
 
-    <section class="py-64 sm:py-96 lg:py-120">
+    <section class="bg-surface py-64 sm:py-96 lg:py-120">
       <div class="container flex flex-col gap-48">
-        <SectionHeading color="primary">Почему стоит выбрать мастер-класс «ФлоВей»</SectionHeading>
+        <SectionHeading color="primary">Почему стоит выбрать мастер-класс “ФлоВей”</SectionHeading>
         <FeatureGrid :items="features" />
       </div>
     </section>
 
-    <section class="bg-surface py-64 sm:py-96 lg:py-120">
+    <section class="py-64 sm:py-96 lg:py-120">
       <div class="container flex flex-col gap-64">
         <MasterclassCard
           v-for="(mc, i) in masterclasses"

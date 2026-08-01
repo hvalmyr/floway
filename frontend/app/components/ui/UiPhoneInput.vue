@@ -32,7 +32,7 @@ function onInput(event: Event) {
 
 <template>
   <div class="flex flex-col gap-8">
-    <label :for="inputId" class="font-display text-small font-bold text-primary">
+    <label :for="inputId" class="font-body text-body-l font-bold text-primary">
       {{ label }}<span v-if="required" aria-hidden="true"> *</span>
     </label>
     <input
@@ -42,13 +42,12 @@ function onInput(event: Event) {
       inputmode="tel"
       placeholder="+7 (000) 000 00 00"
       :aria-invalid="!!errorMessage"
-      :aria-describedby="errorMessage ? errorId : undefined"
+      :aria-describedby="errorId"
       class="h-[64px] rounded-lg border-2 border-primary bg-white px-24 font-body text-body text-ink outline-none placeholder:text-primary/50"
       @input="onInput"
       @blur="handleBlur"
     />
-    <p v-if="errorMessage" :id="errorId" class="text-small font-bold text-ink">
-      {{ errorMessage }}
-    </p>
+    <!-- Всегда занимает место (даже без ошибки), чтобы форма не "прыгала" по высоте. -->
+    <p :id="errorId" class="min-h-[22px] text-small font-bold text-ink">{{ errorMessage }}</p>
   </div>
 </template>

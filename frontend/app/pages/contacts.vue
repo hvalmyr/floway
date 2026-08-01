@@ -7,7 +7,7 @@ import { contactInfo, socialLinks } from "~/constants/contact-info";
 
 useSeoMeta({
   title: "Контакты — ФлоВей",
-  description: "Телефон, почта, мессенджеры и адрес школы флористики «ФлоВей» в Москве.",
+  description: "Телефон, почта, мессенджеры и адрес школы флористики “ФлоВей” в Москве.",
 });
 
 const { text } = await usePageContent();

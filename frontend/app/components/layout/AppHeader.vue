@@ -3,7 +3,7 @@
 // package), not @vueuse/core — the brief named the wrong package; installed
 // the correct one instead of hand-rolling a trap.
 import { useFocusTrap } from "@vueuse/integrations/useFocusTrap";
-import { Menu } from "lucide-vue-next";
+import { Menu, X } from "lucide-vue-next";
 import { nextTick, onUnmounted, ref, watch } from "vue";
 
 const route = useRoute();
@@ -50,7 +50,9 @@ function isActive(to: string) {
 <template>
   <header class="sticky top-0 z-40 h-[64px] border-b-2 border-primary/15 bg-white lg:h-[88px]">
     <div class="container flex h-full items-center justify-between lg:grid lg:grid-cols-3">
-      <NuxtLink to="/" class="font-display text-h4 text-primary lg:hidden">ФлоВей</NuxtLink>
+      <NuxtLink to="/" class="lg:hidden">
+        <LogoFloway class="h-32 w-auto text-primary" />
+      </NuxtLink>
 
       <nav
         class="hidden items-center gap-32 lg:flex lg:justify-self-start"
@@ -67,11 +69,8 @@ function isActive(to: string) {
         </NuxtLink>
       </nav>
 
-      <NuxtLink
-        to="/"
-        class="hidden font-display text-h4 text-primary lg:block lg:justify-self-center"
-      >
-        ФлоВей
+      <NuxtLink to="/" class="hidden lg:block lg:justify-self-center">
+        <LogoFloway class="h-40 w-auto text-primary" />
       </NuxtLink>
 
       <nav
@@ -97,7 +96,7 @@ function isActive(to: string) {
         aria-controls="mobile-menu-panel"
         @click="isOpen = !isOpen"
       >
-        <IconClose v-if="isOpen" class="size-24" aria-hidden="true" />
+        <X v-if="isOpen" class="size-24" aria-hidden="true" />
         <Menu v-else class="size-24" aria-hidden="true" />
         <span class="sr-only">{{ isOpen ? "Закрыть меню" : "Открыть меню" }}</span>
       </button>

@@ -28,12 +28,8 @@ const errorId = useId();
 </script>
 
 <template>
-  <fieldset
-    class="flex flex-col gap-4"
-    :aria-describedby="errorMessage ? errorId : undefined"
-    :aria-invalid="!!errorMessage"
-  >
-    <legend class="mb-4 font-display text-body-l font-bold text-primary">{{ label }}</legend>
+  <fieldset class="flex flex-col gap-4" :aria-describedby="errorId" :aria-invalid="!!errorMessage">
+    <legend class="mb-4 font-body text-body-l font-bold text-primary">{{ label }}</legend>
     <label
       v-for="option in options"
       :key="option.value"
@@ -60,8 +56,7 @@ const errorId = useId();
       </span>
       {{ option.label }}
     </label>
-    <p v-if="errorMessage" :id="errorId" class="text-small font-bold text-ink">
-      {{ errorMessage }}
-    </p>
+    <!-- Всегда занимает место (даже без ошибки), чтобы форма не "прыгала" по высоте. -->
+    <p :id="errorId" class="min-h-[22px] text-small font-bold text-ink">{{ errorMessage }}</p>
   </fieldset>
 </template>

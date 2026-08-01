@@ -83,7 +83,7 @@ const onSubmit = handleSubmit(async (values) => {
 
 <template>
   <div class="rounded-lg bg-surface p-32 sm:p-48">
-    <h2 v-if="title" class="mb-24 font-display text-h2 text-primary">{{ title }}</h2>
+    <h2 v-if="title" class="mb-24 text-center font-display text-h2 text-primary">{{ title }}</h2>
 
     <div
       v-if="status === 'success'"

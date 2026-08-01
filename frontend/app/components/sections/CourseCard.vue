@@ -7,7 +7,7 @@
  *
  * @example
  * <CourseCard
- *   title="Блок «Букеты»"
+ *   title="Блок “Букеты”"
  *   variant="surface-primary"
  *   :lessons-count="7"
  *   :hours="30"
@@ -39,17 +39,17 @@ const ctaVariant = computed(() =>
 </script>
 
 <template>
-  <UiCard :variant="variant" class="flex h-full flex-col">
+  <UiCard :variant="variant" class="flex h-full min-h-[520px] flex-col">
     <template #media>
       <img
         v-if="coverImage"
         :src="resolveMediaUrl(coverImage)"
         :alt="title"
-        class="mx-auto aspect-square w-full max-w-[200px] rounded-sm object-cover"
+        class="mx-auto aspect-square w-full max-w-[240px] rounded-sm object-cover"
       />
       <div
         v-else
-        class="mx-auto aspect-square w-full max-w-[200px] rounded-sm border-2 border-current"
+        class="mx-auto aspect-square w-full max-w-[240px] rounded-sm border-2 border-current"
       />
     </template>
     <template #title>{{ title }}</template>
@@ -58,7 +58,7 @@ const ctaVariant = computed(() =>
       {{ lessonsCount ?? "?" }} занятий, {{ hours ?? "?" }} часов
     </p>
     <p v-if="description" class="mb-24 font-body text-body">{{ description }}</p>
-    <p v-if="price" class="mb-24 font-display text-h4">{{ price.toLocaleString("ru-RU") }} ₽</p>
+    <p v-if="price" class="mb-24 font-body text-h4 font-bold">{{ price.toLocaleString("ru-RU") }} ₽</p>
 
     <UiButton :variant="ctaVariant" :to="to" class="mt-auto w-full justify-center">{{
       ctaLabel

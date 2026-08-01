@@ -8,7 +8,7 @@
  *
  * @example
  * <UiCard variant="surface-primary">
- *   <template #title>Блок «Букеты»</template>
+ *   <template #title>Блок “Букеты”</template>
  *   7 занятий, 30 часов
  * </UiCard>
  */

@@ -1,7 +1,10 @@
 <script setup lang="ts">
- /**
+/**
  * Shared hero layout for all 4 page types: H1 + lead + CTAs on the left,
- * photo/video media on the right; stacks to text → CTA → media below `lg`.
+ * 1:1 photo/video on the right; stacks to text → CTA → media below `lg`.
+ * CTAs always stack full-width in a column (never side by side), per the
+ * mockup. `.container` caps overall width so this doesn't stretch awkwardly
+ * on very wide screens.
  *
  * @example
  * <Hero>
@@ -25,13 +28,13 @@
         <p v-if="$slots.lead" class="font-body text-body-l text-ink">
           <slot name="lead" />
         </p>
-        <div v-if="$slots.actions" class="flex w-full flex-col gap-16 sm:w-auto sm:flex-row">
+        <div v-if="$slots.actions" class="flex w-full flex-col gap-16">
           <slot name="actions" />
         </div>
       </div>
       <div class="lg:w-1/2">
         <slot name="media">
-          <UiMediaPlaceholder aspect="4/3" />
+          <UiMediaPlaceholder aspect="1/1" />
         </slot>
       </div>
     </div>
