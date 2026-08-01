@@ -25,6 +25,7 @@ type Services struct {
 	PageContent *service.PageContentService
 	Feature     *service.FeatureService
 	AboutItem   *service.AboutItemService
+	SocialLink  *service.SocialLinkService
 
 	Storage *storage.Client
 
@@ -74,6 +75,7 @@ func NewRouter(services Services) http.Handler {
 		r.Route("/page-content", newPageContentHandler(services.PageContent, admin).routes)
 		r.Route("/features", newFeatureHandler(services.Feature, admin).routes)
 		r.Route("/about-items", newAboutItemHandler(services.AboutItem, admin).routes)
+		r.Route("/social-links", newSocialLinkHandler(services.SocialLink, admin).routes)
 	})
 
 	return r

@@ -112,6 +112,33 @@ func TestCourseBlockService_Create(t *testing.T) {
 		assert.ErrorIs(t, err, service.ErrValidation)
 		assert.Empty(t, repo.items)
 	})
+
+	t.Run("accepts an oldPrice greater than price", func(t *testing.T) {
+		repo := newFakeCourseBlockRepository()
+		svc := service.NewCourseBlockService(repo)
+		oldPrice := 1200
+
+		item, err := svc.Create(context.Background(), model.CourseBlock{
+			CourseID: 1, Title: "Основы", Price: 1000, OldPrice: &oldPrice,
+		})
+
+		require.NoError(t, err)
+		require.NotNil(t, item.OldPrice)
+		assert.Equal(t, 1200, *item.OldPrice)
+	})
+
+	t.Run("rejects an oldPrice not greater than price", func(t *testing.T) {
+		repo := newFakeCourseBlockRepository()
+		svc := service.NewCourseBlockService(repo)
+		oldPrice := 900
+
+		_, err := svc.Create(context.Background(), model.CourseBlock{
+			CourseID: 1, Title: "Основы", Price: 1000, OldPrice: &oldPrice,
+		})
+
+		require.Error(t, err)
+		assert.ErrorIs(t, err, service.ErrValidation)
+	})
 }
 
 func TestCourseBlockService_Update(t *testing.T) {

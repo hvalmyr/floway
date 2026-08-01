@@ -24,15 +24,17 @@ type Course struct {
 }
 
 type CourseBlock struct {
-	ID           int64     `db:"id" json:"id"`
-	CourseID     int64     `db:"course_id" json:"courseId"`
-	Title        string    `db:"title" json:"title"`
-	LessonsCount int       `db:"lessons_count" json:"lessonsCount"`
-	Hours        int       `db:"hours" json:"hours"`
-	Price        int       `db:"price" json:"price"`
-	SortOrder    int       `db:"sort_order" json:"sortOrder"`
-	CreatedAt    time.Time `db:"created_at" json:"createdAt"`
-	UpdatedAt    time.Time `db:"updated_at" json:"updatedAt"`
+	ID           int64  `db:"id" json:"id"`
+	CourseID     int64  `db:"course_id" json:"courseId"`
+	Title        string `db:"title" json:"title"`
+	LessonsCount int    `db:"lessons_count" json:"lessonsCount"`
+	Hours        int    `db:"hours" json:"hours"`
+	Price        int    `db:"price" json:"price"`
+	// nil — обычная цена, без скидки "было/стало".
+	OldPrice  *int      `db:"old_price" json:"oldPrice,omitempty"`
+	SortOrder int       `db:"sort_order" json:"sortOrder"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
 }
 
 type Lesson struct {
@@ -186,6 +188,18 @@ type AboutItem struct {
 	SortOrder   int       `db:"sort_order" json:"sortOrder"`
 	CreatedAt   time.Time `db:"created_at" json:"createdAt"`
 	UpdatedAt   time.Time `db:"updated_at" json:"updatedAt"`
+}
+
+type SocialLink struct {
+	ID    int64  `db:"id" json:"id"`
+	Label string `db:"label" json:"label"`
+	Href  string `db:"href" json:"href"`
+	// Legally required disclaimer text for some platforms in Russia (e.g.
+	// Meta-owned apps) — empty when none applies.
+	Disclaimer string    `db:"disclaimer" json:"disclaimer"`
+	SortOrder  int       `db:"sort_order" json:"sortOrder"`
+	CreatedAt  time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt  time.Time `db:"updated_at" json:"updatedAt"`
 }
 
 type AdminUser struct {

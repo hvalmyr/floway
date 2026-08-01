@@ -35,6 +35,9 @@ func (s *CourseBlockService) Create(ctx context.Context, item model.CourseBlock)
 	if item.Title == "" {
 		return model.CourseBlock{}, errors.Join(ErrValidation, errors.New("title is required"))
 	}
+	if err := validateOldPrice(item); err != nil {
+		return model.CourseBlock{}, err
+	}
 
 	return s.repo.Create(ctx, item)
 }
@@ -47,8 +50,20 @@ func (s *CourseBlockService) Update(ctx context.Context, item model.CourseBlock)
 	if item.Title == "" {
 		return model.CourseBlock{}, errors.Join(ErrValidation, errors.New("title is required"))
 	}
+	if err := validateOldPrice(item); err != nil {
+		return model.CourseBlock{}, err
+	}
 
 	return s.repo.Update(ctx, item)
+}
+
+// validateOldPrice keeps "old price" meaningful as a was/now discount label:
+// if set, it has to be strictly higher than the current price.
+func validateOldPrice(item model.CourseBlock) error {
+	if item.OldPrice != nil && *item.OldPrice <= item.Price {
+		return errors.Join(ErrValidation, errors.New("oldPrice must be greater than price"))
+	}
+	return nil
 }
 
 func (s *CourseBlockService) Delete(ctx context.Context, id int64) error {

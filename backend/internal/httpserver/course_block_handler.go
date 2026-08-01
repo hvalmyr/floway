@@ -36,6 +36,7 @@ type courseBlockCreateRequest struct {
 	LessonsCount int    `json:"lessonsCount"`
 	Hours        int    `json:"hours"`
 	Price        int    `json:"price"`
+	OldPrice     *int   `json:"oldPrice"`
 	SortOrder    int    `json:"sortOrder"`
 }
 
@@ -73,6 +74,7 @@ func (h *courseBlockHandler) create(w http.ResponseWriter, r *http.Request) {
 		LessonsCount: req.LessonsCount,
 		Hours:        req.Hours,
 		Price:        req.Price,
+		OldPrice:     req.OldPrice,
 		SortOrder:    req.SortOrder,
 	})
 	if err != nil {
@@ -101,6 +103,7 @@ func (h *courseBlockHandler) update(w http.ResponseWriter, r *http.Request) {
 		LessonsCount: req.LessonsCount,
 		Hours:        req.Hours,
 		Price:        req.Price,
+		OldPrice:     req.OldPrice,
 		SortOrder:    req.SortOrder,
 	})
 	if err != nil {

@@ -59,6 +59,7 @@ func run() error {
 		PageContent: service.NewPageContentService(repository.NewPageContentRepository(pool)),
 		Feature:     service.NewFeatureService(repository.NewFeatureRepository(pool)),
 		AboutItem:   service.NewAboutItemService(repository.NewAboutItemRepository(pool)),
+		SocialLink:  service.NewSocialLinkService(repository.NewSocialLinkRepository(pool)),
 
 		Storage: garageClient,
 
