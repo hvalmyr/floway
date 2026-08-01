@@ -1,10 +1,6 @@
 <script setup lang="ts">
-import IconEightyTwenty from "~/components/ui/IconEightyTwenty.vue";
-import IconFlexStart from "~/components/ui/IconFlexStart.vue";
-import IconLevels from "~/components/ui/IconLevels.vue";
-import IconMapPin from "~/components/ui/IconMapPin.vue";
-import IconPeopleGroup from "~/components/ui/IconPeopleGroup.vue";
-import IconTwoFormats from "~/components/ui/IconTwoFormats.vue";
+import type { Component } from "vue";
+import { featureIconComponent } from "~/constants/feature-icons";
 
 useSeoMeta({
   title: "ФлоВей — школа флористики в Москве",
@@ -33,70 +29,24 @@ const profileCourses = computed(
       .sort((a, b) => a.sortOrder - b.sortOrder) ?? [],
 );
 
-const features = [
-  {
-    icon: IconTwoFormats,
-    title: "два формата обучения",
-    description:
-      "Обучение в группе по расписанию или свободное посещение — выбирайте формат, который подходит именно вам.",
-  },
-  {
-    icon: IconPeopleGroup,
-    title: "комфортное обучение",
-    description:
-      "Небольшие группы из 5–7 человек позволяют преподавателю уделить внимание каждому ученику.",
-  },
-  {
-    icon: IconMapPin,
-    title: "центр москвы",
-    description:
-      "Школа находится в центре Москвы, в пешей доступности от станций метро Арбатская, Смоленская, Баррикадная и Краснопресненская.",
-  },
-  {
-    icon: IconFlexStart,
-    title: "гибкий старт",
-    description: "Не нужно ждать набора новой группы — начните обучение, когда будете готовы.",
-  },
-  {
-    icon: IconEightyTwenty,
-    title: "максимум практики",
-    description:
-      "Большую часть обучения занимает работа с живыми цветами. Только 20% курса — теория.",
-  },
-  {
-    icon: IconLevels,
-    title: "для любого уровня",
-    description: "Обучаем как новичков, так и практикующих флористов.",
-  },
-];
+const { data: featuresData } = await useAsyncData("home-features", () => api.getFeatures("home"));
+const features = computed(
+  () =>
+    featuresData.value
+      ?.slice()
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((f) => ({
+        icon: featureIconComponent(f.icon),
+        title: f.title,
+        description: f.description,
+      }))
+      .filter((f): f is typeof f & { icon: Component } => f.icon !== undefined) ?? [],
+);
 
-const aboutItems = [
-  {
-    badge: "есть свободный формат",
-    description:
-      "Формат свободного посещения позволяет начать обучение без ожидания набора группы. Вы сами выбираете удобные даты и время занятий. Каждое занятие начинается с индивидуального объяснения новой темы, после чего основное время посвящено практике под постоянным сопровождением преподавателя.",
-  },
-  {
-    badge: "есть групповой формат",
-    description:
-      "Мы проводим обучение в небольших группах. Ближайшие даты набора можно посмотреть в календаре событий. При раннем бронировании курса действует скидка 10%.",
-  },
-  {
-    badge: "маленькие группы до 7 человек",
-    description:
-      "Мы принципиально не работаем с большими группами. На групповых занятиях обучается до 5–7 человек, а в формате свободного посещения преподаватель одновременно сопровождает не более 5–7 учеников. Такой подход позволяет уделить внимание каждому, ответить на вопросы и помочь закрепить материал на практике.",
-  },
-  {
-    badge: "только живые цветы",
-    description:
-      "Мы убеждены, что работать со спиральной техникой важно сразу на живых цветах. Каждый стебель отличается толщиной, гибкостью, формой и особенностями строения, поэтому именно живой материал учит чувствовать правильное положение цветов в руке и понимать, как формируется спираль. Спиральная техника — это не только положение стеблей, но и умение работать с живым материалом. Поэтому её невозможно полноценно освоить на материале, который не передаёт естественные особенности растений. Чем раньше появляется этот навык, тем увереннее флорист чувствует себя в дальнейшей работе с цветами.",
-  },
-  {
-    badge: "работаем с 2013 года",
-    description:
-      "Школа ФлоВей работает с 2013 года. За это время мы обучили флористике сотни учеников — от новичков до тех, кто решил связать с цветами свою профессию.",
-  },
-];
+const { data: aboutItemsData } = await useAsyncData("home-about-items", () => api.getAboutItems());
+const aboutItems = computed(
+  () => aboutItemsData.value?.slice().sort((a, b) => a.sortOrder - b.sortOrder) ?? [],
+);
 
 const { data: teachersData } = await useAsyncData("home-teachers", () => api.getTeachers());
 const teachers = computed(
@@ -128,6 +78,13 @@ const openFaqIds = ref<Array<string | number>>([0]);
           >О школе</UiButton
         >
       </template>
+      <template v-if="text('home_hero_image')" #media>
+        <img
+          :src="resolveMediaUrl(text('home_hero_image'))"
+          alt=""
+          class="aspect-[4/3] w-full rounded-lg object-cover"
+        />
+      </template>
     </Hero>
 
     <section class="py-64 sm:py-96 lg:py-120">
@@ -150,7 +107,7 @@ const openFaqIds = ref<Array<string | number>>([0]);
         <div class="flex flex-col gap-24">
           <div
             v-for="item in aboutItems"
-            :key="item.badge"
+            :key="item.id"
             class="flex flex-col items-start gap-16 rounded-md bg-white p-32"
           >
             <UiBadge>{{ item.badge }}</UiBadge>
@@ -234,8 +191,14 @@ const openFaqIds = ref<Array<string | number>>([0]);
             </div>
             <ApplyForm context="trial_lesson" variant="simple" title="" />
           </div>
-          <!-- TODO: заменить на видео с пробным уроком, когда оно будет готово. -->
-          <div class="aspect-[4/3] rounded-lg bg-primary lg:aspect-auto" />
+          <!-- TODO: заменить на видео с пробным уроком, когда оно будет готово (пока фото). -->
+          <img
+            v-if="text('home_trial_image')"
+            :src="resolveMediaUrl(text('home_trial_image'))"
+            alt=""
+            class="aspect-[4/3] w-full rounded-lg object-cover lg:aspect-auto"
+          />
+          <div v-else class="aspect-[4/3] rounded-lg bg-primary lg:aspect-auto" />
         </div>
       </div>
     </section>

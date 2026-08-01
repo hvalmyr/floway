@@ -164,7 +164,28 @@ type PageContent struct {
 	Key       string    `db:"key" json:"key"`
 	Label     string    `db:"label" json:"label"`
 	Value     string    `db:"value" json:"value"`
+	Type      string    `db:"type" json:"type"`
 	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
+}
+
+type Feature struct {
+	ID          int64     `db:"id" json:"id"`
+	Page        string    `db:"page" json:"page"`
+	Icon        string    `db:"icon" json:"icon"`
+	Title       string    `db:"title" json:"title"`
+	Description string    `db:"description" json:"description"`
+	SortOrder   int       `db:"sort_order" json:"sortOrder"`
+	CreatedAt   time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt   time.Time `db:"updated_at" json:"updatedAt"`
+}
+
+type AboutItem struct {
+	ID          int64     `db:"id" json:"id"`
+	Badge       string    `db:"badge" json:"badge"`
+	Description string    `db:"description" json:"description"`
+	SortOrder   int       `db:"sort_order" json:"sortOrder"`
+	CreatedAt   time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt   time.Time `db:"updated_at" json:"updatedAt"`
 }
 
 type AdminUser struct {

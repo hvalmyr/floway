@@ -57,6 +57,8 @@ func run() error {
 		Lead:        service.NewLeadService(repository.NewLeadRepository(pool)),
 		AdminUser:   service.NewAdminUserService(repository.NewAdminUserRepository(pool)),
 		PageContent: service.NewPageContentService(repository.NewPageContentRepository(pool)),
+		Feature:     service.NewFeatureService(repository.NewFeatureRepository(pool)),
+		AboutItem:   service.NewAboutItemService(repository.NewAboutItemRepository(pool)),
 
 		Storage: garageClient,
 

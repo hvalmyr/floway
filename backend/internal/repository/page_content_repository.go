@@ -18,7 +18,7 @@ func NewPageContentRepository(db *pgxpool.Pool) *PageContentRepository {
 
 func (r *PageContentRepository) List(ctx context.Context) ([]model.PageContent, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT key, label, value, updated_at
+		SELECT key, label, value, type, updated_at
 		FROM page_content
 		ORDER BY key
 	`)
@@ -30,7 +30,7 @@ func (r *PageContentRepository) List(ctx context.Context) ([]model.PageContent, 
 	items := []model.PageContent{}
 	for rows.Next() {
 		var item model.PageContent
-		if err := rows.Scan(&item.Key, &item.Label, &item.Value, &item.UpdatedAt); err != nil {
+		if err := rows.Scan(&item.Key, &item.Label, &item.Value, &item.Type, &item.UpdatedAt); err != nil {
 			return nil, err
 		}
 		items = append(items, item)
@@ -48,7 +48,7 @@ func (r *PageContentRepository) Update(ctx context.Context, key, value string) (
 		UPDATE page_content
 		SET value = $1, updated_at = now()
 		WHERE key = $2
-		RETURNING label, updated_at
-	`, value, key).Scan(&item.Label, &item.UpdatedAt)
+		RETURNING label, type, updated_at
+	`, value, key).Scan(&item.Label, &item.Type, &item.UpdatedAt)
 	return item, err
 }

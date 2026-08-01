@@ -1,10 +1,6 @@
 <script setup lang="ts">
-import IconCalendarCheck from "~/components/ui/IconCalendarCheck.vue";
-import IconChecklist from "~/components/ui/IconChecklist.vue";
-import IconGift from "~/components/ui/IconGift.vue";
-import IconMcLocation from "~/components/ui/IconMcLocation.vue";
-import IconPeopleTrio from "~/components/ui/IconPeopleTrio.vue";
-import IconTulips from "~/components/ui/IconTulips.vue";
+import type { Component } from "vue";
+import { featureIconComponent } from "~/constants/feature-icons";
 
 useSeoMeta({
   title: "Мастер-классы по флористике в Москве — ФлоВей",
@@ -13,48 +9,26 @@ useSeoMeta({
 });
 
 const api = useApi();
+const { text } = await usePageContent();
 const { data: masterclasses } = await useAsyncData("masterclasses-list", () =>
   api.getMasterClasses(),
 );
 
-const features = [
-  {
-    icon: IconCalendarCheck,
-    title: "свободный график",
-    description:
-      "Все мастер-классы проходят по системе свободного посещения. После покупки вы самостоятельно выбираете удобные дату и время. Записаться можно минимум за один день через сайт, в мессенджерах или по телефону.",
-  },
-  {
-    icon: IconPeopleTrio,
-    title: "для одного, двоих или компании",
-    description:
-      "Мы проводим индивидуальные мастер-классы, занятия для двоих и групповые мастер-классы. Вы можете прийти самостоятельно, устроить творческое свидание, отметить день рождения, провести корпоратив или любое другое мероприятие в атмосфере живых цветов.",
-  },
-  {
-    icon: IconMcLocation,
-    title: "в школе или с выездом",
-    description:
-      "Мастер-классы проходят в школе флористики ФлоВей, а также в выездном формате. При необходимости преподаватель приедет на вашу площадку со всеми необходимыми материалами и проведёт мастер-класс для любого количества участников.",
-  },
-  {
-    icon: IconChecklist,
-    title: "индивидуальная программа",
-    description:
-      "На сайте представлены самые популярные мастер-классы, но ими выбор не ограничивается. Если вы хотите освоить определённую технику, создать конкретный букет или композицию либо провести занятие по собственной программе, мы разработаем мастер-класс специально под ваш запрос.",
-  },
-  {
-    icon: IconGift,
-    title: "подарочный сертификат",
-    description:
-      "Любой мастер-класс можно оформить в виде подарочного сертификата. Вы можете выбрать сертификат на конкретное занятие или универсальный сертификат, чтобы получатель самостоятельно выбрал мастер-класс и удобную дату посещения.",
-  },
-  {
-    icon: IconTulips,
-    title: "живые цветы и максимум практики",
-    description:
-      "Все мастер-классы проходят исключительно на живых цветах. Большую часть занятия занимает практика, а преподаватель сопровождает вас на каждом этапе, помогая освоить технику и получить удовольствие от работы с материалом.",
-  },
-];
+const { data: featuresData } = await useAsyncData("masterclasses-features", () =>
+  api.getFeatures("masterclasses"),
+);
+const features = computed(
+  () =>
+    featuresData.value
+      ?.slice()
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((f) => ({
+        icon: featureIconComponent(f.icon),
+        title: f.title,
+        description: f.description,
+      }))
+      .filter((f): f is typeof f & { icon: Component } => f.icon !== undefined) ?? [],
+);
 </script>
 
 <template>
@@ -65,6 +39,13 @@ const features = [
         <UiButton variant="primary" size="lg" to="#apply" class="w-full sm:w-auto"
           >Оставить заявку</UiButton
         >
+      </template>
+      <template v-if="text('masterclasses_hero_image')" #media>
+        <img
+          :src="resolveMediaUrl(text('masterclasses_hero_image'))"
+          alt=""
+          class="aspect-[4/3] w-full rounded-lg object-cover"
+        />
       </template>
     </Hero>
 

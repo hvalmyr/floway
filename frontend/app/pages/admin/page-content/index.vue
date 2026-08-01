@@ -5,6 +5,7 @@ interface PageContentItem {
   key: string;
   label: string;
   value: string;
+  type: "text" | "image";
   updatedAt: string;
 }
 
@@ -45,6 +46,11 @@ async function save(item: PageContentItem) {
     savingKey.value = null;
   }
 }
+
+function onImageUploaded(item: PageContentItem, url: string) {
+  item.value = url;
+  save(item);
+}
 </script>
 
 <template>
@@ -67,7 +73,14 @@ async function save(item: PageContentItem) {
           <label :for="`field-${item.key}`" class="text-sm font-medium">{{ item.label }}</label>
           <span class="font-mono text-xs text-[var(--color-text-muted)]">{{ item.key }}</span>
         </div>
+        <AdminImageUpload
+          v-if="item.type === 'image'"
+          :model-value="item.value"
+          :label="item.label"
+          @update:model-value="(url) => onImageUploaded(item, url)"
+        />
         <textarea
+          v-else
           :id="`field-${item.key}`"
           v-model="item.value"
           rows="3"
@@ -75,6 +88,7 @@ async function save(item: PageContentItem) {
         />
         <div class="mt-2 flex items-center gap-3">
           <button
+            v-if="item.type !== 'image'"
             type="button"
             :disabled="savingKey === item.key"
             class="rounded bg-[var(--color-primary)] px-4 py-2 text-sm text-white disabled:opacity-50"

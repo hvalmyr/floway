@@ -10,6 +10,8 @@ useSeoMeta({
   description: "Телефон, почта, мессенджеры и адрес школы флористики «ФлоВей» в Москве.",
 });
 
+const { text } = await usePageContent();
+
 const socialIcons: Record<string, Component> = {
   Telegram: IconTelegram,
   VK: IconVk,
@@ -62,7 +64,13 @@ const socialIcons: Record<string, Component> = {
           {{ paragraph }}
         </p>
       </div>
-      <UiMediaPlaceholder aspect="4/3" />
+      <img
+        v-if="text('contacts_office_image')"
+        :src="resolveMediaUrl(text('contacts_office_image'))"
+        alt=""
+        class="aspect-[4/3] w-full rounded-lg object-cover"
+      />
+      <UiMediaPlaceholder v-else aspect="4/3" />
     </div>
 
     <div class="flex flex-col gap-24">

@@ -7,6 +7,8 @@ const sections = [
   { to: "/admin/masterclasses", title: "Мастер-классы" },
   { to: "/admin/courses", title: "Курсы" },
   { to: "/admin/faq", title: "FAQ" },
+  { to: "/admin/features", title: "Преимущества" },
+  { to: "/admin/about-items", title: "О школе" },
   { to: "/admin/page-content", title: "Тексты сайта" },
   { to: "/admin/leads", title: "Заявки" },
 ];

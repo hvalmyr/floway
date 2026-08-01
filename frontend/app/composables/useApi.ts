@@ -2,12 +2,15 @@ import { FetchError } from "ofetch";
 import { mockGetCourse, mockGetCourses } from "~/mocks/courses";
 import { mockGetMasterClass, mockGetMasterClasses } from "~/mocks/masterclasses";
 import type {
+  AboutItem,
   ApiError,
   ApplicationPayload,
   BlogPost,
   Course,
   CourseDetail,
   FAQItem,
+  Feature,
+  FeaturePage,
   Lead,
   Masterclass,
   PageContent,
@@ -122,6 +125,31 @@ export function useApi() {
   }
 
   /**
+   * GET /api/v1/features?page=home|masterclasses — public, no auth.
+   * Icon+title+description cards (feature_handler.go's list route has no
+   * admin middleware). Already sorted by sortOrder on the backend.
+   */
+  async function getFeatures(page: FeaturePage): Promise<Feature[]> {
+    try {
+      return await client<Feature[]>("/api/v1/features", { query: { page } });
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/about-items — public, no auth. Badge+description cards for
+   * the homepage "О школе" section. Already sorted by sortOrder.
+   */
+  async function getAboutItems(): Promise<AboutItem[]> {
+    try {
+      return await client<AboutItem[]>("/api/v1/about-items");
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
    * GET /api/v1/blog-posts?status=published — draft posts are never
    * returned (see blog_post_handler.go). No mocks fallback: there's no
    * design brief for the blog yet, so this always hits the real backend.
@@ -158,6 +186,8 @@ export function useApi() {
     getMasterClass,
     getTeachers,
     getFAQItems,
+    getFeatures,
+    getAboutItems,
     getPageContent,
     getBlogPosts,
     getBlogPost,

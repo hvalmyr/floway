@@ -84,11 +84,38 @@ export interface Masterclass {
  * usePageContent(). `value` may contain markdown; render it with
  * <MarkdownContent> where the surrounding markup allows block content.
  */
+export type PageContentType = "text" | "image";
+
 export interface PageContent {
   key: string;
   label: string;
   value: string;
+  type: PageContentType;
   updatedAt: string;
+}
+
+export type FeaturePage = "home" | "masterclasses";
+
+/**
+ * Shape returned by the public GET /api/v1/features?page=home|masterclasses
+ * (list, no auth, pre-sorted by sortOrder). `icon` is a key into
+ * FEATURE_ICONS (constants/feature-icons.ts), not a rendered value.
+ */
+export interface Feature {
+  id: number;
+  page: FeaturePage;
+  icon: string;
+  title: string;
+  description: string;
+  sortOrder: number;
+}
+
+/** Shape returned by the public GET /api/v1/about-items (list, no auth, pre-sorted by sortOrder). */
+export interface AboutItem {
+  id: number;
+  badge: string;
+  description: string;
+  sortOrder: number;
 }
 
 /** Shape returned by the public GET /api/v1/faq (list, no auth, pre-sorted by sortOrder). */
