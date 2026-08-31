@@ -9,11 +9,11 @@ import (
 )
 
 type CourseRepository interface {
-	List(ctx context.Context) ([]model.Course, error)
+	ListBySectionID(ctx context.Context, sectionID int64) ([]model.Course, error)
 	FindBySlug(ctx context.Context, slug string) (model.Course, error)
 	Create(ctx context.Context, item model.Course) (model.Course, error)
 	Update(ctx context.Context, item model.Course) (model.Course, error)
-	Delete(ctx context.Context, id int64) error
+	Delete(ctx context.Context, sectionID, id int64) error
 }
 
 type CourseService struct {
@@ -24,8 +24,8 @@ func NewCourseService(repo CourseRepository) *CourseService {
 	return &CourseService{repo: repo}
 }
 
-func (s *CourseService) List(ctx context.Context) ([]model.Course, error) {
-	return s.repo.List(ctx)
+func (s *CourseService) ListBySectionID(ctx context.Context, sectionID int64) ([]model.Course, error) {
+	return s.repo.ListBySectionID(ctx, sectionID)
 }
 
 func (s *CourseService) GetBySlug(ctx context.Context, slug string) (model.Course, error) {
@@ -34,53 +34,50 @@ func (s *CourseService) GetBySlug(ctx context.Context, slug string) (model.Cours
 
 func (s *CourseService) Create(ctx context.Context, item model.Course) (model.Course, error) {
 	item.Slug = strings.TrimSpace(item.Slug)
-	item.Title = strings.TrimSpace(item.Title)
-	if item.Slug == "" || item.Title == "" {
-		return model.Course{}, errors.Join(ErrValidation, errors.New("slug and title are required"))
+	item.Name = strings.TrimSpace(item.Name)
+	if item.SectionID == 0 {
+		return model.Course{}, errors.Join(ErrValidation, errors.New("sectionId is required"))
 	}
-
-	if item.Status == "" {
-		item.Status = model.CourseStatusActive
+	if item.Slug == "" || item.Name == "" {
+		return model.Course{}, errors.Join(ErrValidation, errors.New("slug and name are required"))
 	}
-	if item.Status != model.CourseStatusActive && item.Status != model.CourseStatusArchived {
-		return model.Course{}, errors.Join(ErrValidation, errors.New("status must be active or archived"))
+	style, err := validateDisplayStyle(item.DisplayStyle)
+	if err != nil {
+		return model.Course{}, err
 	}
-	// gallery is NOT NULL DEFAULT '{}' in the DB, but a nil Go slice (an
-	// omitted or explicit-null "gallery" in the request JSON) is sent as
-	// SQL NULL, not "use the column default" — violates the constraint.
-	if item.Gallery == nil {
-		item.Gallery = []string{}
-	}
+	item.DisplayStyle = style
 
 	return s.repo.Create(ctx, item)
 }
 
 func (s *CourseService) Update(ctx context.Context, item model.Course) (model.Course, error) {
 	item.Slug = strings.TrimSpace(item.Slug)
-	item.Title = strings.TrimSpace(item.Title)
+	item.Name = strings.TrimSpace(item.Name)
 	if item.ID == 0 {
 		return model.Course{}, errors.Join(ErrValidation, errors.New("id is required"))
 	}
-	if item.Slug == "" || item.Title == "" {
-		return model.Course{}, errors.Join(ErrValidation, errors.New("slug and title are required"))
+	// Load-bearing, not just documentation: the repository matches on
+	// id AND section_id, so a wrong/missing sectionId here means the update
+	// silently (well, loudly — ErrNotFound) touches nothing rather than
+	// accidentally hitting a same-id course under a different section.
+	if item.SectionID == 0 {
+		return model.Course{}, errors.Join(ErrValidation, errors.New("sectionId is required"))
 	}
-
-	if item.Status == "" {
-		item.Status = model.CourseStatusActive
+	if item.Slug == "" || item.Name == "" {
+		return model.Course{}, errors.Join(ErrValidation, errors.New("slug and name are required"))
 	}
-	if item.Status != model.CourseStatusActive && item.Status != model.CourseStatusArchived {
-		return model.Course{}, errors.Join(ErrValidation, errors.New("status must be active or archived"))
+	style, err := validateDisplayStyle(item.DisplayStyle)
+	if err != nil {
+		return model.Course{}, err
 	}
-	if item.Gallery == nil {
-		item.Gallery = []string{}
-	}
+	item.DisplayStyle = style
 
 	return s.repo.Update(ctx, item)
 }
 
-func (s *CourseService) Delete(ctx context.Context, id int64) error {
-	if id == 0 {
-		return errors.Join(ErrValidation, errors.New("id is required"))
+func (s *CourseService) Delete(ctx context.Context, sectionID, id int64) error {
+	if sectionID == 0 || id == 0 {
+		return errors.Join(ErrValidation, errors.New("sectionId and id are required"))
 	}
-	return s.repo.Delete(ctx, id)
+	return s.repo.Delete(ctx, sectionID, id)
 }

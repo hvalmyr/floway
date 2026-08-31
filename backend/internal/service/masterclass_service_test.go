@@ -83,9 +83,13 @@ func TestMasterclassService_Create(t *testing.T) {
 		svc := service.NewMasterclassService(repo)
 
 		item, err := svc.Create(context.Background(), model.Masterclass{
-			Slug:   "  vocal-basics  ",
-			Title:  "  Основы вокала  ",
-			Status: model.MasterclassStatusActive,
+			Slug:        "  vocal-basics  ",
+			Title:       "  Основы вокала  ",
+			Description: "Описание",
+			CoverImage:  "/uploads/cover.jpg",
+			Duration:    "2 часа",
+			Price:       "2000₽",
+			Status:      model.MasterclassStatusActive,
 		})
 
 		require.NoError(t, err)
@@ -100,8 +104,12 @@ func TestMasterclassService_Create(t *testing.T) {
 		svc := service.NewMasterclassService(repo)
 
 		item, err := svc.Create(context.Background(), model.Masterclass{
-			Slug:  "vocal-basics",
-			Title: "Основы вокала",
+			Slug:        "vocal-basics",
+			Title:       "Основы вокала",
+			Description: "Описание",
+			CoverImage:  "/uploads/cover.jpg",
+			Duration:    "2 часа",
+			Price:       "2000₽",
 		})
 
 		require.NoError(t, err)
@@ -155,8 +163,12 @@ func TestMasterclassService_Update(t *testing.T) {
 	repo := newFakeMasterclassRepository()
 	svc := service.NewMasterclassService(repo)
 	created, err := svc.Create(context.Background(), model.Masterclass{
-		Slug:  "vocal-basics",
-		Title: "Основы вокала",
+		Slug:        "vocal-basics",
+		Title:       "Основы вокала",
+		Description: "Описание",
+		CoverImage:  "/uploads/cover.jpg",
+		Duration:    "2 часа",
+		Price:       "2000₽",
 	})
 	require.NoError(t, err)
 
@@ -180,8 +192,12 @@ func TestMasterclassService_Delete(t *testing.T) {
 	repo := newFakeMasterclassRepository()
 	svc := service.NewMasterclassService(repo)
 	created, err := svc.Create(context.Background(), model.Masterclass{
-		Slug:  "vocal-basics",
-		Title: "Основы вокала",
+		Slug:        "vocal-basics",
+		Title:       "Основы вокала",
+		Description: "Описание",
+		CoverImage:  "/uploads/cover.jpg",
+		Duration:    "2 часа",
+		Price:       "2000₽",
 	})
 	require.NoError(t, err)
 
@@ -202,7 +218,10 @@ func TestMasterclassService_Delete(t *testing.T) {
 func TestMasterclassService_GetBySlug(t *testing.T) {
 	repo := newFakeMasterclassRepository()
 	svc := service.NewMasterclassService(repo)
-	created, err := svc.Create(context.Background(), model.Masterclass{Slug: "vocal-basics", Title: "Основы вокала"})
+	created, err := svc.Create(context.Background(), model.Masterclass{
+		Slug: "vocal-basics", Title: "Основы вокала",
+		Description: "Описание", CoverImage: "/uploads/cover.jpg", Duration: "2 часа", Price: "2000₽",
+	})
 	require.NoError(t, err)
 
 	t.Run("finds an existing item", func(t *testing.T) {

@@ -12,31 +12,63 @@ import (
 )
 
 type courseHandler struct {
-	svc       *service.CourseService
-	detailSvc *service.CourseDetailService
-	admin     func(http.Handler) http.Handler
+	svc     *service.CourseService
+	catalog *service.CourseCatalogService
+	admin   func(http.Handler) http.Handler
 }
 
-func newCourseHandler(svc *service.CourseService, detailSvc *service.CourseDetailService, admin func(http.Handler) http.Handler) *courseHandler {
-	return &courseHandler{svc: svc, detailSvc: detailSvc, admin: admin}
+func newCourseHandler(svc *service.CourseService, catalog *service.CourseCatalogService, admin func(http.Handler) http.Handler) *courseHandler {
+	return &courseHandler{svc: svc, catalog: catalog, admin: admin}
 }
 
+// routes is expected to be mounted under a path carrying the {sectionId}
+// URL param, e.g. r.Route("/course-sections/{sectionId}/courses", handler.routes)
+// — the admin-facing nested CRUD. getFullBySlug is mounted separately at
+// top-level /courses/{slug}/full (see router.go) since it's public and has
+// nothing to do with the section-scoped admin routes.
 func (h *courseHandler) routes(r chi.Router) {
 	r.Get("/", h.list)
-	r.Get("/{slug}/full", h.getFullBySlug)
 	r.With(h.admin).Post("/", h.create)
 	r.With(h.admin).Put("/{id}", h.update)
 	r.With(h.admin).Delete("/{id}", h.delete)
 }
 
+type courseRequest struct {
+	Slug         string                        `json:"slug"`
+	Name         string                        `json:"name"`
+	Description  string                        `json:"description"`
+	CoverImage   string                        `json:"coverImage"`
+	LessonCount  string                        `json:"lessonCount"`
+	TimeLength   string                        `json:"timeLength"`
+	Price        string                        `json:"price"`
+	DisplayStyle model.CourseBlockDisplayStyle `json:"displayStyle"`
+	Visible      bool                          `json:"visible"`
+	SortOrder    int                           `json:"sortOrder"`
+	SingleCard   bool                          `json:"singleCard"`
+}
+
+func (h *courseHandler) list(w http.ResponseWriter, r *http.Request) {
+	sectionID, err := strconv.ParseInt(chi.URLParam(r, "sectionId"), 10, 64)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	items, err := h.svc.ListBySectionID(r.Context(), sectionID)
+	if err != nil {
+		writeInternalError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, items)
+}
+
 // getFullBySlug is the public "course page" endpoint: one course, with its
-// blocks and each block's lessons. Aggregation lives in CourseDetailService
-// (three queries total, not one-per-block) — the handler just fetches and
-// encodes, like every other handler.
+// blocks and each block's lessons. Aggregation lives in CourseCatalogService
+// (three queries total, not one-per-block).
 func (h *courseHandler) getFullBySlug(w http.ResponseWriter, r *http.Request) {
 	slug := chi.URLParam(r, "slug")
 
-	detail, err := h.detailSvc.GetFullBySlug(r.Context(), slug)
+	detail, err := h.catalog.GetFullBySlug(r.Context(), slug)
 	if err != nil {
 		writeServiceError(w, r, err)
 		return
@@ -45,27 +77,13 @@ func (h *courseHandler) getFullBySlug(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, detail)
 }
 
-type courseRequest struct {
-	Slug       string             `json:"slug"`
-	Title      string             `json:"title"`
-	ShortDesc  string             `json:"shortDescription"`
-	FullDesc   string             `json:"fullDescription"`
-	Status     model.CourseStatus `json:"status"`
-	CoverImage string             `json:"coverImage"`
-	Gallery    []string           `json:"gallery"`
-	SortOrder  int                `json:"sortOrder"`
-}
-
-func (h *courseHandler) list(w http.ResponseWriter, r *http.Request) {
-	items, err := h.svc.List(r.Context())
+func (h *courseHandler) create(w http.ResponseWriter, r *http.Request) {
+	sectionID, err := strconv.ParseInt(chi.URLParam(r, "sectionId"), 10, 64)
 	if err != nil {
-		writeInternalError(w, r, err)
+		writeError(w, http.StatusBadRequest, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, items)
-}
 
-func (h *courseHandler) create(w http.ResponseWriter, r *http.Request) {
 	var req courseRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, err)
@@ -73,14 +91,18 @@ func (h *courseHandler) create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	item, err := h.svc.Create(r.Context(), model.Course{
-		Slug:       req.Slug,
-		Title:      req.Title,
-		ShortDesc:  req.ShortDesc,
-		FullDesc:   req.FullDesc,
-		Status:     req.Status,
-		CoverImage: req.CoverImage,
-		Gallery:    req.Gallery,
-		SortOrder:  req.SortOrder,
+		SectionID:    sectionID,
+		Slug:         req.Slug,
+		Name:         req.Name,
+		Description:  req.Description,
+		CoverImage:   req.CoverImage,
+		LessonCount:  req.LessonCount,
+		TimeLength:   req.TimeLength,
+		Price:        req.Price,
+		DisplayStyle: req.DisplayStyle,
+		Visible:      req.Visible,
+		SortOrder:    req.SortOrder,
+		SingleCard:   req.SingleCard,
 	})
 	if err != nil {
 		writeServiceError(w, r, err)
@@ -90,6 +112,12 @@ func (h *courseHandler) create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *courseHandler) update(w http.ResponseWriter, r *http.Request) {
+	sectionID, err := strconv.ParseInt(chi.URLParam(r, "sectionId"), 10, 64)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err)
@@ -103,15 +131,19 @@ func (h *courseHandler) update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	item, err := h.svc.Update(r.Context(), model.Course{
-		ID:         id,
-		Slug:       req.Slug,
-		Title:      req.Title,
-		ShortDesc:  req.ShortDesc,
-		FullDesc:   req.FullDesc,
-		Status:     req.Status,
-		CoverImage: req.CoverImage,
-		Gallery:    req.Gallery,
-		SortOrder:  req.SortOrder,
+		ID:           id,
+		SectionID:    sectionID,
+		Slug:         req.Slug,
+		Name:         req.Name,
+		Description:  req.Description,
+		CoverImage:   req.CoverImage,
+		LessonCount:  req.LessonCount,
+		TimeLength:   req.TimeLength,
+		Price:        req.Price,
+		DisplayStyle: req.DisplayStyle,
+		Visible:      req.Visible,
+		SortOrder:    req.SortOrder,
+		SingleCard:   req.SingleCard,
 	})
 	if err != nil {
 		writeServiceError(w, r, err)
@@ -121,13 +153,19 @@ func (h *courseHandler) update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *courseHandler) delete(w http.ResponseWriter, r *http.Request) {
+	sectionID, err := strconv.ParseInt(chi.URLParam(r, "sectionId"), 10, 64)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err)
 		return
 	}
 
-	if err := h.svc.Delete(r.Context(), id); err != nil {
+	if err := h.svc.Delete(r.Context(), sectionID, id); err != nil {
 		writeServiceError(w, r, err)
 		return
 	}

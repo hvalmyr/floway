@@ -50,10 +50,14 @@ func TestAdminRoutes_RejectUnauthenticated(t *testing.T) {
 		{http.MethodPost, "/api/v1/masterclasses"},
 		{http.MethodPut, "/api/v1/masterclasses/1"},
 		{http.MethodDelete, "/api/v1/masterclasses/1"},
-		// courses
-		{http.MethodPost, "/api/v1/courses"},
-		{http.MethodPut, "/api/v1/courses/1"},
-		{http.MethodDelete, "/api/v1/courses/1"},
+		// course sections
+		{http.MethodPost, "/api/v1/course-sections"},
+		{http.MethodPut, "/api/v1/course-sections/1"},
+		{http.MethodDelete, "/api/v1/course-sections/1"},
+		// courses (nested under a section)
+		{http.MethodPost, "/api/v1/course-sections/1/courses"},
+		{http.MethodPut, "/api/v1/course-sections/1/courses/1"},
+		{http.MethodDelete, "/api/v1/course-sections/1/courses/1"},
 		// course blocks (nested)
 		{http.MethodPost, "/api/v1/courses/1/blocks"},
 		{http.MethodPut, "/api/v1/courses/1/blocks/1"},
@@ -80,6 +84,10 @@ func TestAdminRoutes_RejectUnauthenticated(t *testing.T) {
 		{http.MethodPost, "/api/v1/social-links"},
 		{http.MethodPut, "/api/v1/social-links/1"},
 		{http.MethodDelete, "/api/v1/social-links/1"},
+		// gallery-photos
+		{http.MethodPost, "/api/v1/gallery-photos"},
+		{http.MethodPut, "/api/v1/gallery-photos/1"},
+		{http.MethodDelete, "/api/v1/gallery-photos/1"},
 		// uploads
 		{http.MethodPost, "/api/v1/admin/uploads"},
 	}

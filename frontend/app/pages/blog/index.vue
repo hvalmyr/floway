@@ -22,7 +22,7 @@ function formatDate(dateString: string | null) {
 </script>
 
 <template>
-  <div class="container flex flex-col gap-48 py-64 sm:py-96 lg:py-120">
+  <div class="container flex flex-col gap-48 py-48 sm:py-64 lg:py-80">
     <h1 class="font-display text-h1 text-ink">Блог</h1>
 
     <p v-if="pending" class="font-body text-body text-ink">Загрузка…</p>

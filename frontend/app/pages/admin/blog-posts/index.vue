@@ -36,7 +36,19 @@ const formError = ref("");
 
 await fetchAll();
 
+// Auto-fills slug from title for a brand-new post, right up until the user
+// types into the slug field themselves — editing an existing post's title
+// never touches its (possibly already-live) slug.
+const slugTouched = ref(false);
+watch(
+  () => form.value.title,
+  (title) => {
+    if (!slugTouched.value) form.value.slug = slugify(title);
+  },
+);
+
 function startEdit(post: BlogPost) {
+  slugTouched.value = true;
   editingId.value = post.id;
   form.value = {
     slug: post.slug,
@@ -54,6 +66,7 @@ function startEdit(post: BlogPost) {
 function cancelEdit() {
   editingId.value = null;
   form.value = emptyForm();
+  slugTouched.value = false;
 }
 
 async function onSubmit() {
@@ -93,6 +106,36 @@ async function onDelete(id: number) {
   await remove(id);
   if (editingId.value === id) cancelEdit();
 }
+
+async function onDuplicate(post: BlogPost) {
+  await create({
+    slug: `${post.slug}-copy-${Date.now()}`,
+    title: `${post.title} (копия)`,
+    coverImage: post.coverImage,
+    category: post.category,
+    tags: post.tags,
+    author: post.author,
+    publishedAt: null,
+    content: post.content,
+    status: "draft",
+  });
+}
+
+const searchQuery = ref("");
+const filteredItems = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase();
+  if (!query) return items.value;
+  return items.value.filter((post) => post.title.toLowerCase().includes(query));
+});
+
+const { selectedIds, isSelected, toggle, allSelected, toggleAll, clear } =
+  useAdminBulkSelect(filteredItems);
+
+async function onBulkDelete() {
+  if (!confirm(`Удалить выбранные записи блога (${selectedIds.value.size})?`)) return;
+  await Promise.all([...selectedIds.value].map((id) => remove(id)));
+  clear();
+}
 </script>
 
 <template>
@@ -116,6 +159,7 @@ async function onDelete(id: number) {
         placeholder="Slug"
         required
         class="rounded border border-gray-300 px-3 py-2"
+        @input="slugTouched = true"
       />
       <input
         v-model="form.author"
@@ -146,11 +190,11 @@ async function onDelete(id: number) {
         <option value="draft">Черновик</option>
         <option value="published">Опубликовано</option>
       </select>
-      <textarea
+      <AdminMarkdownField
         v-model="form.content"
         placeholder="Содержимое"
-        rows="6"
-        class="rounded border border-gray-300 px-3 py-2 sm:col-span-2"
+        :rows="6"
+        class="sm:col-span-2"
       />
 
       <p v-if="formError" class="text-sm text-red-600 sm:col-span-2">{{ formError }}</p>
@@ -174,6 +218,26 @@ async function onDelete(id: number) {
       </div>
     </form>
 
+    <div class="mt-6 flex flex-wrap items-center gap-3">
+      <input
+        v-model="searchQuery"
+        type="text"
+        placeholder="Поиск по заголовку…"
+        class="min-w-64 rounded border border-gray-300 px-3 py-2 text-sm"
+      />
+    </div>
+
+    <div
+      v-if="selectedIds.size > 0"
+      class="mt-3 flex flex-wrap items-center gap-3 rounded border border-[var(--color-primary)] bg-white p-3 text-sm"
+    >
+      <span>Выбрано: {{ selectedIds.size }}</span>
+      <button class="text-red-600 hover:underline" @click="onBulkDelete">Удалить выбранные</button>
+      <button class="text-[var(--color-text-muted)] hover:underline" @click="clear">
+        Отменить выбор
+      </button>
+    </div>
+
     <p v-if="loading" class="mt-6 text-[var(--color-text-muted)]">Загрузка…</p>
     <p v-else-if="error" class="mt-6 text-red-600">{{ error }}</p>
     <table
@@ -182,6 +246,9 @@ async function onDelete(id: number) {
     >
       <thead>
         <tr class="border-b border-gray-200 text-left">
+          <th class="px-4 py-2">
+            <input type="checkbox" class="size-5" :checked="allSelected" @change="toggleAll" />
+          </th>
           <th class="px-4 py-2">Заголовок</th>
           <th class="px-4 py-2">Slug</th>
           <th class="px-4 py-2">Статус</th>
@@ -190,7 +257,19 @@ async function onDelete(id: number) {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="post in items" :key="post.id" class="border-b border-gray-100 last:border-0">
+        <tr
+          v-for="post in filteredItems"
+          :key="post.id"
+          class="border-b border-gray-100 last:border-0"
+        >
+          <td class="px-4 py-2">
+            <input
+              type="checkbox"
+              class="size-5"
+              :checked="isSelected(post.id)"
+              @change="toggle(post.id)"
+            />
+          </td>
           <td class="px-4 py-2">{{ post.title }}</td>
           <td class="px-4 py-2">{{ post.slug }}</td>
           <td class="px-4 py-2">{{ post.status === "published" ? "Опубликовано" : "Черновик" }}</td>
@@ -199,12 +278,15 @@ async function onDelete(id: number) {
             <button class="text-[var(--color-primary)] hover:underline" @click="startEdit(post)">
               Редактировать
             </button>
+            <button class="text-[var(--color-primary)] hover:underline" @click="onDuplicate(post)">
+              Дублировать
+            </button>
             <button class="text-red-600 hover:underline" @click="onDelete(post.id)">Удалить</button>
           </td>
         </tr>
-        <tr v-if="items.length === 0">
-          <td colspan="5" class="px-4 py-6 text-center text-[var(--color-text-muted)]">
-            Пока пусто
+        <tr v-if="filteredItems.length === 0">
+          <td colspan="6" class="px-4 py-6 text-center text-[var(--color-text-muted)]">
+            {{ items.length === 0 ? "Пока пусто" : "Ничего не найдено" }}
           </td>
         </tr>
       </tbody>

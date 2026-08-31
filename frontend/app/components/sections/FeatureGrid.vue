@@ -24,7 +24,7 @@ defineProps<{
       выглядеть одной высоты, а не влезать в одинаковый квадрат. -->
       <component :is="item.icon" class="h-40 w-auto text-primary" aria-hidden="true" />
       <h3 class="font-display text-h4 text-primary">{{ item.title }}</h3>
-      <p class="font-body text-body text-ink">{{ item.description }}</p>
+      <p class="whitespace-pre-line font-body text-body text-ink">{{ item.description }}</p>
     </div>
   </div>
 </template>

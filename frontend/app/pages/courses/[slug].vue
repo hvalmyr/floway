@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { CourseBlockWithLessons } from "~/types/api";
+
 const route = useRoute();
 const slug = route.params.slug as string;
 
@@ -10,92 +12,90 @@ if (!course.value) {
 }
 
 useSeoMeta({
-  title: () => `${course.value?.title} — ФлоВей`,
-  description: () => course.value?.shortDescription,
+  title: () => `${course.value?.name} — ФлоВей`,
+  description: () => course.value?.description,
 });
 
-// Первое занятие каждого блока открыто по умолчанию.
+// Undivided single-block courses (the common case) don't show the block's
+// own name anywhere — it's only a meaningful label once there's more than
+// one block to tell apart. Same rule for both the info-row badges and the
+// curriculum heading below.
+const hasNamedBlocks = computed(() => course.value!.blockCount > 1);
+
+function badgeItems(block: CourseBlockWithLessons) {
+  const parts = hasNamedBlocks.value ? [block.blockName] : [];
+  return [...parts, block.lessonCount, block.timeLength, block.price].filter(Boolean);
+}
+
+// First lesson of each block open by default, same as the old per-module
+// behavior.
 const openLessonIds = ref<Record<number, Array<string | number>>>(
   Object.fromEntries(
-    course.value.modules.map((m) => [m.id, m.lessons.length ? [m.lessons[0].id] : []]),
+    course.value!.blocks.map((b) => [b.id, b.lessons.length ? [b.lessons[0]!.id] : []]),
   ),
 );
-
-function priceRow(module: (typeof course.value.modules)[number]) {
-  const lessonsWord = module.lessonsCount === 1 ? "занятие" : "занятий";
-  const price = `${module.price.toLocaleString("ru-RU")} ₽`;
-  return [
-    `Блок “${module.title}”`,
-    `${module.lessonsCount} ${lessonsWord}`,
-    `${module.hours} часов`,
-    module.oldPrice ? `${module.oldPrice.toLocaleString("ru-RU")} ₽ → ${price}` : price,
-  ];
-}
 </script>
 
 <template>
   <div v-if="course">
     <Hero>
-      <template #title>Курс “{{ course.title }}”</template>
-      <template #lead>{{ course.fullDescription }}</template>
+      <template #title>Курс “{{ course.name }}”</template>
+      <template #lead>{{ course.description }}</template>
       <template #actions>
         <UiButton variant="primary" to="#apply">Оставить заявку</UiButton>
       </template>
-      <template v-if="course.coverImage" #media>
+      <template v-if="course.blocks[0]?.blockCover" #media>
         <img
-          :src="resolveMediaUrl(course.coverImage)"
-          :alt="course.title"
-          class="aspect-[4/3] w-full rounded-lg object-cover"
+          :src="resolveMediaUrl(course.blocks[0].blockCover)"
+          :alt="course.name"
+          class="aspect-square w-full rounded-lg object-cover"
         />
       </template>
     </Hero>
 
-    <section v-if="course.modules.length" class="py-64 sm:py-96 lg:py-120">
+    <section v-if="course.blocks.length" class="py-48 sm:py-64 lg:py-80">
       <div class="container flex flex-col gap-24">
         <UiInfoRow
-          v-for="(module, i) in course.modules"
-          :key="module.id"
-          :items="priceRow(module)"
+          v-for="(block, i) in course.blocks"
+          :key="block.id"
+          :items="badgeItems(block)"
           :highlighted="i % 2 === 1"
         />
       </div>
     </section>
 
-    <section v-if="course.modules.length" class="bg-surface py-64 sm:py-96 lg:py-120">
+    <section v-if="course.blocks.length" class="py-48 sm:py-64 lg:py-80">
       <div class="container flex flex-col gap-64">
-        <div v-for="module in course.modules" :key="module.id" class="flex flex-col gap-24">
-          <div class="flex flex-col gap-16">
+        <div v-for="block in course.blocks" :key="block.id" class="flex flex-col gap-24">
+          <div class="flex flex-col items-center gap-16 text-center">
             <h2 class="font-display text-h2">
-              <span class="text-primary">Учебный план.</span>
-              <span class="text-ink">Блок “{{ module.title }}”</span>
+              <template v-if="hasNamedBlocks">
+                <span class="text-primary">Учебный план. </span>
+                <span class="text-ink">{{ block.blockName }}</span>
+              </template>
+              <span v-else class="text-primary">{{ block.blockName || "Учебный план" }}</span>
             </h2>
-            <p v-if="module.description" class="w-full font-body text-body text-ink lg:w-4/5">
-              {{ module.description }}
+            <p
+              v-if="block.description"
+              class="mx-auto w-full whitespace-pre-line rounded-md bg-white/55 px-24 py-16 font-body text-body text-ink backdrop-blur backdrop-saturate-150 lg:w-4/5"
+            >
+              {{ block.description }}
             </p>
           </div>
-          <UiAccordion v-model="openLessonIds[module.id]">
+          <UiAccordion v-model="openLessonIds[block.id]!">
             <UiAccordionItem
-              v-for="lesson in module.lessons"
+              v-for="lesson in block.lessons"
               :key="lesson.id"
               :id="lesson.id"
-              :title="lesson.title"
+              :title="lesson.name"
             >
-              <p class="mb-8">
-                <strong class="font-body text-ink">Темы:</strong> {{ lesson.topics }}
-              </p>
-              <p class="mb-8">
-                <strong class="font-body text-ink">Вы научитесь:</strong> {{ lesson.outcomes }}
-              </p>
-              <p>
-                <strong class="font-body text-ink">Продолжительность:</strong>
-                {{ lesson.durationHours }} часа.
-              </p>
+              <MarkdownContent :source="lesson.description" />
             </UiAccordionItem>
           </UiAccordion>
         </div>
       </div>
     </section>
-    <section v-else class="py-64">
+    <section v-else class="py-48">
       <div class="container">
         <p class="font-body text-body text-ink">
           Программа курса пока готовится — оставьте заявку, и мы расскажем подробности при звонке.
@@ -103,10 +103,18 @@ function priceRow(module: (typeof course.value.modules)[number]) {
       </div>
     </section>
 
-    <section id="apply" class="scroll-mt-64 py-64 sm:py-96 lg:scroll-mt-96 lg:py-120">
+    <section
+      id="apply"
+      class="scroll-mt-64 bg-surface/55 py-48 backdrop-blur backdrop-saturate-150 sm:py-64 lg:scroll-mt-96 lg:py-80"
+    >
       <div class="container">
         <div class="mx-auto max-w-[720px]">
-          <ApplyForm context="course" :related-id="course.id" title="Записаться на курс" />
+          <ApplyForm
+            context="course"
+            :related-id="course.id"
+            :related-slug="course.slug"
+            title="Записаться на курс"
+          />
         </div>
       </div>
     </section>

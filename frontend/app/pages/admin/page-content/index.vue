@@ -79,13 +79,7 @@ function onImageUploaded(item: PageContentItem, url: string) {
           :label="item.label"
           @update:model-value="(url) => onImageUploaded(item, url)"
         />
-        <textarea
-          v-else
-          :id="`field-${item.key}`"
-          v-model="item.value"
-          rows="3"
-          class="w-full rounded border border-gray-300 px-3 py-2"
-        />
+        <AdminMarkdownField v-else :id="`field-${item.key}`" v-model="item.value" :rows="3" />
         <div class="mt-2 flex items-center gap-3">
           <button
             v-if="item.type !== 'image'"

@@ -1,16 +1,16 @@
 import { FetchError } from "ofetch";
-import { mockGetCourse, mockGetCourses } from "~/mocks/courses";
-import { mockGetMasterClass, mockGetMasterClasses } from "~/mocks/masterclasses";
+import { mockGetMasterClasses } from "~/mocks/masterclasses";
 import type {
   AboutItem,
   ApiError,
   ApplicationPayload,
   BlogPost,
-  Course,
-  CourseDetail,
+  CourseSectionWithCourses,
+  CourseWithBlocks,
   FAQItem,
   Feature,
   FeaturePage,
+  GalleryPhoto,
   Lead,
   Masterclass,
   PageContent,
@@ -41,26 +41,30 @@ function toApiError(err: unknown): ApiError {
  *
  * @example
  * const api = useApi();
- * const { data: courses } = await useAsyncData('courses', () => api.getCourses());
+ * const { data: sections } = await useAsyncData('course-sections', () => api.getCourseSections());
  */
 export function useApi() {
   const config = useRuntimeConfig();
   const client = useApiClient();
   const useMocks = config.public.useMocks;
 
-  async function getCourses(): Promise<Course[]> {
-    if (useMocks) return mockGetCourses();
+  /**
+   * GET /api/v1/course-sections/full — public, no auth. Every course
+   * section with its courses and each course's blocks (no lesson text) —
+   * the homepage courses block. No mocks fallback: no design brief existed
+   * for this shape before it was built.
+   */
+  async function getCourseSections(): Promise<CourseSectionWithCourses[]> {
     try {
-      return await client<Course[]>("/api/v1/courses");
+      return await client<CourseSectionWithCourses[]>("/api/v1/course-sections/full");
     } catch (err) {
       throw toApiError(err);
     }
   }
 
-  async function getCourse(slug: string): Promise<CourseDetail | null> {
-    if (useMocks) return mockGetCourse(slug);
+  async function getCourse(slug: string): Promise<CourseWithBlocks | null> {
     try {
-      return await client<CourseDetail>(`/api/v1/courses/${slug}/full`);
+      return await client<CourseWithBlocks>(`/api/v1/courses/${slug}/full`);
     } catch (err) {
       throw toApiError(err);
     }
@@ -75,15 +79,6 @@ export function useApi() {
     }
   }
 
-  async function getMasterClass(slug: string): Promise<Masterclass | null> {
-    if (useMocks) return mockGetMasterClass(slug);
-    try {
-      return await client<Masterclass>(`/api/v1/masterclasses/${slug}`);
-    } catch (err) {
-      throw toApiError(err);
-    }
-  }
-
   /**
    * GET /api/v1/teachers — public, no auth (teacher_handler.go's list route
    * has no admin middleware). No mocks fallback: there's no design brief for
@@ -93,6 +88,18 @@ export function useApi() {
   async function getTeachers(): Promise<Teacher[]> {
     try {
       return await client<Teacher[]>("/api/v1/teachers");
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/gallery-photos — public, no auth. Slides for the homepage
+   * carousel between "Преимущества" and "О школе", pre-sorted by sortOrder.
+   */
+  async function getGalleryPhotos(): Promise<GalleryPhoto[]> {
+    try {
+      return await client<GalleryPhoto[]>("/api/v1/gallery-photos");
     } catch (err) {
       throw toApiError(err);
     }
@@ -180,11 +187,11 @@ export function useApi() {
   }
 
   return {
-    getCourses,
+    getCourseSections,
     getCourse,
     getMasterClasses,
-    getMasterClass,
     getTeachers,
+    getGalleryPhotos,
     getFAQItems,
     getFeatures,
     getAboutItems,

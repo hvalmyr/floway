@@ -20,6 +20,10 @@ const formError = ref("");
 
 await fetchAll();
 
+const { draggingIndex, onDragStart, onDragOver, onDrop } = useAdminDragReorder(items, (item) =>
+  update(item.id, item),
+);
+
 function startEdit(faqItem: FAQItem) {
   editingId.value = faqItem.id;
   form.value = {
@@ -39,7 +43,7 @@ async function onSubmit() {
   saving.value = true;
   try {
     if (editingId.value === null) {
-      await create(form.value);
+      await create({ ...form.value, sortOrder: items.value.length });
     } else {
       await update(editingId.value, form.value);
     }
@@ -66,27 +70,20 @@ async function onDelete(id: number) {
       class="mt-6 grid gap-3 rounded border border-gray-200 bg-white p-4 sm:grid-cols-2"
       @submit.prevent="onSubmit"
     >
-      <textarea
+      <AdminMarkdownField
         v-model="form.question"
         placeholder="Вопрос"
-        rows="2"
+        :rows="2"
         required
-        class="rounded border border-gray-300 px-3 py-2 sm:col-span-2"
+        class="sm:col-span-2"
       />
-      <textarea
+      <AdminMarkdownField
         v-model="form.answer"
         placeholder="Ответ"
-        rows="3"
+        :rows="3"
         required
-        class="rounded border border-gray-300 px-3 py-2 sm:col-span-2"
+        class="sm:col-span-2"
       />
-      <input
-        v-model.number="form.sortOrder"
-        type="number"
-        placeholder="Порядок сортировки"
-        class="rounded border border-gray-300 px-3 py-2"
-      />
-
       <p v-if="formError" class="text-sm text-red-600 sm:col-span-2">{{ formError }}</p>
 
       <div class="flex gap-2 sm:col-span-2">
@@ -116,19 +113,24 @@ async function onDelete(id: number) {
     >
       <thead>
         <tr class="border-b border-gray-200 text-left">
+          <th class="px-4 py-2" />
           <th class="px-4 py-2">Вопрос</th>
-          <th class="px-4 py-2">Порядок</th>
           <th class="px-4 py-2" />
         </tr>
       </thead>
       <tbody>
         <tr
-          v-for="faqItem in items"
+          v-for="(faqItem, index) in items"
           :key="faqItem.id"
+          draggable="true"
           class="border-b border-gray-100 last:border-0"
+          :class="draggingIndex === index ? 'opacity-50' : ''"
+          @dragstart="onDragStart(index)"
+          @dragover.prevent="onDragOver(index)"
+          @drop.prevent="onDrop"
         >
+          <td class="px-4 py-2"><AdminDragHandle /></td>
           <td class="px-4 py-2">{{ faqItem.question }}</td>
-          <td class="px-4 py-2">{{ faqItem.sortOrder }}</td>
           <td class="flex gap-3 px-4 py-2 text-right">
             <button class="text-[var(--color-primary)] hover:underline" @click="startEdit(faqItem)">
               Редактировать

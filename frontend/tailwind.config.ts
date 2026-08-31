@@ -16,6 +16,11 @@ export default {
     "./app/layouts/**/*.vue",
     "./app/pages/**/*.vue",
     "./app/plugins/**/*.{js,ts}",
+    "./app/composables/**/*.{js,ts}",
+    "./app/constants/**/*.{js,ts}",
+    "./app/lib/**/*.{js,ts}",
+    "./app/middleware/**/*.{js,ts}",
+    "./app/utils/**/*.{js,ts}",
     "./app/app.vue",
     "./app/error.vue",
   ],
@@ -60,6 +65,7 @@ export default {
         pill: "999px",
       },
       // Ровно 4 цвета по требованию заказчика — никаких оттенков/шейдов.
+      // Состояния валидации форм используют primary, не отдельный цвет.
       colors: {
         primary: "#82B1CC",
         surface: "#F7F5F3",
@@ -69,14 +75,17 @@ export default {
         display: ["Soyuz Grotesk", "sans-serif"],
         body: ["Non Bureau", "sans-serif"],
       },
+      // Exactly 4 sizes by client direction: hero-block headings (h1),
+      // section headings (h2), everything else that reads as "a small
+      // heading" — item headings, buttons, cards, badges, course cards,
+      // header nav links (h4/button, already the same size) — and body copy
+      // for descriptions and the form (body). h3/body-l/small were dropped;
+      // anything that used them moved to the nearest of these four.
       fontSize: {
         h1: ["var(--text-h1)", { lineHeight: "1.08", fontWeight: "800" }],
         h2: ["var(--text-h2)", { lineHeight: "1.15", fontWeight: "800" }],
-        h3: ["var(--text-h3)", { lineHeight: "1.25", fontWeight: "700" }],
         h4: ["var(--text-h4)", { lineHeight: "1.3", fontWeight: "700" }],
-        "body-l": ["var(--text-body-l)", { lineHeight: "1.5" }],
         body: ["var(--text-body)", { lineHeight: "1.6" }],
-        small: ["var(--text-small)", { lineHeight: "1.4", fontWeight: "600" }],
         // Одинаковый шрифт/размер/жирность с заголовками преимуществ, именами
         // педагогов и вопросами FAQ — везде text-h4 font-display font-bold, у
         // кнопок только line-height туже (однострочный текст).

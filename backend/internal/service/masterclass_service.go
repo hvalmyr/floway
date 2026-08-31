@@ -32,18 +32,28 @@ func (s *MasterclassService) GetBySlug(ctx context.Context, slug string) (model.
 	return s.repo.FindBySlug(ctx, slug)
 }
 
+// requiredFields validates the fields the admin brief marks with "*":
+// title, slug, cover image, duration, description and price. description2
+// and endingText stay optional — not every masterclass needs a second
+// paragraph or a closing note.
+func requiredMasterclassFields(item model.Masterclass) error {
+	if item.Slug == "" || item.Title == "" || item.CoverImage == "" || item.Duration == "" || item.Description == "" || item.Price == "" {
+		return errors.Join(ErrValidation, errors.New("slug, title, coverImage, duration, description and price are required"))
+	}
+	return nil
+}
+
 func (s *MasterclassService) Create(ctx context.Context, item model.Masterclass) (model.Masterclass, error) {
 	item.Slug = strings.TrimSpace(item.Slug)
 	item.Title = strings.TrimSpace(item.Title)
-	if item.Slug == "" || item.Title == "" {
-		return model.Masterclass{}, errors.Join(ErrValidation, errors.New("slug and title are required"))
-	}
-
 	if item.Status == "" {
 		item.Status = model.MasterclassStatusActive
 	}
 	if item.Status != model.MasterclassStatusActive && item.Status != model.MasterclassStatusArchived {
 		return model.Masterclass{}, errors.Join(ErrValidation, errors.New("status must be active or archived"))
+	}
+	if err := requiredMasterclassFields(item); err != nil {
+		return model.Masterclass{}, err
 	}
 
 	return s.repo.Create(ctx, item)
@@ -55,15 +65,14 @@ func (s *MasterclassService) Update(ctx context.Context, item model.Masterclass)
 	if item.ID == 0 {
 		return model.Masterclass{}, errors.Join(ErrValidation, errors.New("id is required"))
 	}
-	if item.Slug == "" || item.Title == "" {
-		return model.Masterclass{}, errors.Join(ErrValidation, errors.New("slug and title are required"))
-	}
-
 	if item.Status == "" {
 		item.Status = model.MasterclassStatusActive
 	}
 	if item.Status != model.MasterclassStatusActive && item.Status != model.MasterclassStatusArchived {
 		return model.Masterclass{}, errors.Join(ErrValidation, errors.New("status must be active or archived"))
+	}
+	if err := requiredMasterclassFields(item); err != nil {
+		return model.Masterclass{}, err
 	}
 
 	return s.repo.Update(ctx, item)

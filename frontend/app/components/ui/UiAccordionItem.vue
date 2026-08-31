@@ -33,7 +33,7 @@ const open = computed(() => accordion.isOpen(props.id));
 </script>
 
 <template>
-  <div class="overflow-hidden rounded-md bg-surface">
+  <div class="overflow-hidden rounded-md bg-surface/55 backdrop-blur backdrop-saturate-150">
     <h3 class="m-0">
       <button
         :id="buttonId"

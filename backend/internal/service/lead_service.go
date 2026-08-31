@@ -67,6 +67,7 @@ func (s *LeadService) Create(ctx context.Context, item model.Lead) (model.Lead, 
 	item.Name = strings.TrimSpace(item.Name)
 	item.Phone = strings.TrimSpace(item.Phone)
 	item.Email = strings.TrimSpace(item.Email)
+	item.RelatedSlug = strings.TrimSpace(item.RelatedSlug)
 
 	if item.Name == "" || item.Phone == "" {
 		return model.Lead{}, errors.Join(ErrValidation, errors.New("name and phone are required"))

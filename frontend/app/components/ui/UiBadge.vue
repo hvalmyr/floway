@@ -10,7 +10,7 @@
 
 <template>
   <span
-    class="inline-flex items-center rounded-pill border-2 border-primary bg-transparent px-[20px] py-12 font-body text-body-l font-bold text-primary"
+    class="inline-flex items-center rounded-pill border-2 border-primary bg-transparent px-[20px] py-12 font-body text-h4 font-medium text-primary"
   >
     <slot />
   </span>

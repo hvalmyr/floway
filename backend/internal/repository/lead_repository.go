@@ -18,7 +18,7 @@ func NewLeadRepository(db *pgxpool.Pool) *LeadRepository {
 
 func (r *LeadRepository) List(ctx context.Context) ([]model.Lead, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT id, name, phone, email, contact_method, source, request_type, related_id, status, created_at
+		SELECT id, name, phone, email, contact_method, source, request_type, related_id, related_slug, status, created_at
 		FROM leads
 		ORDER BY created_at DESC
 	`)
@@ -39,6 +39,7 @@ func (r *LeadRepository) List(ctx context.Context) ([]model.Lead, error) {
 			&item.Source,
 			&item.RequestType,
 			&item.RelatedID,
+			&item.RelatedSlug,
 			&item.Status,
 			&item.CreatedAt,
 		); err != nil {
@@ -51,8 +52,8 @@ func (r *LeadRepository) List(ctx context.Context) ([]model.Lead, error) {
 
 func (r *LeadRepository) Create(ctx context.Context, item model.Lead) (model.Lead, error) {
 	err := r.db.QueryRow(ctx, `
-		INSERT INTO leads (name, phone, email, contact_method, source, request_type, related_id, status)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO leads (name, phone, email, contact_method, source, request_type, related_id, related_slug, status)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING id, created_at
 	`,
 		item.Name,
@@ -62,6 +63,7 @@ func (r *LeadRepository) Create(ctx context.Context, item model.Lead) (model.Lea
 		item.Source,
 		item.RequestType,
 		item.RelatedID,
+		item.RelatedSlug,
 		item.Status,
 	).Scan(&item.ID, &item.CreatedAt)
 	return item, err
@@ -73,7 +75,7 @@ func (r *LeadRepository) UpdateStatus(ctx context.Context, id int64, status mode
 		UPDATE leads
 		SET status = $1
 		WHERE id = $2
-		RETURNING id, name, phone, email, contact_method, source, request_type, related_id, status, created_at
+		RETURNING id, name, phone, email, contact_method, source, request_type, related_id, related_slug, status, created_at
 	`, status, id).Scan(
 		&item.ID,
 		&item.Name,
@@ -83,6 +85,7 @@ func (r *LeadRepository) UpdateStatus(ctx context.Context, id int64, status mode
 		&item.Source,
 		&item.RequestType,
 		&item.RelatedID,
+		&item.RelatedSlug,
 		&item.Status,
 		&item.CreatedAt,
 	)

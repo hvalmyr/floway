@@ -26,6 +26,10 @@ const formError = ref("");
 
 await fetchAll();
 
+const { draggingIndex, onDragStart, onDragOver, onDrop } = useAdminDragReorder(items, (item) =>
+  update(item.id, item),
+);
+
 function startEdit(teacher: Teacher) {
   editingId.value = teacher.id;
   form.value = {
@@ -46,7 +50,7 @@ async function onSubmit() {
   saving.value = true;
   try {
     if (editingId.value === null) {
-      await create(form.value);
+      await create({ ...form.value, sortOrder: items.value.length });
     } else {
       await update(editingId.value, form.value);
     }
@@ -81,17 +85,11 @@ async function onDelete(id: number) {
         class="rounded border border-gray-300 px-3 py-2 sm:col-span-2"
       />
       <AdminImageUpload v-model="form.photo" label="Фото" />
-      <input
-        v-model.number="form.sortOrder"
-        type="number"
-        placeholder="Порядок сортировки"
-        class="rounded border border-gray-300 px-3 py-2"
-      />
-      <textarea
+      <AdminMarkdownField
         v-model="form.description"
         placeholder="Описание"
-        rows="3"
-        class="rounded border border-gray-300 px-3 py-2 sm:col-span-2"
+        :rows="3"
+        class="sm:col-span-2"
       />
 
       <p v-if="formError" class="text-sm text-red-600 sm:col-span-2">{{ formError }}</p>
@@ -123,19 +121,24 @@ async function onDelete(id: number) {
     >
       <thead>
         <tr class="border-b border-gray-200 text-left">
+          <th class="px-4 py-2" />
           <th class="px-4 py-2">Имя</th>
-          <th class="px-4 py-2">Порядок</th>
           <th class="px-4 py-2" />
         </tr>
       </thead>
       <tbody>
         <tr
-          v-for="teacher in items"
+          v-for="(teacher, index) in items"
           :key="teacher.id"
+          draggable="true"
           class="border-b border-gray-100 last:border-0"
+          :class="draggingIndex === index ? 'opacity-50' : ''"
+          @dragstart="onDragStart(index)"
+          @dragover.prevent="onDragOver(index)"
+          @drop.prevent="onDrop"
         >
+          <td class="px-4 py-2"><AdminDragHandle /></td>
           <td class="px-4 py-2">{{ teacher.name }}</td>
-          <td class="px-4 py-2">{{ teacher.sortOrder }}</td>
           <td class="flex gap-3 px-4 py-2 text-right">
             <button class="text-[var(--color-primary)] hover:underline" @click="startEdit(teacher)">
               Редактировать

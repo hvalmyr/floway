@@ -33,17 +33,15 @@ func (h *masterclassHandler) routes(r chi.Router) {
 }
 
 type masterclassRequest struct {
-	Slug             string                  `json:"slug"`
-	Title            string                  `json:"title"`
-	ShortDesc        string                  `json:"shortDescription"`
-	FullDesc         string                  `json:"fullDescription"`
-	EndingText       string                  `json:"endingText"`
-	Duration         string                  `json:"duration"`
-	PriceGroup       int                     `json:"priceGroup"`
-	PriceIndividual  int                     `json:"priceIndividual"`
-	PriceDescription string                  `json:"priceDescription"`
-	CoverImage       string                  `json:"coverImage"`
-	Status           model.MasterclassStatus `json:"status"`
+	Slug         string                  `json:"slug"`
+	Title        string                  `json:"title"`
+	Description  string                  `json:"description"`
+	Description2 string                  `json:"description2"`
+	EndingText   string                  `json:"endingText"`
+	Duration     string                  `json:"duration"`
+	Price        string                  `json:"price"`
+	CoverImage   string                  `json:"coverImage"`
+	Status       model.MasterclassStatus `json:"status"`
 }
 
 func (h *masterclassHandler) list(w http.ResponseWriter, r *http.Request) {
@@ -74,17 +72,15 @@ func (h *masterclassHandler) create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	item, err := h.svc.Create(r.Context(), model.Masterclass{
-		Slug:             req.Slug,
-		Title:            req.Title,
-		ShortDesc:        req.ShortDesc,
-		FullDesc:         req.FullDesc,
-		EndingText:       req.EndingText,
-		Duration:         req.Duration,
-		PriceGroup:       req.PriceGroup,
-		PriceIndividual:  req.PriceIndividual,
-		PriceDescription: req.PriceDescription,
-		CoverImage:       req.CoverImage,
-		Status:           req.Status,
+		Slug:         req.Slug,
+		Title:        req.Title,
+		Description:  req.Description,
+		Description2: req.Description2,
+		EndingText:   req.EndingText,
+		Duration:     req.Duration,
+		Price:        req.Price,
+		CoverImage:   req.CoverImage,
+		Status:       req.Status,
 	})
 	if err != nil {
 		writeServiceError(w, r, err)
@@ -107,18 +103,16 @@ func (h *masterclassHandler) update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	item, err := h.svc.Update(r.Context(), model.Masterclass{
-		ID:               id,
-		Slug:             req.Slug,
-		Title:            req.Title,
-		ShortDesc:        req.ShortDesc,
-		FullDesc:         req.FullDesc,
-		EndingText:       req.EndingText,
-		Duration:         req.Duration,
-		PriceGroup:       req.PriceGroup,
-		PriceIndividual:  req.PriceIndividual,
-		PriceDescription: req.PriceDescription,
-		CoverImage:       req.CoverImage,
-		Status:           req.Status,
+		ID:           id,
+		Slug:         req.Slug,
+		Title:        req.Title,
+		Description:  req.Description,
+		Description2: req.Description2,
+		EndingText:   req.EndingText,
+		Duration:     req.Duration,
+		Price:        req.Price,
+		CoverImage:   req.CoverImage,
+		Status:       req.Status,
 	})
 	if err != nil {
 		writeServiceError(w, r, err)
