@@ -1,73 +1,119 @@
 <script setup lang="ts">
-import type { Masterclass } from "~/types/api";
+import { computed } from "vue";
+import type { CourseBlockDisplayStyle, Masterclass } from "~/types/api";
 
 /**
- * Photo + text block for a masterclass — used both as a repeating teaser on
- * /masterclasses and as the main content block of /masterclasses/[slug].
- * `linkToDetail` shows the "узнать подробнее" CTA (listing use); omit it on
- * the detail page itself, which has its own <ApplyForm> below instead.
- * `accent` switches the title between blue and dark ink — the listing
- * alternates it per item, matching the mockup.
+ * Masterclass row for the /masterclasses list — one masterclass per row
+ * (not a grid), image (always on the left, sm+) and copy side by side so
+ * each entry reads like an editorial feature rather than a cramped card.
+ * Stacks image-then-copy on mobile.
+ *
+ * The button's top margin is a fixed gap, not a `mt-auto`-to-the-bottom
+ * trick — a masterclass with a long description/description2/endingText
+ * stack can already be taller than the square image next to it, leaving no
+ * leftover flex space for `mt-auto` to push against (the button would then
+ * end up jammed right under the last paragraph with no gap at all).
  *
  * @example
- * <MasterclassCard :masterclass="mc" link-to-detail accent />
+ * <MasterclassCard :masterclass="mc" display-style="beige-blue" @apply="..." />
  */
 const props = withDefaults(
   defineProps<{
     masterclass: Masterclass;
-    linkToDetail?: boolean;
-    accent?: boolean;
+    displayStyle?: CourseBlockDisplayStyle;
   }>(),
-  { linkToDetail: false, accent: false },
+  { displayStyle: "beige-blue" },
 );
 
-const infoItems = computed(() => {
-  const duration = props.masterclass.duration ?? "уточняется";
+// Pulled out of the template as computeds rather than inline compound
+// conditions -- `v-if="masterclass.duration || masterclass.price"` on a
+// <p> with 3 sibling children (span/div/span) made Vue's SSR/hydration
+// produce an empty, class-less paragraph on the server while the client
+// rendered it correctly, throwing off hydration alignment for every
+// paragraph after it (description2/endingText showed up as "hydration
+// text mismatch" purely as a downstream symptom of this). Named computeds
+// for both boolean expressions sidestep whatever compiler edge case those
+// inline `||`/`&&` expressions hit.
+const hasDurationOrPrice = computed(
+  () => !!(props.masterclass.duration || props.masterclass.price),
+);
+const hasDurationAndPrice = computed(
+  () => !!(props.masterclass.duration && props.masterclass.price),
+);
 
-  if (props.masterclass.priceGroup == null) {
-    return [duration, "цена уточняется"];
-  }
-  if (props.masterclass.priceIndividual != null) {
-    return [
-      duration,
-      `${props.masterclass.priceGroup.toLocaleString("ru-RU")}₽ или ${props.masterclass.priceIndividual.toLocaleString("ru-RU")}₽ [*]`,
-    ];
-  }
-  return [duration, `${props.masterclass.priceGroup.toLocaleString("ru-RU")}₽`];
-});
+// The page has ONE shared ApplyForm below every row (not one per card) —
+// this tells the page which masterclass's "Записаться" was actually
+// clicked, so it can pass that slug into the form (see masterclasses/index.vue).
+defineEmits<{ apply: [] }>();
+
+// Masterclass-specific palette — diverges from the shared
+// displayStyleColorClasses (course cards keep the plain beige): the
+// "beige-blue" style reads as blue text on white here instead of beige,
+// and both variants get the site's glass treatment.
+const colorClasses: Record<CourseBlockDisplayStyle, string> = {
+  "blue-beige": "bg-primary/70 text-surface backdrop-blur backdrop-saturate-150",
+  "brown-beige": "bg-ink/70 text-surface backdrop-blur backdrop-saturate-150",
+  "beige-blue":
+    "border-2 border-primary bg-white/55 text-primary backdrop-blur backdrop-saturate-150",
+  "beige-brown": "border-2 border-ink bg-surface/55 text-ink backdrop-blur backdrop-saturate-150",
+};
 </script>
 
 <template>
-  <article class="grid grid-cols-1 gap-24 lg:grid-cols-[38%_1fr] lg:gap-40">
+  <div
+    class="flex flex-col gap-32 rounded-md p-40 sm:flex-row sm:gap-48"
+    :class="colorClasses[displayStyle]"
+  >
     <img
       v-if="masterclass.coverImage"
       :src="resolveMediaUrl(masterclass.coverImage)"
       :alt="masterclass.title"
-      class="aspect-[4/3] w-full rounded-lg object-cover lg:aspect-[3/4]"
+      class="aspect-[4/5] w-full rounded-sm object-cover sm:w-[38%] sm:shrink-0"
     />
-    <UiMediaPlaceholder v-else aspect="4/3" class="lg:aspect-[3/4]" />
+    <div
+      v-else
+      class="aspect-[4/5] w-full rounded-sm border-2 border-current sm:w-[38%] sm:shrink-0"
+    />
 
-    <div class="flex flex-col items-start gap-16">
-      <h2 class="font-display text-h2" :class="accent ? 'text-primary' : 'text-ink'">
-        {{ masterclass.title }}
-      </h2>
-      <p class="w-full font-body text-body text-ink lg:w-4/5">{{ masterclass.shortDescription }}</p>
-      <p v-if="masterclass.fullDescription" class="w-full font-body text-body text-ink lg:w-4/5">
-        {{ masterclass.fullDescription }}
+    <div class="flex flex-1 flex-col">
+      <h3 class="font-display text-h2">{{ masterclass.title }}</h3>
+      <p
+        v-if="hasDurationOrPrice"
+        class="mt-16 flex flex-row items-center gap-8 font-body text-body font-bold"
+      >
+        <span v-if="masterclass.duration">{{ masterclass.duration }}</span>
+        <span
+          v-if="hasDurationAndPrice"
+          aria-hidden="true"
+          class="inline-block size-[5px] shrink-0 rounded-full bg-current"
+        />
+        <span v-if="masterclass.price">{{ masterclass.price }}</span>
       </p>
-      <p v-if="masterclass.endingText" class="w-full font-body text-body text-ink lg:w-4/5">
+      <p class="mt-24 whitespace-pre-line font-body text-body">{{ masterclass.description }}</p>
+      <p v-if="masterclass.description2" class="mt-24 whitespace-pre-line font-body text-body">
+        {{ masterclass.description2 }}
+      </p>
+      <!-- Known issue: this paragraph (the last conditional element before
+      <UiButton>) still triggers an SSR/hydration mismatch warning for
+      masterclasses with endingText set, on every load — a stable wrapper
+      div here didn't fix it either. Looks like a Vue 3.5/Nuxt 4 SSR edge
+      case around a conditional element adjacent to a component boundary
+      inside a v-for. Vue itself marks this class of mismatch "check-only"
+      (production doesn't re-render for it), so it's a console-only
+      annoyance today, not a visible bug — see git history/PR discussion
+      for the investigation before attempting another fix here. -->
+      <p v-if="masterclass.endingText" class="mt-24 whitespace-pre-line font-body text-body italic">
         {{ masterclass.endingText }}
       </p>
 
-      <UiInfoRow :items="infoItems" class="w-full" />
-
-      <UiButton v-if="linkToDetail" variant="primary" :to="`/masterclasses/${masterclass.slug}`">
-        Узнать подробнее
-      </UiButton>
-
-      <p v-if="masterclass.priceDescription" class="font-body text-body text-ink/70">
-        {{ masterclass.priceDescription }}
-      </p>
+      <UiButton
+        variant="outline"
+        transparent
+        to="#apply"
+        class="mt-32 w-full justify-center sm:w-auto"
+        @click="$emit('apply')"
+        >Записаться</UiButton
+      >
     </div>
-  </article>
+  </div>
 </template>

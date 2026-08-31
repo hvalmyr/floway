@@ -63,6 +63,7 @@ func run(logger *slog.Logger) error {
 		return fmt.Errorf("connect to garage: %w", err)
 	}
 
+	courseSectionRepo := repository.NewCourseSectionRepository(pool)
 	courseRepo := repository.NewCourseRepository(pool)
 	courseBlockRepo := repository.NewCourseBlockRepository(pool)
 	lessonRepo := repository.NewLessonRepository(pool)
@@ -85,20 +86,23 @@ func run(logger *slog.Logger) error {
 	}
 
 	services := httpserver.Services{
-		FAQ:          service.NewFAQService(repository.NewFAQRepository(pool)),
-		Teacher:      service.NewTeacherService(repository.NewTeacherRepository(pool)),
-		BlogPost:     service.NewBlogPostService(repository.NewBlogPostRepository(pool)),
-		Masterclass:  service.NewMasterclassService(repository.NewMasterclassRepository(pool)),
-		Course:       service.NewCourseService(courseRepo),
-		CourseDetail: service.NewCourseDetailService(courseRepo, courseBlockRepo, lessonRepo),
-		CourseBlock:  service.NewCourseBlockService(courseBlockRepo),
-		Lesson:       service.NewLessonService(lessonRepo),
-		Lead:         service.NewLeadService(repository.NewLeadRepository(pool), leadNotifier),
-		AdminUser:    service.NewAdminUserService(repository.NewAdminUserRepository(pool)),
-		PageContent:  service.NewPageContentService(repository.NewPageContentRepository(pool), garageClient),
-		Feature:      service.NewFeatureService(repository.NewFeatureRepository(pool)),
-		AboutItem:    service.NewAboutItemService(repository.NewAboutItemRepository(pool)),
-		SocialLink:   service.NewSocialLinkService(repository.NewSocialLinkRepository(pool)),
+		FAQ:           service.NewFAQService(repository.NewFAQRepository(pool)),
+		Teacher:       service.NewTeacherService(repository.NewTeacherRepository(pool)),
+		BlogPost:      service.NewBlogPostService(repository.NewBlogPostRepository(pool)),
+		Masterclass:   service.NewMasterclassService(repository.NewMasterclassRepository(pool)),
+		CourseSection: service.NewCourseSectionService(courseSectionRepo),
+		Course:        service.NewCourseService(courseRepo),
+		CourseBlock:   service.NewCourseBlockService(courseBlockRepo),
+		Lesson:        service.NewLessonService(lessonRepo),
+		CourseCatalog: service.NewCourseCatalogService(courseSectionRepo, courseRepo, courseRepo, courseBlockRepo, courseBlockRepo, lessonRepo),
+		Lead:          service.NewLeadService(repository.NewLeadRepository(pool), leadNotifier),
+		AdminUser:     service.NewAdminUserService(repository.NewAdminUserRepository(pool)),
+		PageContent:   service.NewPageContentService(repository.NewPageContentRepository(pool), garageClient),
+		Feature:       service.NewFeatureService(repository.NewFeatureRepository(pool)),
+		AboutItem:     service.NewAboutItemService(repository.NewAboutItemRepository(pool)),
+		SocialLink:    service.NewSocialLinkService(repository.NewSocialLinkRepository(pool)),
+		GalleryPhoto:  service.NewGalleryPhotoService(repository.NewGalleryPhotoRepository(pool)),
+		ContentExport: service.NewContentExportService(pool),
 
 		Storage: garageClient,
 		DB:      pool,

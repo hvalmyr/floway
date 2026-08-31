@@ -13,15 +13,6 @@ async function onLogout() {
       <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
         <nav class="flex flex-wrap gap-4 text-sm">
           <NuxtLink to="/admin">Дашборд</NuxtLink>
-          <NuxtLink to="/admin/teachers">Преподаватели</NuxtLink>
-          <NuxtLink to="/admin/blog-posts">Блог</NuxtLink>
-          <NuxtLink to="/admin/masterclasses">Мастер-классы</NuxtLink>
-          <NuxtLink to="/admin/courses">Курсы</NuxtLink>
-          <NuxtLink to="/admin/faq">FAQ</NuxtLink>
-          <NuxtLink to="/admin/features">Преимущества</NuxtLink>
-          <NuxtLink to="/admin/about-items">О школе</NuxtLink>
-          <NuxtLink to="/admin/page-content">Тексты сайта</NuxtLink>
-          <NuxtLink to="/admin/leads">Заявки</NuxtLink>
         </nav>
         <div class="flex items-center gap-3 text-sm">
           <span class="text-[var(--color-text-muted)]">{{ adminUser.login }}</span>

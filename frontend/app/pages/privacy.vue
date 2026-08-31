@@ -5,7 +5,7 @@ const { text } = await usePageContent();
 </script>
 
 <template>
-  <div class="container flex flex-col gap-24 py-64 sm:py-96">
+  <div class="container flex flex-col gap-24 py-48 sm:py-64">
     <h1 class="font-display text-h1 text-ink">Политика обработки персональных данных</h1>
     <MarkdownContent
       :source="

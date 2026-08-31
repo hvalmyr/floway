@@ -31,20 +31,23 @@ func limitBodySize(next http.Handler) http.Handler {
 }
 
 type Services struct {
-	FAQ          *service.FAQService
-	Teacher      *service.TeacherService
-	BlogPost     *service.BlogPostService
-	Masterclass  *service.MasterclassService
-	Course       *service.CourseService
-	CourseDetail *service.CourseDetailService
-	CourseBlock  *service.CourseBlockService
-	Lesson       *service.LessonService
-	Lead         *service.LeadService
-	AdminUser    *service.AdminUserService
-	PageContent  *service.PageContentService
-	Feature      *service.FeatureService
-	AboutItem    *service.AboutItemService
-	SocialLink   *service.SocialLinkService
+	FAQ           *service.FAQService
+	Teacher       *service.TeacherService
+	BlogPost      *service.BlogPostService
+	Masterclass   *service.MasterclassService
+	CourseSection *service.CourseSectionService
+	Course        *service.CourseService
+	CourseBlock   *service.CourseBlockService
+	Lesson        *service.LessonService
+	CourseCatalog *service.CourseCatalogService
+	Lead          *service.LeadService
+	AdminUser     *service.AdminUserService
+	PageContent   *service.PageContentService
+	Feature       *service.FeatureService
+	AboutItem     *service.AboutItemService
+	SocialLink    *service.SocialLinkService
+	GalleryPhoto  *service.GalleryPhotoService
+	ContentExport *service.ContentExportService
 
 	Storage *storage.Client
 	// DB is used only by /readyz. Reaching into the pool directly here (not
@@ -117,16 +120,24 @@ func NewRouter(services Services) http.Handler {
 		r.Route("/teachers", newTeacherHandler(services.Teacher, admin).routes)
 		r.Route("/blog-posts", newBlogPostHandler(services.BlogPost, services.Tokens, services.AdminUser, admin).routes)
 		r.Route("/masterclasses", newMasterclassHandler(services.Masterclass, admin).routes)
+		courseHdl := newCourseHandler(services.Course, services.CourseCatalog, admin)
+		r.Route("/course-sections", func(r chi.Router) {
+			newCourseSectionHandler(services.CourseSection, services.CourseCatalog, admin).routes(r)
+			r.Route("/{sectionId}/courses", courseHdl.routes)
+		})
 		r.Route("/courses", func(r chi.Router) {
-			newCourseHandler(services.Course, services.CourseDetail, admin).routes(r)
+			r.Get("/{slug}/full", courseHdl.getFullBySlug)
 			r.Route("/{courseId}/blocks", newCourseBlockHandler(services.CourseBlock, admin).routes)
+			r.Route("/{courseId}/lessons", newCourseLessonHandler(services.Lesson, admin).routes)
 		})
 		r.Route("/course-blocks/{blockId}/lessons", newLessonHandler(services.Lesson, admin).routes)
+		r.Route("/gallery-photos", newGalleryPhotoHandler(services.GalleryPhoto, admin).routes)
 		r.Route("/leads", newLeadHandler(services.Lead, admin, leadLimiter).routes)
 		r.Route("/page-content", newPageContentHandler(services.PageContent, admin).routes)
 		r.Route("/features", newFeatureHandler(services.Feature, admin).routes)
 		r.Route("/about-items", newAboutItemHandler(services.AboutItem, admin).routes)
 		r.Route("/social-links", newSocialLinkHandler(services.SocialLink, admin).routes)
+		r.Route("/admin/content", newContentExportHandler(services.ContentExport, admin).routes)
 	})
 
 	return r

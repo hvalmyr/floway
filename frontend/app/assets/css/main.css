@@ -3,8 +3,14 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Transparent so the fixed AmbientTreeBackground (layouts/default.vue)
+     shows through everywhere a section doesn't paint its own background. */
   body {
-    @apply bg-white font-body text-ink;
+    @apply font-body text-ink;
   }
 
   h1,

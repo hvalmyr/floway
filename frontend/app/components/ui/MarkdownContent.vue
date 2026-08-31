@@ -33,7 +33,7 @@ const html = computed(() => md.render(props.source));
   margin-top: 1.5em;
   margin-bottom: 0.5em;
   font-family: var(--font-display);
-  font-size: var(--text-h3);
+  font-size: var(--text-h4);
 }
 .markdown-content :deep(h3) {
   margin-top: 1.25em;

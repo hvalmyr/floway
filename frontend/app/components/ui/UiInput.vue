@@ -29,7 +29,7 @@ const errorId = useId();
 
 <template>
   <div class="flex flex-col gap-8">
-    <label :for="inputId" class="font-body text-body-l font-bold text-primary">
+    <label :for="inputId" class="font-body text-body font-light text-ink">
       {{ label }}<span v-if="required" aria-hidden="true"> *</span>
     </label>
     <input
@@ -40,10 +40,14 @@ const errorId = useId();
       :autocomplete="autocomplete"
       :aria-invalid="!!errorMessage"
       :aria-describedby="errorId"
-      class="h-[64px] rounded-lg border-2 border-primary bg-white px-24 font-body text-body text-ink outline-none placeholder:text-primary/50"
+      class="h-[56px] rounded-[15px] border-2 bg-surface px-[20px] font-body text-body text-ink outline-none placeholder:text-ink/45"
+      :class="errorMessage ? 'border-primary' : 'border-transparent'"
       @blur="handleBlur"
     />
-    <!-- Всегда занимает место (даже без ошибки), чтобы форма не "прыгала" по высоте. -->
-    <p :id="errorId" class="min-h-[30px] text-body font-bold text-ink">{{ errorMessage }}</p>
+    <!-- Рендерится только при ошибке — поле "растёт" вниз вместо того, чтобы
+    всегда резервировать место под текст ошибки. -->
+    <p v-if="errorMessage" :id="errorId" class="font-body text-body text-primary">
+      {{ errorMessage }}
+    </p>
   </div>
 </template>

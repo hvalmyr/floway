@@ -30,11 +30,9 @@ func (h *lessonHandler) routes(r chi.Router) {
 }
 
 type lessonCreateRequest struct {
-	Number        int    `json:"number"`
-	Title         string `json:"title"`
-	Topics        string `json:"topics"`
-	Outcomes      string `json:"outcomes"`
-	DurationHours int    `json:"durationHours"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	SortOrder   int    `json:"sortOrder"`
 }
 
 func (h *lessonHandler) list(w http.ResponseWriter, r *http.Request) {
@@ -66,12 +64,10 @@ func (h *lessonHandler) create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	item, err := h.svc.Create(r.Context(), model.Lesson{
-		CourseBlockID: blockID,
-		Number:        req.Number,
-		Title:         req.Title,
-		Topics:        req.Topics,
-		Outcomes:      req.Outcomes,
-		DurationHours: req.DurationHours,
+		CourseBlockID: &blockID,
+		Name:          req.Name,
+		Description:   req.Description,
+		SortOrder:     req.SortOrder,
 	})
 	if err != nil {
 		writeServiceError(w, r, err)
@@ -101,12 +97,10 @@ func (h *lessonHandler) update(w http.ResponseWriter, r *http.Request) {
 
 	item, err := h.svc.Update(r.Context(), model.Lesson{
 		ID:            id,
-		CourseBlockID: blockID,
-		Number:        req.Number,
-		Title:         req.Title,
-		Topics:        req.Topics,
-		Outcomes:      req.Outcomes,
-		DurationHours: req.DurationHours,
+		CourseBlockID: &blockID,
+		Name:          req.Name,
+		Description:   req.Description,
+		SortOrder:     req.SortOrder,
 	})
 	if err != nil {
 		writeServiceError(w, r, err)

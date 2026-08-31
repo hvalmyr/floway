@@ -83,105 +83,116 @@ func TestCourseBlockService_Create(t *testing.T) {
 		svc := service.NewCourseBlockService(repo)
 
 		item, err := svc.Create(context.Background(), model.CourseBlock{
-			CourseID:     1,
-			Title:        "  Основы  ",
-			LessonsCount: 5,
-			Hours:        10,
-			Price:        1000,
-			SortOrder:    1,
+			CourseID:    1,
+			BlockName:   "  Букеты  ",
+			LessonCount: "7 занятий",
+			TimeLength:  "30 часов",
+			Price:       "38 500 ₽",
+			SortOrder:   1,
 		})
 
 		require.NoError(t, err)
 		assert.Equal(t, int64(1), item.ID)
-		assert.Equal(t, "Основы", item.Title)
+		assert.Equal(t, "Букеты", item.BlockName)
 		assert.Equal(t, int64(1), item.CourseID)
 	})
 
-	t.Run("rejects an empty title", func(t *testing.T) {
+	t.Run("allows an empty blockName (undivided single-block course)", func(t *testing.T) {
 		repo := newFakeCourseBlockRepository()
 		svc := service.NewCourseBlockService(repo)
 
-		_, err := svc.Create(context.Background(), model.CourseBlock{CourseID: 1, Title: "   "})
+		item, err := svc.Create(context.Background(), model.CourseBlock{CourseID: 1, LessonCount: "7 занятий"})
 
-		require.Error(t, err)
-		assert.ErrorIs(t, err, service.ErrValidation)
-		assert.Empty(t, repo.items)
+		require.NoError(t, err)
+		assert.Empty(t, item.BlockName)
 	})
 
 	t.Run("rejects a zero courseId", func(t *testing.T) {
 		repo := newFakeCourseBlockRepository()
 		svc := service.NewCourseBlockService(repo)
 
-		_, err := svc.Create(context.Background(), model.CourseBlock{CourseID: 0, Title: "Основы"})
+		_, err := svc.Create(context.Background(), model.CourseBlock{CourseID: 0, BlockName: "Букеты"})
 
 		require.Error(t, err)
 		assert.ErrorIs(t, err, service.ErrValidation)
 		assert.Empty(t, repo.items)
 	})
 
-	t.Run("accepts an oldPrice greater than price", func(t *testing.T) {
+	t.Run("defaults displayStyle to blue-beige when empty", func(t *testing.T) {
 		repo := newFakeCourseBlockRepository()
 		svc := service.NewCourseBlockService(repo)
-		oldPrice := 1200
+
+		item, err := svc.Create(context.Background(), model.CourseBlock{CourseID: 1, BlockName: "Букеты"})
+
+		require.NoError(t, err)
+		assert.Equal(t, model.DisplayStyleBlueBeige, item.DisplayStyle)
+	})
+
+	t.Run("accepts any of the 4 valid display styles", func(t *testing.T) {
+		repo := newFakeCourseBlockRepository()
+		svc := service.NewCourseBlockService(repo)
 
 		item, err := svc.Create(context.Background(), model.CourseBlock{
-			CourseID: 1, Title: "Основы", Price: 1000, OldPrice: &oldPrice,
+			CourseID:     1,
+			BlockName:    "Букеты",
+			DisplayStyle: model.DisplayStyleBeigeBrown,
 		})
 
 		require.NoError(t, err)
-		require.NotNil(t, item.OldPrice)
-		assert.Equal(t, 1200, *item.OldPrice)
+		assert.Equal(t, model.DisplayStyleBeigeBrown, item.DisplayStyle)
 	})
 
-	t.Run("rejects an oldPrice not greater than price", func(t *testing.T) {
+	t.Run("rejects an invalid displayStyle", func(t *testing.T) {
 		repo := newFakeCourseBlockRepository()
 		svc := service.NewCourseBlockService(repo)
-		oldPrice := 900
 
 		_, err := svc.Create(context.Background(), model.CourseBlock{
-			CourseID: 1, Title: "Основы", Price: 1000, OldPrice: &oldPrice,
+			CourseID:     1,
+			BlockName:    "Букеты",
+			DisplayStyle: "green-purple",
 		})
 
 		require.Error(t, err)
 		assert.ErrorIs(t, err, service.ErrValidation)
+		assert.Empty(t, repo.items)
 	})
 }
 
 func TestCourseBlockService_Update(t *testing.T) {
 	repo := newFakeCourseBlockRepository()
 	svc := service.NewCourseBlockService(repo)
-	created, err := svc.Create(context.Background(), model.CourseBlock{CourseID: 1, Title: "Основы"})
+	created, err := svc.Create(context.Background(), model.CourseBlock{CourseID: 1, BlockName: "Основы"})
 	require.NoError(t, err)
 
 	t.Run("updates an existing item", func(t *testing.T) {
-		created.Title = "updated title"
+		created.BlockName = "updated name"
 		updated, err := svc.Update(context.Background(), created)
 
 		require.NoError(t, err)
-		assert.Equal(t, "updated title", updated.Title)
+		assert.Equal(t, "updated name", updated.BlockName)
 	})
 
 	t.Run("rejects a missing id", func(t *testing.T) {
-		_, err := svc.Update(context.Background(), model.CourseBlock{CourseID: 1, Title: "title"})
+		_, err := svc.Update(context.Background(), model.CourseBlock{CourseID: 1, BlockName: "name"})
 
 		require.Error(t, err)
 		assert.ErrorIs(t, err, service.ErrValidation)
 	})
 
 	t.Run("rejects a missing courseId", func(t *testing.T) {
-		_, err := svc.Update(context.Background(), model.CourseBlock{ID: created.ID, Title: "title"})
+		_, err := svc.Update(context.Background(), model.CourseBlock{ID: created.ID, BlockName: "name"})
 
 		require.Error(t, err)
 		assert.ErrorIs(t, err, service.ErrValidation)
 	})
 
 	t.Run("does not update a block belonging to a different course", func(t *testing.T) {
-		other, err := svc.Create(context.Background(), model.CourseBlock{CourseID: 2, Title: "Course 2 block"})
+		other, err := svc.Create(context.Background(), model.CourseBlock{CourseID: 2, BlockName: "Course 2 block"})
 		require.NoError(t, err)
 
 		// Same block id as `created`'s course-2 sibling, but wrong courseId —
 		// simulates PUT /courses/1/blocks/{other.ID}.
-		_, err = svc.Update(context.Background(), model.CourseBlock{ID: other.ID, CourseID: 1, Title: "hijacked"})
+		_, err = svc.Update(context.Background(), model.CourseBlock{ID: other.ID, CourseID: 1, BlockName: "hijacked"})
 
 		require.Error(t, err)
 		assert.ErrorIs(t, err, service.ErrNotFound)
@@ -191,7 +202,7 @@ func TestCourseBlockService_Update(t *testing.T) {
 func TestCourseBlockService_Delete(t *testing.T) {
 	repo := newFakeCourseBlockRepository()
 	svc := service.NewCourseBlockService(repo)
-	created, err := svc.Create(context.Background(), model.CourseBlock{CourseID: 1, Title: "Основы"})
+	created, err := svc.Create(context.Background(), model.CourseBlock{CourseID: 1, BlockName: "Основы"})
 	require.NoError(t, err)
 
 	t.Run("deletes an existing item", func(t *testing.T) {
@@ -208,7 +219,7 @@ func TestCourseBlockService_Delete(t *testing.T) {
 	})
 
 	t.Run("does not delete a block belonging to a different course", func(t *testing.T) {
-		block, err := svc.Create(context.Background(), model.CourseBlock{CourseID: 2, Title: "Course 2 block"})
+		block, err := svc.Create(context.Background(), model.CourseBlock{CourseID: 2, BlockName: "Course 2 block"})
 		require.NoError(t, err)
 
 		err = svc.Delete(context.Background(), 1, block.ID) // wrong courseId (1, not 2)
@@ -227,11 +238,11 @@ func TestCourseBlockService_ListByCourseID(t *testing.T) {
 		repo := newFakeCourseBlockRepository()
 		svc := service.NewCourseBlockService(repo)
 
-		_, err := svc.Create(context.Background(), model.CourseBlock{CourseID: 1, Title: "Course 1 Block 1"})
+		_, err := svc.Create(context.Background(), model.CourseBlock{CourseID: 1, BlockName: "Course 1 Block 1"})
 		require.NoError(t, err)
-		_, err = svc.Create(context.Background(), model.CourseBlock{CourseID: 2, Title: "Course 2 Block 1"})
+		_, err = svc.Create(context.Background(), model.CourseBlock{CourseID: 2, BlockName: "Course 2 Block 1"})
 		require.NoError(t, err)
-		_, err = svc.Create(context.Background(), model.CourseBlock{CourseID: 1, Title: "Course 1 Block 2"})
+		_, err = svc.Create(context.Background(), model.CourseBlock{CourseID: 1, BlockName: "Course 1 Block 2"})
 		require.NoError(t, err)
 
 		items, err := svc.ListByCourseID(context.Background(), 1)

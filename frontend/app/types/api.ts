@@ -5,64 +5,124 @@
  * generated/shared automatically.
  */
 
-export type CourseStatus = "active" | "archived";
-export type MasterclassStatus = "active" | "archived";
+export type ImportMode = "merge" | "replace";
 
-export interface Course {
-  id: number;
-  slug: string;
-  title: string;
-  shortDescription: string;
-  fullDescription: string;
-  status: CourseStatus;
-  coverImage: string;
-  gallery: string[];
-  sortOrder: number;
+/**
+ * Response from POST /api/v1/admin/content/import. `counts` keys match
+ * SiteContent's own field names (courseSections, courses, ...) — the number
+ * of rows written for that entity. `pageContentSkipped` lists page-content
+ * keys from the import that don't exist on this server (that entity has no
+ * create path — see backend/internal/service/content_export_service.go).
+ */
+export interface ImportResult {
+  mode: ImportMode;
+  counts: Record<string, number>;
+  pageContentSkipped?: string[];
 }
 
+export type MasterclassStatus = "active" | "archived";
+
+/** Background/text color pair for a course block's homepage card — see CourseCard.vue. */
+export type CourseBlockDisplayStyle = "blue-beige" | "brown-beige" | "beige-blue" | "beige-brown";
+
+export interface CourseSection {
+  id: number;
+  heading: string;
+  description: string;
+  sortOrder: number;
+  /** Hides the whole section (and its courses) from the public site without deleting it. */
+  visible: boolean;
+}
+
+/**
+ * coverImage/lessonCount/timeLength/price/displayStyle are this course's OWN
+ * card — splitting into CourseBlocks is optional. A course with zero blocks
+ * renders as one homepage card built from these fields; a course with one
+ * or more blocks renders one card per block instead, and these go unused.
+ */
+export interface Course {
+  id: number;
+  sectionId: number;
+  slug: string;
+  name: string;
+  description: string;
+  coverImage: string;
+  lessonCount: string;
+  timeLength: string;
+  price: string;
+  displayStyle: CourseBlockDisplayStyle;
+  sortOrder: number;
+  /** Hides this course from the public site (its section listing and its own page) without deleting it. */
+  visible: boolean;
+  /** Collapses a multi-block course into one homepage card (this course's own fields) instead of one card per block. */
+  singleCard: boolean;
+}
+
+/**
+ * A course's blocks carry their own lesson list directly (via
+ * CourseBlockWithLessons below) — there's no separate "curriculum" level.
+ * lessonCount/timeLength/price are free text ("7 занятий", "30 часов",
+ * "38 500 ₽", or even a "было/стало" discount narrative) rather than
+ * numbers, so the admin can phrase them however the site copy needs.
+ */
 export interface CourseBlock {
   id: number;
   courseId: number;
-  title: string;
-  lessonsCount: number;
-  hours: number;
-  price: number;
-  /**
-   * TODO: согласовать с бэкенд-командой — поля "старая цена" (для скидок) в
-   * backend/internal/model/model.go сейчас нет. Пока это чисто фронтовое
-   * опциональное поле, приходит только из моков.
-   */
-  oldPrice?: number;
+  blockName: string;
+  /** Intro text shown above this block's lesson list. */
+  description: string;
+  blockCover: string;
+  lessonCount: string;
+  timeLength: string;
+  price: string;
+  displayStyle: CourseBlockDisplayStyle;
+  sortOrder: number;
+  /** Hides this block's homepage card (and drops it from the course page) without deleting it. */
+  visible: boolean;
+}
+
+// A lesson belongs to exactly one parent — courseBlockId (a course split
+// into blocks) or courseId (a course with no blocks, editing its lessons
+// directly) — never both.
+export interface Lesson {
+  id: number;
+  courseBlockId?: number;
+  courseId?: number;
+  name: string;
+  description: string;
   sortOrder: number;
 }
 
-export interface Lesson {
-  id: number;
-  courseBlockId: number;
-  number: number;
-  title: string;
-  topics: string;
-  outcomes: string;
-  durationHours: number;
-}
-
-export interface CourseModule extends CourseBlock {
-  /** Intro text shown above the "Учебный план" accordion for this block. */
-  description?: string;
+export interface CourseBlockWithLessons extends CourseBlock {
   lessons: Lesson[];
 }
 
 /** Shape returned by the public GET /api/v1/courses/{slug}/full. */
-export interface CourseDetail extends Course {
-  modules: CourseModule[];
+export interface CourseWithBlocks extends Course {
+  blockCount: number;
+  blocks: CourseBlockWithLessons[];
+}
+
+/** Homepage listing shape — blocks without lesson text. */
+export interface CourseSummary extends Course {
+  blockCount: number;
+  blocks: CourseBlock[];
+}
+
+/** Shape returned by the public GET /api/v1/course-sections/full. */
+export interface CourseSectionWithCourses extends CourseSection {
+  length: number;
+  courses: CourseSummary[];
 }
 
 export interface Masterclass {
   id: number;
   slug: string;
   title: string;
-  shortDescription: string;
-  fullDescription: string;
+  description: string;
+  /** Optional second paragraph — not every masterclass needs one. */
+  description2: string;
+  /** Optional closing note. */
   endingText: string;
   /**
    * Optional here (unlike the Go model, where these are required columns)
@@ -71,9 +131,8 @@ export interface Masterclass {
    * A real backend record will always have these populated.
    */
   duration?: string;
-  priceGroup?: number;
-  priceIndividual?: number;
-  priceDescription?: string;
+  /** Free text ("3000₽", "3000₽ или 4500₽", "от 2500₽") — not always one number. */
+  price?: string;
   coverImage: string;
   status: MasterclassStatus;
 }
@@ -135,6 +194,17 @@ export interface Teacher {
   sortOrder: number;
 }
 
+/**
+ * One slide of the homepage's vertical-photo carousel (between
+ * "Преимущества" and "О школе"). Shape returned by the public
+ * GET /api/v1/gallery-photos (list, no auth, pre-sorted by sortOrder).
+ */
+export interface GalleryPhoto {
+  id: number;
+  image: string;
+  sortOrder: number;
+}
+
 export type BlogPostStatus = "draft" | "published";
 
 /**
@@ -167,6 +237,10 @@ export interface ApplicationPayload {
   source: LeadSource;
   requestType: LeadRequestType;
   relatedId?: number;
+  /** The course/masterclass slug the visitor was looking at — lets the
+   * admin panel show which specific one without cross-referencing
+   * relatedId. Blank for trial_lesson (no specific entity). */
+  relatedSlug?: string;
 }
 
 export interface Lead extends ApplicationPayload {

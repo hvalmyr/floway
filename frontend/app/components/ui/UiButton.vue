@@ -3,18 +3,25 @@ import { NuxtLink } from "#components";
 
 /**
  * Button/link primitive. Renders a <NuxtLink> when `to` is set, otherwise a
- * <button>. Exactly one size/font everywhere — only bg/border/text color
- * (and hover behavior) differ between the two variants:
+ * <button>. Exactly one size/font everywhere, and that height (56px) always
+ * matches UiInput/UiPhoneInput/UiSelect so buttons and fields line up in a
+ * form — only bg/border/text color (and hover behavior) differ between the
+ * two variants:
  *
- * - `primary`: white text on blue fill. Hover inverts to blue text on white
- *   fill; the blue border is there at rest too, just the same color as the
- *   fill so it's invisible until the fill flips to white.
+ * - `primary`: white text on blue fill.
  * - `outline` (brand brown): brown text on white fill with a brown border.
- *   Hover fills brown with white text and drops the border.
+ *   Set `transparent` to drop the white fill AND switch text/border to
+ *   `currentColor` — the button then takes on whatever text color its
+ *   container already set (e.g. CourseCard.vue's 4 display styles), so one
+ *   button reads correctly on any of them instead of always being brown.
+ *
+ * Hover doesn't touch color on either variant — it lifts the button by a
+ * single px (press back down to `translate-y-0` on `:active`), a subtle
+ * physical-feedback nudge instead of a color swap. No shadow.
  *
  * `pill` still controls shape (stadium vs. large-rounded-rect) since that's
- * not restricted to one value — nav/hero/card CTAs are pill, form submit
- * buttons use `:pill="false"`.
+ * not restricted to one value — everything is pill by default; set
+ * `:pill="false"` for the rare flatter, large-rounded-rect shape.
  *
  * `:is` takes the imported NuxtLink component, not the string "NuxtLink" —
  * a bare string doesn't resolve at runtime (Nuxt's auto-import only
@@ -25,7 +32,7 @@ import { NuxtLink } from "#components";
  * @example
  * <UiButton variant="primary" to="/masterclasses">Мастер-классы</UiButton>
  * <UiButton variant="outline" to="/#about">О школе</UiButton>
- * <UiButton type="submit" :pill="false" block :loading="pending">Отправить заявку</UiButton>
+ * <UiButton type="submit" block :loading="pending">Отправить заявку</UiButton>
  */
 const props = withDefaults(
   defineProps<{
@@ -38,6 +45,8 @@ const props = withDefaults(
     block?: boolean;
     /** Stadium/pill shape (nav, hero, card CTAs). Set false for the flatter form-submit shape. */
     pill?: boolean;
+    /** `outline` only: no white fill, just border + text on whatever sits behind it. */
+    transparent?: boolean;
   }>(),
   {
     variant: "primary",
@@ -47,6 +56,7 @@ const props = withDefaults(
     loading: false,
     block: false,
     pill: true,
+    transparent: false,
   },
 );
 
@@ -65,15 +75,16 @@ function onClick(event: MouseEvent) {
     :disabled="!to && (disabled || loading)"
     :aria-busy="loading || undefined"
     :aria-disabled="to && (disabled || loading) ? 'true' : undefined"
-    class="inline-flex h-[44px] items-center justify-center gap-8 border-2 px-24 font-display text-button font-bold transition-colors duration-200 sm:h-[64px] sm:px-40"
+    class="inline-flex h-[56px] items-center justify-center gap-8 border-2 px-24 font-display text-button font-bold transition-transform duration-200 ease-out will-change-transform hover:-translate-y-1 active:translate-y-0 active:duration-75 motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:px-40"
     :class="[
       pill ? 'rounded-pill' : 'rounded-lg',
       block ? 'w-full' : '',
-      (disabled || loading) && 'cursor-not-allowed opacity-40',
-      variant === 'primary' &&
-        'border-primary bg-primary text-white hover:bg-white hover:text-primary',
+      (disabled || loading) && 'cursor-not-allowed opacity-40 hover:translate-y-0',
+      variant === 'primary' && 'border-primary bg-primary text-white',
       variant === 'outline' &&
-        'border-ink bg-white text-ink hover:border-transparent hover:bg-ink hover:text-white',
+        (transparent
+          ? 'border-current bg-transparent text-current'
+          : 'border-ink bg-white text-ink'),
     ]"
     @click="onClick"
   >

@@ -27,7 +27,7 @@ const errorId = useId();
 
 <template>
   <div class="flex flex-col gap-8">
-    <label :for="inputId" class="font-body text-body-l font-bold text-primary">
+    <label :for="inputId" class="font-body text-body font-bold text-primary">
       {{ label }}<span v-if="required" aria-hidden="true"> *</span>
     </label>
     <textarea

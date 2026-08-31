@@ -22,11 +22,17 @@ func newFakeCourseRepository() *fakeCourseRepository {
 	return &fakeCourseRepository{nextID: 1}
 }
 
-func (f *fakeCourseRepository) List(ctx context.Context) ([]model.Course, error) {
+func (f *fakeCourseRepository) ListBySectionID(ctx context.Context, sectionID int64) ([]model.Course, error) {
 	if f.err != nil {
 		return nil, f.err
 	}
-	return f.items, nil
+	var items []model.Course
+	for _, existing := range f.items {
+		if existing.SectionID == sectionID {
+			items = append(items, existing)
+		}
+	}
+	return items, nil
 }
 
 func (f *fakeCourseRepository) FindBySlug(ctx context.Context, slug string) (model.Course, error) {
@@ -51,30 +57,35 @@ func (f *fakeCourseRepository) Create(ctx context.Context, item model.Course) (m
 	return item, nil
 }
 
+// Update and Delete only match a row that belongs to the given section —
+// mirrors the real repository's WHERE id = $x AND section_id = $y, so a URL
+// like /course-sections/1/courses/42 can't touch a course that actually
+// belongs to a different section.
 func (f *fakeCourseRepository) Update(ctx context.Context, item model.Course) (model.Course, error) {
 	if f.err != nil {
 		return model.Course{}, f.err
 	}
 	for i, existing := range f.items {
-		if existing.ID == item.ID {
+		if existing.ID == item.ID && existing.SectionID == item.SectionID {
+			item.SectionID = existing.SectionID
 			f.items[i] = item
 			return item, nil
 		}
 	}
-	return model.Course{}, errors.New("not found")
+	return model.Course{}, service.ErrNotFound
 }
 
-func (f *fakeCourseRepository) Delete(ctx context.Context, id int64) error {
+func (f *fakeCourseRepository) Delete(ctx context.Context, sectionID, id int64) error {
 	if f.err != nil {
 		return f.err
 	}
 	for i, existing := range f.items {
-		if existing.ID == id {
+		if existing.ID == id && existing.SectionID == sectionID {
 			f.items = append(f.items[:i], f.items[i+1:]...)
 			return nil
 		}
 	}
-	return errors.New("not found")
+	return service.ErrNotFound
 }
 
 func TestCourseService_Create(t *testing.T) {
@@ -83,124 +94,106 @@ func TestCourseService_Create(t *testing.T) {
 		svc := service.NewCourseService(repo)
 
 		course, err := svc.Create(context.Background(), model.Course{
-			Slug:  "  go-basics  ",
-			Title: "  Go Basics  ",
+			SectionID: 1,
+			Slug:      "  go-basics  ",
+			Name:      "  Go Basics  ",
 		})
 
 		require.NoError(t, err)
 		assert.Equal(t, int64(1), course.ID)
 		assert.Equal(t, "go-basics", course.Slug)
-		assert.Equal(t, "Go Basics", course.Title)
+		assert.Equal(t, "Go Basics", course.Name)
 	})
 
 	t.Run("rejects an empty slug", func(t *testing.T) {
 		repo := newFakeCourseRepository()
 		svc := service.NewCourseService(repo)
 
-		_, err := svc.Create(context.Background(), model.Course{Slug: "   ", Title: "Title"})
+		_, err := svc.Create(context.Background(), model.Course{SectionID: 1, Slug: "   ", Name: "Name"})
 
 		require.Error(t, err)
 		assert.ErrorIs(t, err, service.ErrValidation)
 		assert.Empty(t, repo.items)
 	})
 
-	t.Run("rejects an empty title", func(t *testing.T) {
+	t.Run("rejects an empty name", func(t *testing.T) {
 		repo := newFakeCourseRepository()
 		svc := service.NewCourseService(repo)
 
-		_, err := svc.Create(context.Background(), model.Course{Slug: "slug", Title: "   "})
+		_, err := svc.Create(context.Background(), model.Course{SectionID: 1, Slug: "slug", Name: "   "})
 
 		require.Error(t, err)
 		assert.ErrorIs(t, err, service.ErrValidation)
 	})
 
-	t.Run("rejects an invalid status", func(t *testing.T) {
+	t.Run("rejects a zero sectionId", func(t *testing.T) {
 		repo := newFakeCourseRepository()
 		svc := service.NewCourseService(repo)
 
-		_, err := svc.Create(context.Background(), model.Course{
-			Slug:   "slug",
-			Title:  "Title",
-			Status: model.CourseStatus("draft"),
-		})
+		_, err := svc.Create(context.Background(), model.Course{Slug: "slug", Name: "Name"})
 
 		require.Error(t, err)
 		assert.ErrorIs(t, err, service.ErrValidation)
-	})
-
-	t.Run("defaults status to active when empty", func(t *testing.T) {
-		repo := newFakeCourseRepository()
-		svc := service.NewCourseService(repo)
-
-		course, err := svc.Create(context.Background(), model.Course{Slug: "slug", Title: "Title"})
-
-		require.NoError(t, err)
-		assert.Equal(t, model.CourseStatusActive, course.Status)
-	})
-
-	t.Run("stores gallery as provided", func(t *testing.T) {
-		repo := newFakeCourseRepository()
-		svc := service.NewCourseService(repo)
-
-		course, err := svc.Create(context.Background(), model.Course{
-			Slug:    "slug",
-			Title:   "Title",
-			Gallery: []string{"one.jpg", "two.jpg"},
-		})
-
-		require.NoError(t, err)
-		assert.Equal(t, []string{"one.jpg", "two.jpg"}, course.Gallery)
-	})
-
-	t.Run("normalizes a nil gallery slice to empty instead of leaving it nil", func(t *testing.T) {
-		repo := newFakeCourseRepository()
-		svc := service.NewCourseService(repo)
-
-		course, err := svc.Create(context.Background(), model.Course{Slug: "slug", Title: "Title", Gallery: nil})
-
-		require.NoError(t, err)
-		assert.NotNil(t, course.Gallery)
-		assert.Empty(t, course.Gallery)
+		assert.Empty(t, repo.items)
 	})
 }
 
 func TestCourseService_Update(t *testing.T) {
 	repo := newFakeCourseRepository()
 	svc := service.NewCourseService(repo)
-	created, err := svc.Create(context.Background(), model.Course{Slug: "slug", Title: "Title"})
+	created, err := svc.Create(context.Background(), model.Course{SectionID: 1, Slug: "slug", Name: "Name"})
 	require.NoError(t, err)
 
 	t.Run("updates an existing course", func(t *testing.T) {
-		created.Title = "Updated Title"
+		created.Name = "Updated Name"
 		updated, err := svc.Update(context.Background(), created)
 
 		require.NoError(t, err)
-		assert.Equal(t, "Updated Title", updated.Title)
+		assert.Equal(t, "Updated Name", updated.Name)
 	})
 
 	t.Run("rejects a missing id", func(t *testing.T) {
-		_, err := svc.Update(context.Background(), model.Course{Slug: "slug", Title: "Title"})
+		_, err := svc.Update(context.Background(), model.Course{SectionID: 1, Slug: "slug", Name: "Name"})
 
 		require.Error(t, err)
 		assert.ErrorIs(t, err, service.ErrValidation)
+	})
+
+	t.Run("rejects a missing sectionId", func(t *testing.T) {
+		_, err := svc.Update(context.Background(), model.Course{ID: created.ID, Slug: "slug", Name: "Name"})
+
+		require.Error(t, err)
+		assert.ErrorIs(t, err, service.ErrValidation)
+	})
+
+	t.Run("does not update a course belonging to a different section", func(t *testing.T) {
+		other, err := svc.Create(context.Background(), model.Course{SectionID: 2, Slug: "other", Name: "Other"})
+		require.NoError(t, err)
+
+		// Same course id as `other`, but wrong sectionId — simulates
+		// PUT /course-sections/1/courses/{other.ID}.
+		_, err = svc.Update(context.Background(), model.Course{ID: other.ID, SectionID: 1, Slug: "hijacked", Name: "Hijacked"})
+
+		require.Error(t, err)
+		assert.ErrorIs(t, err, service.ErrNotFound)
 	})
 }
 
 func TestCourseService_Delete(t *testing.T) {
 	repo := newFakeCourseRepository()
 	svc := service.NewCourseService(repo)
-	created, err := svc.Create(context.Background(), model.Course{Slug: "slug", Title: "Title"})
+	created, err := svc.Create(context.Background(), model.Course{SectionID: 1, Slug: "slug", Name: "Name"})
 	require.NoError(t, err)
 
 	t.Run("deletes an existing course", func(t *testing.T) {
-		require.NoError(t, svc.Delete(context.Background(), created.ID))
-		items, err := svc.List(context.Background())
+		require.NoError(t, svc.Delete(context.Background(), created.SectionID, created.ID))
+		items, err := svc.ListBySectionID(context.Background(), created.SectionID)
 		require.NoError(t, err)
 		assert.Empty(t, items)
 	})
 
 	t.Run("rejects a zero id", func(t *testing.T) {
-		err := svc.Delete(context.Background(), 0)
+		err := svc.Delete(context.Background(), 1, 0)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, service.ErrValidation)
 	})
@@ -209,7 +202,7 @@ func TestCourseService_Delete(t *testing.T) {
 func TestCourseService_GetBySlug(t *testing.T) {
 	repo := newFakeCourseRepository()
 	svc := service.NewCourseService(repo)
-	created, err := svc.Create(context.Background(), model.Course{Slug: "slug", Title: "Title"})
+	created, err := svc.Create(context.Background(), model.Course{SectionID: 1, Slug: "slug", Name: "Name"})
 	require.NoError(t, err)
 
 	t.Run("finds an existing course", func(t *testing.T) {
@@ -227,12 +220,12 @@ func TestCourseService_GetBySlug(t *testing.T) {
 	})
 }
 
-func TestCourseService_List_PropagatesRepositoryError(t *testing.T) {
+func TestCourseService_ListBySectionID_PropagatesRepositoryError(t *testing.T) {
 	repo := newFakeCourseRepository()
 	repo.err = errors.New("boom")
 	svc := service.NewCourseService(repo)
 
-	_, err := svc.List(context.Background())
+	_, err := svc.ListBySectionID(context.Background(), 1)
 
 	require.Error(t, err)
 }

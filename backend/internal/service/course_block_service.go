@@ -27,23 +27,46 @@ func (s *CourseBlockService) ListByCourseID(ctx context.Context, courseID int64)
 	return s.repo.ListByCourseID(ctx, courseID)
 }
 
+var validDisplayStyles = map[model.CourseBlockDisplayStyle]bool{
+	model.DisplayStyleBlueBeige:  true,
+	model.DisplayStyleBrownBeige: true,
+	model.DisplayStyleBeigeBlue:  true,
+	model.DisplayStyleBeigeBrown: true,
+}
+
+// validateDisplayStyle defaults an empty value (a client that doesn't send
+// the field yet) to the same default the DB column has, and rejects
+// anything outside the 4 combos CourseCard.vue knows how to render.
+func validateDisplayStyle(style model.CourseBlockDisplayStyle) (model.CourseBlockDisplayStyle, error) {
+	if style == "" {
+		return model.DisplayStyleBlueBeige, nil
+	}
+	if !validDisplayStyles[style] {
+		return "", errors.Join(ErrValidation, errors.New("displayStyle must be one of blue-beige, brown-beige, beige-blue, beige-brown"))
+	}
+	return style, nil
+}
+
+// BlockName isn't required — a course with a single, undivided block (the
+// common case; see CourseBlock's doc comment on the frontend rendering
+// rules) leaves it blank, since the public pages only show a block's name
+// as a label when the course actually has more than one block.
 func (s *CourseBlockService) Create(ctx context.Context, item model.CourseBlock) (model.CourseBlock, error) {
-	item.Title = strings.TrimSpace(item.Title)
+	item.BlockName = strings.TrimSpace(item.BlockName)
 	if item.CourseID == 0 {
 		return model.CourseBlock{}, errors.Join(ErrValidation, errors.New("courseId is required"))
 	}
-	if item.Title == "" {
-		return model.CourseBlock{}, errors.Join(ErrValidation, errors.New("title is required"))
-	}
-	if err := validateOldPrice(item); err != nil {
+	style, err := validateDisplayStyle(item.DisplayStyle)
+	if err != nil {
 		return model.CourseBlock{}, err
 	}
+	item.DisplayStyle = style
 
 	return s.repo.Create(ctx, item)
 }
 
 func (s *CourseBlockService) Update(ctx context.Context, item model.CourseBlock) (model.CourseBlock, error) {
-	item.Title = strings.TrimSpace(item.Title)
+	item.BlockName = strings.TrimSpace(item.BlockName)
 	if item.ID == 0 {
 		return model.CourseBlock{}, errors.Join(ErrValidation, errors.New("id is required"))
 	}
@@ -54,23 +77,13 @@ func (s *CourseBlockService) Update(ctx context.Context, item model.CourseBlock)
 	if item.CourseID == 0 {
 		return model.CourseBlock{}, errors.Join(ErrValidation, errors.New("courseId is required"))
 	}
-	if item.Title == "" {
-		return model.CourseBlock{}, errors.Join(ErrValidation, errors.New("title is required"))
-	}
-	if err := validateOldPrice(item); err != nil {
+	style, err := validateDisplayStyle(item.DisplayStyle)
+	if err != nil {
 		return model.CourseBlock{}, err
 	}
+	item.DisplayStyle = style
 
 	return s.repo.Update(ctx, item)
-}
-
-// validateOldPrice keeps "old price" meaningful as a was/now discount label:
-// if set, it has to be strictly higher than the current price.
-func validateOldPrice(item model.CourseBlock) error {
-	if item.OldPrice != nil && *item.OldPrice <= item.Price {
-		return errors.Join(ErrValidation, errors.New("oldPrice must be greater than price"))
-	}
-	return nil
 }
 
 func (s *CourseBlockService) Delete(ctx context.Context, courseID, id int64) error {

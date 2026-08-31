@@ -19,11 +19,11 @@ func NewMasterclassRepository(db *pgxpool.Pool) *MasterclassRepository {
 
 // masterclassColumns/scanMasterclass — see blog_post_repository.go's
 // identical comment (architecture review finding #12).
-const masterclassColumns = "id, slug, title, short_description, full_description, ending_text, duration, price_group, price_individual, price_description, cover_image, status, created_at, updated_at"
+const masterclassColumns = "id, slug, title, description, description2, ending_text, duration, price, cover_image, status, created_at, updated_at"
 
 func scanMasterclass(row pgx.Row) (model.Masterclass, error) {
 	var item model.Masterclass
-	err := row.Scan(&item.ID, &item.Slug, &item.Title, &item.ShortDesc, &item.FullDesc, &item.EndingText, &item.Duration, &item.PriceGroup, &item.PriceIndividual, &item.PriceDescription, &item.CoverImage, &item.Status, &item.CreatedAt, &item.UpdatedAt)
+	err := row.Scan(&item.ID, &item.Slug, &item.Title, &item.Description, &item.Description2, &item.EndingText, &item.Duration, &item.Price, &item.CoverImage, &item.Status, &item.CreatedAt, &item.UpdatedAt)
 	return item, err
 }
 
@@ -62,14 +62,13 @@ func (r *MasterclassRepository) FindBySlug(ctx context.Context, slug string) (mo
 func (r *MasterclassRepository) Create(ctx context.Context, item model.Masterclass) (model.Masterclass, error) {
 	err := r.db.QueryRow(ctx, `
 		INSERT INTO masterclasses (
-			slug, title, short_description, full_description, ending_text, duration,
-			price_group, price_individual, price_description, cover_image, status
+			slug, title, description, description2, ending_text, duration, price, cover_image, status
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING id, created_at, updated_at
 	`,
-		item.Slug, item.Title, item.ShortDesc, item.FullDesc, item.EndingText, item.Duration,
-		item.PriceGroup, item.PriceIndividual, item.PriceDescription, item.CoverImage, item.Status,
+		item.Slug, item.Title, item.Description, item.Description2, item.EndingText, item.Duration,
+		item.Price, item.CoverImage, item.Status,
 	).Scan(&item.ID, &item.CreatedAt, &item.UpdatedAt)
 	return item, err
 }
@@ -77,14 +76,14 @@ func (r *MasterclassRepository) Create(ctx context.Context, item model.Mastercla
 func (r *MasterclassRepository) Update(ctx context.Context, item model.Masterclass) (model.Masterclass, error) {
 	err := r.db.QueryRow(ctx, `
 		UPDATE masterclasses
-		SET slug = $1, title = $2, short_description = $3, full_description = $4, ending_text = $5, duration = $6,
-		    price_group = $7, price_individual = $8, price_description = $9, cover_image = $10, status = $11,
+		SET slug = $1, title = $2, description = $3, description2 = $4, ending_text = $5, duration = $6,
+		    price = $7, cover_image = $8, status = $9,
 		    updated_at = now()
-		WHERE id = $12
+		WHERE id = $10
 		RETURNING updated_at
 	`,
-		item.Slug, item.Title, item.ShortDesc, item.FullDesc, item.EndingText, item.Duration,
-		item.PriceGroup, item.PriceIndividual, item.PriceDescription, item.CoverImage, item.Status, item.ID,
+		item.Slug, item.Title, item.Description, item.Description2, item.EndingText, item.Duration,
+		item.Price, item.CoverImage, item.Status, item.ID,
 	).Scan(&item.UpdatedAt)
 	return item, translateNotFound(err)
 }

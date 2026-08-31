@@ -32,12 +32,15 @@ func (h *courseBlockHandler) routes(r chi.Router) {
 }
 
 type courseBlockCreateRequest struct {
-	Title        string `json:"title"`
-	LessonsCount int    `json:"lessonsCount"`
-	Hours        int    `json:"hours"`
-	Price        int    `json:"price"`
-	OldPrice     *int   `json:"oldPrice"`
-	SortOrder    int    `json:"sortOrder"`
+	BlockName    string                        `json:"blockName"`
+	Description  string                        `json:"description"`
+	BlockCover   string                        `json:"blockCover"`
+	LessonCount  string                        `json:"lessonCount"`
+	TimeLength   string                        `json:"timeLength"`
+	Price        string                        `json:"price"`
+	DisplayStyle model.CourseBlockDisplayStyle `json:"displayStyle"`
+	Visible      bool                          `json:"visible"`
+	SortOrder    int                           `json:"sortOrder"`
 }
 
 func (h *courseBlockHandler) list(w http.ResponseWriter, r *http.Request) {
@@ -70,11 +73,14 @@ func (h *courseBlockHandler) create(w http.ResponseWriter, r *http.Request) {
 
 	item, err := h.svc.Create(r.Context(), model.CourseBlock{
 		CourseID:     courseID,
-		Title:        req.Title,
-		LessonsCount: req.LessonsCount,
-		Hours:        req.Hours,
+		BlockName:    req.BlockName,
+		Description:  req.Description,
+		BlockCover:   req.BlockCover,
+		LessonCount:  req.LessonCount,
+		TimeLength:   req.TimeLength,
 		Price:        req.Price,
-		OldPrice:     req.OldPrice,
+		DisplayStyle: req.DisplayStyle,
+		Visible:      req.Visible,
 		SortOrder:    req.SortOrder,
 	})
 	if err != nil {
@@ -106,11 +112,14 @@ func (h *courseBlockHandler) update(w http.ResponseWriter, r *http.Request) {
 	item, err := h.svc.Update(r.Context(), model.CourseBlock{
 		ID:           id,
 		CourseID:     courseID,
-		Title:        req.Title,
-		LessonsCount: req.LessonsCount,
-		Hours:        req.Hours,
+		BlockName:    req.BlockName,
+		Description:  req.Description,
+		BlockCover:   req.BlockCover,
+		LessonCount:  req.LessonCount,
+		TimeLength:   req.TimeLength,
 		Price:        req.Price,
-		OldPrice:     req.OldPrice,
+		DisplayStyle: req.DisplayStyle,
+		Visible:      req.Visible,
 		SortOrder:    req.SortOrder,
 	})
 	if err != nil {

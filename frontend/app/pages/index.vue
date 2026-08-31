@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Component } from "vue";
 import { featureIconComponent } from "~/constants/feature-icons";
+import type { CourseSectionWithCourses } from "~/types/api";
 
 useSeoMeta({
   title: "ФлоВей — школа флористики в Москве",
@@ -11,23 +12,36 @@ useSeoMeta({
 const api = useApi();
 const { text } = await usePageContent();
 
-const { data: mainCourse } = await useAsyncData("home-course-osnovy", () =>
-  api.getCourse("osnovy-floristiki"),
+const { data: courseSectionsData } = await useAsyncData("home-course-sections", () =>
+  api.getCourseSections(),
 );
-const { data: courses } = await useAsyncData("home-courses", () => api.getCourses());
+const courseSections = computed(() => courseSectionsData.value ?? []);
 
-const profileSlugs = [
-  "kommercheskaya-floristika",
-  "aktualnaya-floristika",
-  "svadebnaya-floristika",
-];
-const profileVariants = ["surface-ink", "surface-primary", "surface-white"] as const;
-const profileCourses = computed(
-  () =>
-    courses.value
-      ?.filter((c) => profileSlugs.includes(c.slug))
-      .sort((a, b) => a.sortOrder - b.sortOrder) ?? [],
-);
+/**
+ * One card per VISIBLE block — a course with a single block (or none at
+ * all, in which case the backend hands back one synthetic block built from
+ * the course's own fields, see model.Course's Go doc comment) renders as
+ * one card; a course with several blocks (e.g. "Основы флористики" with a
+ * "Букеты" and a "Композиции" block) renders one card per block, each
+ * titled with the course's name. `block.blockName` is blank for the
+ * synthetic case, so `blockLabel` naturally comes out empty there and
+ * CourseCard just shows lessonCount/timeLength — no separate branch needed
+ * for "course with no blocks" vs. "course with exactly one named block".
+ */
+function sectionCards(section: CourseSectionWithCourses) {
+  return section.courses.flatMap((course) =>
+    course.blocks.map((block, index) => ({
+      key: `${course.id}-${index}`,
+      name: course.name,
+      blockLabel: block.blockName || undefined,
+      lessonCount: block.lessonCount || undefined,
+      timeLength: block.timeLength || undefined,
+      coverImage: block.blockCover || undefined,
+      displayStyle: block.displayStyle,
+      to: `/courses/${course.slug}`,
+    })),
+  );
+}
 
 const { data: featuresData } = await useAsyncData("home-features", () => api.getFeatures("home"));
 const features = computed(
@@ -48,6 +62,13 @@ const aboutItems = computed(
   () => aboutItemsData.value?.slice().sort((a, b) => a.sortOrder - b.sortOrder) ?? [],
 );
 
+const { data: galleryPhotosData } = await useAsyncData("home-gallery-photos", () =>
+  api.getGalleryPhotos(),
+);
+const galleryPhotos = computed(
+  () => galleryPhotosData.value?.slice().sort((a, b) => a.sortOrder - b.sortOrder) ?? [],
+);
+
 const { data: teachersData } = await useAsyncData("home-teachers", () => api.getTeachers());
 const teachers = computed(
   () => teachersData.value?.slice().sort((a, b) => a.sortOrder - b.sortOrder) ?? [],
@@ -56,6 +77,13 @@ const teachers = computed(
 const { data: faqData } = await useAsyncData("home-faq", () => api.getFAQItems());
 const faqItems = computed(() => faqData.value ?? []);
 const openFaqIds = ref<Array<string | number>>([0]);
+
+function capitalizeName(name: string): string {
+  return name
+    .split(" ")
+    .map((part) => (part ? part[0]!.toUpperCase() + part.slice(1) : part))
+    .join(" ");
+}
 </script>
 
 <template>
@@ -72,136 +100,150 @@ const openFaqIds = ref<Array<string | number>>([0]);
       </template>
       <template #actions>
         <UiButton variant="primary" to="/#courses">Курсы</UiButton>
-        <UiButton variant="outline" to="/#about">О школе</UiButton>
+        <UiButton variant="outline" to="/#trial">Пробное занятие</UiButton>
       </template>
       <template v-if="text('home_hero_image')" #media>
         <img
           :src="resolveMediaUrl(text('home_hero_image'))"
           alt=""
-          class="aspect-[4/3] w-full rounded-lg object-cover"
+          class="aspect-square w-full rounded-lg object-cover"
         />
       </template>
     </Hero>
 
-    <section class="bg-surface py-64 sm:py-96 lg:py-120">
+    <section class="bg-surface/55 py-48 backdrop-blur backdrop-saturate-150 sm:py-64 lg:py-80">
       <div class="container flex flex-col gap-48">
-        <SectionHeading color="primary">
-          Почему стоит учиться в школе “ФлоВей”?
-          <template #lead
-            >Мы создали школу, в которой удобно учиться, легко развиваться и получать реальные
-            практические навыки флористики.</template
-          >
+        <SectionHeading color="primary" on-glass>
+          {{ text("home_features_heading", "Почему стоит учиться в школе «ФлоВей»?") }}
+          <template #lead>
+            {{
+              text(
+                "home_features_lead",
+                "Мы создали школу, в которой удобно учиться, легко развиваться и получать реальные практические навыки флористики.",
+              )
+            }}
+          </template>
         </SectionHeading>
         <FeatureGrid :items="features" />
       </div>
     </section>
 
-    <section id="about" class="scroll-mt-64 bg-white py-64 sm:py-96 lg:scroll-mt-96 lg:py-120">
+    <section v-if="galleryPhotos.length" class="py-48 sm:py-64 lg:py-80">
+      <div class="container">
+        <PhotoCarousel :photos="galleryPhotos" />
+      </div>
+    </section>
+
+    <section id="about" class="scroll-mt-64 py-48 sm:py-64 lg:scroll-mt-96 lg:py-80">
       <div class="container flex flex-col gap-48">
         <SectionHeading>О школе</SectionHeading>
-        <!-- Бежевая карточка-обёртка вокруг списка (flex-column, не грид); каждый
-        пункт внутри — отдельная белая строка на всю ширину. -->
-        <div class="rounded-lg bg-surface p-24 sm:p-32">
-          <div class="flex flex-col gap-24">
+        <!-- Бежевая карточка-обёртка вокруг списка (flex-column, не грид);
+        каждый пункт — отдельная белая строка, растянутая на всю ширину
+        обёртки. -->
+        <div class="rounded-lg bg-surface/55 p-24 backdrop-blur backdrop-saturate-150 sm:p-32">
+          <div class="flex flex-col items-start gap-24">
             <div
               v-for="item in aboutItems"
               :key="item.id"
-              class="flex flex-col items-start gap-16 rounded-md bg-white p-32"
+              class="flex w-full flex-col items-start gap-16 rounded-md bg-white p-32"
             >
               <UiBadge>{{ item.badge }}</UiBadge>
-              <p class="font-body text-body text-ink">{{ item.description }}</p>
+              <p class="whitespace-pre-line font-body text-body text-ink">
+                {{ item.description }}
+              </p>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <section id="courses" class="scroll-mt-64 py-64 sm:py-96 lg:scroll-mt-96 lg:py-120">
+    <section
+      v-for="(section, sIndex) in courseSections"
+      :id="sIndex === 0 ? 'courses' : undefined"
+      :key="section.id"
+      class="py-48 sm:py-64 lg:py-80"
+      :class="sIndex === 0 ? 'scroll-mt-64 lg:scroll-mt-96' : ''"
+    >
       <div class="container flex flex-col gap-48">
-        <SectionHeading color="primary">
-          Курс “Основы флористики”
-          <template #lead>{{ mainCourse?.shortDescription }}</template>
+        <SectionHeading :color="sIndex % 2 === 0 ? 'primary' : 'ink'">
+          {{ section.heading }}
+          <template #lead>{{ section.description }}</template>
         </SectionHeading>
-        <div v-if="mainCourse" class="grid grid-cols-1 gap-24 md:grid-cols-2 lg:gap-32">
+        <div class="flex flex-wrap justify-center gap-24 lg:gap-32">
           <CourseCard
-            v-for="module in mainCourse.modules"
-            :key="module.id"
-            :title="`Блок “${module.title}”`"
-            :variant="module.title === 'Букеты' ? 'surface-primary' : 'surface-ink'"
-            :lessons-count="module.lessonsCount"
-            :hours="module.hours"
-            :price="module.price"
-            :to="`/courses/${mainCourse.slug}`"
+            v-for="card in sectionCards(section)"
+            :key="card.key"
+            :name="card.name"
+            :display-style="card.displayStyle"
+            :block-label="card.blockLabel"
+            :lesson-count="card.lessonCount"
+            :time-length="card.timeLength"
+            :cover-image="card.coverImage"
+            :to="card.to"
+            class="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-22px)]"
           />
         </div>
       </div>
     </section>
 
-    <section class="bg-surface py-64 sm:py-96 lg:py-120">
-      <div class="container flex flex-col gap-48">
-        <SectionHeading>
-          Профильные курсы
-          <template #lead
-            >После прохождения курса “Основы флористики” вы можете продолжить обучение по одному или
-            сразу нескольким специализированным направлениям.</template
-          >
-        </SectionHeading>
-        <div class="grid grid-cols-1 gap-24 md:grid-cols-2 lg:grid-cols-3 lg:gap-32">
-          <CourseCard
-            v-for="(course, i) in profileCourses"
-            :key="course.id"
-            :title="course.title"
-            :variant="profileVariants[i % profileVariants.length]"
-            :cover-image="course.coverImage"
-            :to="`/courses/${course.slug}`"
-          />
-        </div>
-      </div>
-    </section>
-
-    <section class="py-64 sm:py-96 lg:py-120">
+    <section id="trial" class="scroll-mt-64 py-48 sm:py-64 lg:scroll-mt-96 lg:py-80">
       <div class="container flex flex-col gap-48">
         <SectionHeading color="primary">
-          {{ text("home_trial_heading", "Попробуйте флористику на практике") }}
+          {{ text("trial_section_heading", "Попробуйте флористику на практике") }}
           <template #lead>
             {{
               text(
-                "home_trial_description",
+                "trial_section_description",
                 "Вы научитесь собирать круглый букет в спиральной технике: поймёте принцип работы со спиралью, научитесь уверенно удерживать букет в руках во время сборки и правильно подвязывать букет. Кроме практики, вы сможете познакомиться с нашим педагогом, узнать, как проходят занятия в школе, задать все интересующие вопросы и понять, подходит ли вам обучение.",
               )
             }}
           </template>
         </SectionHeading>
 
-        <div class="grid grid-cols-1 gap-32 lg:grid-cols-2 lg:gap-64">
-          <div class="flex flex-col gap-24">
-            <div class="flex flex-col gap-8">
-              <h3 class="text-center font-display text-h2 text-ink">
-                {{ text("home_trial_lesson_title", "Пробное занятие") }}
+        <div class="grid grid-cols-1 gap-32 md:grid-cols-2 md:gap-64">
+          <div class="order-2 flex w-full flex-col gap-24 md:order-1">
+            <div
+              class="flex flex-col gap-16 rounded-md bg-white/55 px-16 py-24 backdrop-blur backdrop-saturate-150"
+            >
+              <h3 class="font-body text-h4 text-ink">
+                {{ text("trial_heading", "Пробное занятие") }}
               </h3>
-              <p class="text-left font-body text-body text-ink">
-                {{ text("home_trial_duration", "Продолжительность: 2,5 часа") }}
-              </p>
-              <p class="text-left font-body text-body text-ink">
-                {{ text("home_trial_price", "Стоимость: 3 000 ₽") }}
-              </p>
+              <!-- Single \n (not \n\n) so duration+price render as one tight
+              paragraph with a <br> between them, not two separately-spaced
+              ones — otherwise the gap between them (markdown paragraph
+              margin) was bigger than the gap to the heading above, so
+              duration read as grouped with "Пробное занятие" instead of
+              with the price right under it. -->
+              <MarkdownContent
+                :source="
+                  text('trial_description', 'Продолжительность: 2,5 часа.\nСтоимость: 3 000 ₽.')
+                "
+              />
             </div>
-            <ApplyForm context="trial_lesson" variant="simple" title="" />
+            <ApplyForm context="trial_lesson" title="" bare class="w-full" />
           </div>
           <!-- TODO: заменить на видео с пробным уроком, когда оно будет готово (пока фото). -->
-          <!-- max-w ограничивает контейнер видео, чтобы оно не растягивалось на всю колонку. -->
+          <!-- Портретное 9:16, растянуто до ширины колонки — но не выше 80%
+          экрана: max-h ограничивает высоту, а aspect-ratio при этом сжимает
+          и ширину пропорционально, так что соотношение сторон не ломается
+          (стандартное поведение aspect-ratio + max-height у браузера, без
+          JS). mx-auto центрирует, когда из-за max-h ширина не дотягивает до
+          полной колонки. -->
           <img
             v-if="text('home_trial_image')"
             :src="resolveMediaUrl(text('home_trial_image'))"
             alt=""
-            class="mx-auto aspect-[9/16] w-full max-w-[280px] rounded-lg object-cover"
+            class="order-1 mx-auto aspect-[9/16] max-h-[80vh] max-w-full rounded-lg object-cover md:sticky md:top-96 md:order-2"
           />
-          <div v-else class="mx-auto aspect-[9/16] w-full max-w-[280px] rounded-lg bg-primary" />
+          <div
+            v-else
+            class="order-1 mx-auto aspect-[9/16] max-h-[80vh] max-w-full rounded-lg bg-primary md:sticky md:top-96 md:order-2"
+          />
         </div>
       </div>
     </section>
 
-    <section class="py-64 sm:py-96 lg:py-120">
+    <section class="py-48 sm:py-64 lg:py-80">
       <div class="container flex flex-col gap-48">
         <SectionHeading>Педагоги</SectionHeading>
         <div class="grid grid-cols-1 gap-24 md:grid-cols-3">
@@ -221,27 +263,49 @@ const openFaqIds = ref<Array<string | number>>([0]);
               class="aspect-square w-full rounded-lg"
               :class="index % 2 === 0 ? 'bg-primary' : 'bg-surface'"
             />
-            <!-- Тот же стиль (шрифт/размер/жирность), что и у заголовков преимуществ,
-            текста кнопок и вопросов FAQ: font-display text-h4 font-bold. -->
+            <!-- Тот же размер, что и у заголовков преимуществ, текста кнопок
+            и вопросов FAQ (text-h4), но шрифт Non Bureau (не Soyuz Grotesk) и
+            Medium, а не Bold. -->
             <p
-              class="font-display text-h4 font-bold"
+              class="w-full rounded-md bg-white/55 py-12 text-center font-body text-h4 font-medium backdrop-blur backdrop-saturate-150"
               :class="index % 2 === 0 ? 'text-primary' : 'text-ink'"
             >
-              {{ teacher.name }}
+              {{ capitalizeName(teacher.name) }}
             </p>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="py-64 sm:py-96 lg:py-120">
-      <div class="container">
-        <!-- TODO: дизайна карточек отзывов пока нет (в макете только заголовок) — уточнить у заказчика перед вёрсткой блока. -->
-        <SectionHeading>Отзывы</SectionHeading>
+    <section class="bg-surface/55 py-48 backdrop-blur backdrop-saturate-150 sm:py-64 lg:py-80">
+      <div class="container flex flex-col gap-48">
+        <SectionHeading color="primary" on-glass>
+          Отзывы
+          <template #lead
+            >Смотрите отзывы о школе на Яндекс Картах — заходите оставить свой.</template
+          >
+        </SectionHeading>
+        <!-- Официальный виджет отзывов Яндекс Карт — сам виджет задаёт
+        style width:100%/height:100% (заказчик прислал), поэтому обёртка
+        ниже даёт ему конкретную высоту, внутри которой он растягивается. -->
+        <div class="mx-auto h-[950px] w-full max-w-[400px]">
+          <iframe
+            src="https://yandex.ru/maps-reviews-widget/83657275642?comments"
+            title="Отзывы о школе «ФлоВей» на Яндекс Картах"
+            loading="lazy"
+            style="
+              width: 100%;
+              height: 100%;
+              border: 1px solid #e6e6e6;
+              border-radius: 8px;
+              box-sizing: border-box;
+            "
+          />
+        </div>
       </div>
     </section>
 
-    <section class="py-64 sm:py-96 lg:py-120">
+    <section class="py-48 sm:py-64 lg:py-80">
       <div class="container flex flex-col gap-48">
         <SectionHeading color="primary">
           Вопросы и ответы
@@ -249,7 +313,7 @@ const openFaqIds = ref<Array<string | number>>([0]);
         </SectionHeading>
         <UiAccordion v-model="openFaqIds">
           <UiAccordionItem v-for="(item, i) in faqItems" :key="i" :id="i" :title="item.question">
-            <p>{{ item.answer }}</p>
+            <MarkdownContent :source="item.answer" />
           </UiAccordionItem>
         </UiAccordion>
       </div>

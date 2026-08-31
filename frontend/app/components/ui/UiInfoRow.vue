@@ -1,10 +1,16 @@
 <script setup lang="ts">
 /**
- * Price/duration info panel (course price table rows, masterclass duration+
- * price bar). A single row of plain-text columns — first column in blue
- * (label-like), the rest in bold ink — that stacks vertically on mobile.
- * `highlighted` switches from the plain surface fill to the white+blue-
- * border treatment used for the second row in the course price table.
+ * Price/duration info panel — one row per course block (or the single
+ * synthetic block) on the course page. A single row of plain-text columns,
+ * all one uniform color — that stacks vertically on mobile. Rows alternate
+ * two full styles via `highlighted`: beige fill + brown text (default) vs.
+ * white fill + blue text + blue border (`highlighted` — the border is
+ * needed here specifically because a plain white fill would otherwise have
+ * no visible edge against this section's own white background, unlike the
+ * beige default which already contrasts on its own) — the caller cycles it
+ * per row (see courses/[slug].vue's `i % 2 === 1`). Items sit in equal-width
+ * columns (`auto-cols-fr`), left-aligned — varying text lengths previously
+ * left items scattered unevenly across the row under `justify-between`.
  *
  * @example
  * <UiInfoRow :items="['Блок “Букеты”', '7 занятий', '30 часов', '38 500 ₽']" />
@@ -21,14 +27,13 @@ withDefaults(
 
 <template>
   <div
-    class="flex flex-col divide-y divide-primary/20 rounded-md md:flex-row md:items-center md:divide-x md:divide-y-0"
-    :class="highlighted ? 'border-2 border-primary bg-white' : 'bg-surface'"
+    class="grid rounded-md md:grid-flow-col md:auto-cols-fr md:items-center"
+    :class="highlighted ? 'border-2 border-primary bg-white text-primary' : 'bg-surface text-ink'"
   >
     <div
       v-for="(item, i) in items"
       :key="i"
-      class="flex-1 px-24 py-16 font-body text-body"
-      :class="i === 0 ? 'font-bold text-primary' : 'font-bold text-ink'"
+      class="px-24 py-32 text-left font-body text-body font-bold"
     >
       {{ item }}
     </div>

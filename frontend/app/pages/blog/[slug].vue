@@ -28,7 +28,7 @@ function formatDate(dateString: string | null) {
 </script>
 
 <template>
-  <div v-if="post" class="container flex flex-col gap-24 py-64 sm:py-96 lg:py-120">
+  <div v-if="post" class="container flex flex-col gap-24 py-48 sm:py-64 lg:py-80">
     <NuxtLink to="/blog" class="font-body text-body text-primary hover:underline"
       >← Ко всем статьям</NuxtLink
     >

@@ -52,5 +52,8 @@ func formatLeadText(lead model.Lead) string {
 	fmt.Fprintf(&b, "Способ связи: %s\n", label(lead.ContactMethod, contactMethodLabels))
 	fmt.Fprintf(&b, "Источник: %s\n", label(lead.Source, leadSourceLabels))
 	fmt.Fprintf(&b, "Запрос: %s\n", label(lead.RequestType, leadRequestTypeLabels))
+	if lead.RelatedSlug != "" {
+		fmt.Fprintf(&b, "Страница: %s\n", lead.RelatedSlug)
+	}
 	return b.String()
 }

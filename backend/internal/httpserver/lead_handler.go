@@ -38,6 +38,7 @@ type leadCreateRequest struct {
 	Source        model.LeadSource      `json:"source"`
 	RequestType   model.LeadRequestType `json:"requestType"`
 	RelatedID     *int64                `json:"relatedId,omitempty"`
+	RelatedSlug   string                `json:"relatedSlug"`
 }
 
 type leadUpdateStatusRequest struct {
@@ -68,6 +69,7 @@ func (h *leadHandler) create(w http.ResponseWriter, r *http.Request) {
 		Source:        req.Source,
 		RequestType:   req.RequestType,
 		RelatedID:     req.RelatedID,
+		RelatedSlug:   req.RelatedSlug,
 	})
 	if err != nil {
 		writeServiceError(w, r, err)

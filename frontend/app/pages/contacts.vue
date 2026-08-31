@@ -17,63 +17,89 @@ const socialIcons: Record<string, Component> = {
   VK: IconVk,
   Instagram: IconInstagram,
 };
+
+const phone = computed(() => text("contact_phone", contactInfo.phone));
+const phoneHref = computed(() => `tel:${phone.value.replace(/[^\d+]/g, "")}`);
+const metroStations = computed(() =>
+  text("contact_metro_stations", contactInfo.metroStations.join(", "))
+    .split(",")
+    .map((station) => station.trim())
+    .filter(Boolean),
+);
 </script>
 
 <template>
-  <div class="container flex flex-col gap-64 py-64 sm:py-96 lg:py-120">
-    <div class="flex flex-col gap-16">
-      <h1 class="font-display text-h1 text-ink">Контакты</h1>
+  <div class="container flex flex-col gap-64 py-48 sm:py-64 lg:py-80">
+    <!-- Одна колонка на всю ширину — h1 (визуально уменьшен до размера
+    остальных заголовков) теперь внутри той же стеклянной карточки, что и
+    способы связи, а не отдельной строкой над ней. -->
+    <div
+      class="flex w-full flex-col gap-16 rounded-md bg-white/55 p-24 backdrop-blur backdrop-saturate-150"
+    >
+      <h1 class="font-display text-h2 text-ink">Контакты</h1>
 
       <p class="font-body text-body text-ink">
         Позвонить:
-        <a :href="contactInfo.phoneHref" class="text-primary underline">{{ contactInfo.phone }}</a>
+        <a :href="phoneHref" class="text-primary underline">{{ phone }}</a>
       </p>
       <p class="font-body text-body text-ink">
         Написать на почту:
-        <a :href="`mailto:${contactInfo.email}`" class="text-primary underline">{{
-          contactInfo.email
-        }}</a>
+        <a
+          :href="`mailto:${text('contact_email', contactInfo.email)}`"
+          class="text-primary underline"
+          >{{ text("contact_email", contactInfo.email) }}</a
+        >
       </p>
       <p class="font-body text-body text-ink">
         Написать в
-        <a :href="contactInfo.telegramUrl" class="text-primary underline">Telegram</a>,
-        <a :href="contactInfo.whatsappUrl" class="text-primary underline">Whatsapp</a>
-        или
-        <!-- TODO: реальная ссылка/контакт для Max ожидает данных от заказчика. -->
-        <a href="#" class="text-primary underline">Max</a>
+        <a
+          :href="text('contact_telegram_url', contactInfo.telegramUrl)"
+          class="text-primary underline"
+          >Telegram</a
+        >,
+        <a
+          :href="text('contact_whatsapp_url', contactInfo.whatsappUrl)"
+          class="text-primary underline"
+          >Whatsapp</a
+        >
+        <template v-if="text('contact_max_url', contactInfo.maxUrl)">
+          или
+          <a :href="text('contact_max_url', contactInfo.maxUrl)" class="text-primary underline"
+            >Max</a
+          >
+        </template>
       </p>
     </div>
 
-    <div class="grid grid-cols-1 gap-32 lg:grid-cols-2 lg:gap-64">
-      <div class="flex flex-col gap-16">
-        <h2 class="font-display text-h2 text-primary">Адрес</h2>
+    <div
+      class="flex w-full flex-col gap-16 rounded-md bg-white/55 p-24 backdrop-blur backdrop-saturate-150"
+    >
+      <h2 class="font-display text-h2 text-primary">Адрес</h2>
 
-        <p class="font-body text-body text-ink">{{ contactInfo.address }}</p>
-        <p class="font-body text-body text-ink">
-          Ближайшие станции метро:
-          <strong>{{ contactInfo.metroStations.slice(0, -1).join(", ") }}</strong>
-          и
-          <strong>{{ contactInfo.metroStations.at(-1) }}</strong
-          >.
-        </p>
-        <p
-          v-for="(paragraph, i) in contactInfo.directions"
-          :key="i"
-          class="font-body text-body text-ink"
-        >
-          {{ paragraph }}
-        </p>
-      </div>
-      <img
-        v-if="text('contacts_office_image')"
-        :src="resolveMediaUrl(text('contacts_office_image'))"
-        alt=""
-        class="aspect-[4/3] w-full rounded-lg object-cover"
-      />
-      <UiMediaPlaceholder v-else aspect="4/3" />
+      <p class="font-body text-body text-ink">{{ text("contact_address", contactInfo.address) }}</p>
+      <p class="font-body text-body text-ink">
+        Ближайшие станции метро:
+        <strong>{{ metroStations.slice(0, -1).join(", ") }}</strong>
+        и
+        <strong>{{ metroStations.at(-1) }}</strong
+        >.
+      </p>
+      <MarkdownContent :source="text('contact_directions', contactInfo.directions.join('\n\n'))" />
     </div>
 
-    <div class="flex flex-col gap-24">
+    <iframe
+      :src="text('contact_map_iframe_url', '')"
+      title="Карта проезда до школы «ФлоВей»"
+      loading="lazy"
+      width="100%"
+      height="607"
+      frameborder="0"
+      class="w-full rounded-lg border-0"
+    />
+
+    <div
+      class="flex w-full flex-col gap-24 rounded-md bg-white/55 p-24 backdrop-blur backdrop-saturate-150"
+    >
       <h2 class="font-display text-h2 text-ink">Соцсети</h2>
       <div class="flex flex-col gap-8">
         <div class="flex gap-16">
