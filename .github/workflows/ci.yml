@@ -4,10 +4,21 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: >-
+          Тег образов в GHCR для раскатки. Пусто — собрать текущий коммит и
+          задеплоить его; заполнено (например sha-abc1234) — задеплоить уже
+          опубликованный тег, ничего не пересобирая и не двигая latest (откат).
+        required: false
+        default: ""
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # На main отменять нельзя: новый пуш оборвал бы уже идущий ansible-прогон
+  # на проде посреди пересоздания контейнеров. На ветках/PR — отменяем как раньше.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 permissions:
   contents: read
@@ -141,18 +152,50 @@ jobs:
       - run: bun run build
 
   docker-build:
-    name: Docker / build images (no push)
+    name: Docker / build & push images
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # пуш в ghcr.io под встроенным GITHUB_TOKEN, отдельный PAT не нужен
+    outputs:
+      image_tag: ${{ steps.meta.outputs.image_tag }}
     steps:
       - uses: actions/checkout@v7
 
       - uses: docker/setup-buildx-action@v4
 
+      - name: Определить имена образов и тег
+        id: meta
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          # GHCR принимает только нижний регистр в пути образа, а github.repository_owner
+          # отдаёт логин как есть.
+          owner_lc="$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')"
+          {
+            echo "backend_image=ghcr.io/$owner_lc/floway-backend"
+            echo "frontend_image=ghcr.io/$owner_lc/floway-frontend"
+            echo "image_tag=sha-$(git rev-parse --short=7 HEAD)"
+          } >> "$GITHUB_OUTPUT"
+
+      # Пушим только с main и только когда реально собираем текущий коммит:
+      # при ручном запуске с явным image_tag (откат) пересборка ничего не публикует,
+      # чтобы latest не уехал вперёд задеплоенного тега.
+      - name: Логин в GHCR
+        if: ${{ github.ref == 'refs/heads/main' && !inputs.image_tag }}
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
+        run: echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+
       - name: Build backend image
         uses: docker/build-push-action@v7
         with:
           context: ./backend
-          push: false
+          push: ${{ github.ref == 'refs/heads/main' && !inputs.image_tag }}
+          tags: |
+            ${{ steps.meta.outputs.backend_image }}:${{ steps.meta.outputs.image_tag }}
+            ${{ steps.meta.outputs.backend_image }}:latest
           cache-from: type=gha,scope=backend
           cache-to: type=gha,mode=max,scope=backend
 
@@ -160,6 +203,87 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: ./frontend
-          push: false
+          push: ${{ github.ref == 'refs/heads/main' && !inputs.image_tag }}
+          tags: |
+            ${{ steps.meta.outputs.frontend_image }}:${{ steps.meta.outputs.image_tag }}
+            ${{ steps.meta.outputs.frontend_image }}:latest
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,mode=max,scope=frontend
+
+  deploy:
+    name: Deploy / production
+    runs-on: ubuntu-latest
+    needs:
+      - backend-lint
+      - backend-test
+      - frontend-lint
+      - frontend-test
+      - frontend-build
+      - docker-build
+    # Только main: PR (refs/pull/N/merge) и ручной запуск с другой ветки сюда не попадают.
+    if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+    # Отдельная от workflow-level группа: два деплоя не должны идти внахлёст,
+    # но и отменять уже начавшийся нельзя — он дожидается своей очереди.
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    environment:
+      name: production
+      url: https://kursfloristiki.ru
+    env:
+      # Пустой inputs.image_tag (обычный пуш в main) => свежесобранный sha-тег.
+      IMAGE_TAG: ${{ inputs.image_tag || needs.docker-build.outputs.image_tag }}
+      # Должен совпадать с floway_domain в
+      # ansible/inventory/group_vars/floway_prod/vars.yml — используется только
+      # для смоук-проверки ниже; расхождение сразу поймает упавший curl.
+      FLOWAY_DOMAIN: kursfloristiki.ru
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Установить Ansible
+        run: pipx install ansible-core
+
+      - name: Установить коллекции Ansible
+        run: ansible-galaxy collection install -r ansible/requirements.yml
+
+      - name: Разложить SSH-ключ и known_hosts
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          # ansible.cfg держит host_key_checking = True, поэтому отпечаток хоста
+          # берётся из секрета, а не через ssh-keyscan на лету (это был бы TOFU
+          # на каждом прогоне, то есть проверка хоста впустую).
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Раскатать приложение (ansible-playbook deploy.yml)
+        working-directory: ansible
+        env:
+          ANSIBLE_VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
+          ANSIBLE_FORCE_COLOR: "1"
+        run: |
+          trap 'rm -f .vault_pass' EXIT
+          printf '%s' "$ANSIBLE_VAULT_PASSWORD" > .vault_pass
+          chmod 600 .vault_pass
+          ansible-playbook playbooks/deploy.yml \
+            --vault-password-file .vault_pass \
+            --private-key ~/.ssh/id_ed25519 \
+            -e image_tag="$IMAGE_TAG"
+
+      - name: Смоук-проверка прода
+        run: |
+          for i in $(seq 1 10); do
+            if curl -fsS --max-time 10 "https://$FLOWAY_DOMAIN/healthz" >/dev/null; then
+              echo "OK: https://$FLOWAY_DOMAIN/healthz отвечает (тег $IMAGE_TAG)"
+              exit 0
+            fi
+            echo "Попытка $i/10: /healthz ещё не отвечает, ждём 6 с"
+            sleep 6
+          done
+          echo "::error::/healthz не ответил в течение 60 с после деплоя"
+          exit 1

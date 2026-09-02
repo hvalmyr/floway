@@ -4,6 +4,12 @@
 
 # --- Пользователь для деплоя/эксплуатации ---
 deploy_user: deploy
+# По одному ключу на строку — authorized_key авторизует их все.
+# TODO: третьей строкой сюда нужен публичный ключ для GitHub Actions (см.
+# ansible/README.md → «Деплой из CI»), после чего один раз прогнать
+# `just bootstrap`, чтобы он доехал до ~deploy/.ssh/authorized_keys на VPS.
+# Отдельный ключ для CI, а не переиспользование личного: его можно отозвать
+# (убрать строку + `just bootstrap`), не трогая свои рабочие машины.
 deploy_user_ssh_public_key: |
   ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICZmi7F5zuJk/pZvi01lbRsyAmt7yKMfRed5LuMDMCcB jazz@cmc
   ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHYT81b4h6nuW+RhbzMewSUEgKW2KPjLXQrxxNzNuwww zornfeuer@vargasov-arch

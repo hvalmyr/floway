@@ -91,7 +91,14 @@ _до_ перезапуска демона — если проверка не п
 just bootstrap
 ```
 
-## Сборка и публикация образов (пока вручную, до GitHub Actions)
+## Сборка и публикация образов
+
+Это делает CI (`.github/workflows/ci.yml`, джоба `docker-build`) на каждый пуш
+в `main`: собирает `floway-backend`/`floway-frontend` и пушит в GHCR двумя
+тегами — `sha-<короткий-sha>` и `latest`. На PR образы только собираются
+(проверка, что Dockerfile жив), но не публикуются.
+
+Руками, если понадобится:
 
 ```bash
 docker buildx build --push -t ghcr.io/<owner>/floway-backend:latest ./backend
@@ -116,20 +123,56 @@ just deploy
 `/opt/floway/`, логинится в GHCR (если нужно), `docker compose pull && up -d`,
 чистит неиспользуемые образы.
 
-## Планы по CI/CD (когда дойдут руки до GitHub Actions)
+## Деплой из CI
 
-Предлагаемый пайплайн:
+Джоба `deploy` в `.github/workflows/ci.yml` гоняет ровно тот же
+`playbooks/deploy.yml`, что и `just deploy`, только из раннера GitHub Actions.
+Порядок: пуш в `main` → зелёные линты/тесты/сборки → `docker-build` публикует
+образы в GHCR → `deploy` раскатывает свежий `sha-`тег на VPS → смоук-проверка
+`https://<floway_domain>/healthz`.
 
-1. На пуш в `main` — джоба собирает и пушит `floway-backend`/`floway-frontend`
-   в GHCR с тегом `sha-<short-sha>` (и обновляет `latest`).
-2. Джоба деплоя — либо `ansible-playbook playbooks/deploy.yml` прямо в раннере
-   GitHub Actions (нужен SSH-ключ и пароль vault как секреты Action), либо
-   более простой вариант — деплой без Ansible на этом шаге: `ssh` на VPS и
-   `docker compose pull && up -d` (Ansible-плейбук уже разложил
-   docker-compose.yml/Caddyfile/.env один раз при бутстрапе/первом деплое,
-   для рутинных обновлений образов полноценный Ansible-прогон избыточен).
-3. Пароль vault хранить как секрет GitHub Actions (`ANSIBLE_VAULT_PASSWORD`),
-   передавать через `--vault-password-file <(echo "$ANSIBLE_VAULT_PASSWORD")`.
+Гоняется именно Ansible, а не `ssh + docker compose pull`, чтобы изменения
+`docker-compose.prod.yml`, `Caddyfile.j2` и `env.j2` в git доезжали до прода
+тем же деплоем, что и код, — иначе конфиг и образы разъезжаются.
+
+Ручной запуск — Actions → CI → Run workflow: пустой `image_tag` пересобирает и
+катит текущий коммит, заполненный (например `sha-abc1234`) катит уже
+опубликованный тег, ничего не пересобирая и не двигая `latest`, — то есть
+откат на предыдущий образ.
+
+### Подготовка (один раз)
+
+1. Сгенерировать отдельный SSH-ключ для CI (без пароля — раннеру некому его
+   вводить):
+
+   ```bash
+   ssh-keygen -t ed25519 -C "github-actions@floway" -N "" -f ~/.ssh/floway_ci_deploy
+   ```
+
+2. Публичную часть (`~/.ssh/floway_ci_deploy.pub`) добавить третьей строкой в
+   `deploy_user_ssh_public_key` в `inventory/group_vars/floway_prod/vars.yml`
+   и раскатать на VPS: `just bootstrap`.
+
+3. Собрать отпечаток хоста для `known_hosts` (в `ansible.cfg` включён
+   `host_key_checking = True`, поэтому в CI он нужен явно):
+
+   ```bash
+   ssh-keyscan -H 79.143.29.84
+   ```
+
+4. Завести секреты репозитория (Settings → Secrets and variables → Actions):
+
+   | Секрет | Что внутри |
+   |---|---|
+   | `DEPLOY_SSH_PRIVATE_KEY` | содержимое `~/.ssh/floway_ci_deploy` целиком, включая строки `-----BEGIN/END OPENSSH PRIVATE KEY-----` |
+   | `DEPLOY_SSH_KNOWN_HOSTS` | вывод `ssh-keyscan -H <IP VPS>` |
+   | `ANSIBLE_VAULT_PASSWORD` | пароль от `ansible-vault` (то же, что лежит в `ansible/.vault_pass`) |
+
+   `GITHUB_TOKEN` для пуша в GHCR заводить не нужно — он встроенный, джобе
+   выдано `packages: write`.
+
+Ключ и пароль vault пишутся в раннере во временные файлы и живут только время
+джобы; `.vault_pass` удаляется по `trap ... EXIT`, даже если плейбук упал.
 
 ## Что не входит в эти плейбуки (но стоит сделать по мере роста прод-нагрузки)
 

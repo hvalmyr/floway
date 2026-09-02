@@ -4,8 +4,9 @@
 # Перед первым запуском:
 #   1. A/AAAA-запись floway_domain должна указывать на IP этой VPS
 #      (Caddy иначе не пройдёт ACME HTTP-01 challenge и не выдаст сертификат).
-#   2. Образы должны быть собраны и запушены в GHCR (см. ansible/README.md —
-#      пока вручную, позже через GitHub Actions).
+#   2. Образы должны быть собраны и запушены в GHCR — это делает джоба
+#      docker-build в .github/workflows/ci.yml на каждый пуш в main
+#      (см. ansible/README.md → «Деплой из CI»).
 #
 #   ansible-playbook playbooks/deploy.yml --vault-password-file .vault_pass
 #

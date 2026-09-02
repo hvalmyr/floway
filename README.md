@@ -187,7 +187,9 @@ just install-hooks   # один раз на машину: git config core.hooksP
 
 ## CI
 
-`.github/workflows/ci.yml` (GitHub Actions) на каждый push в `main` и pull request: lint + build + test backend (Go: `gofmt`, `go vet`, `golangci-lint`, `go test -race`) и frontend (Bun: `oxlint`, `oxfmt --check`, `vitest`, `nuxt build`), плюс сборка обоих Docker-образов (без пуша — деплой пока не в CI, см. `ansible/`).
+`.github/workflows/ci.yml` (GitHub Actions) на каждый push в `main` и pull request: lint + build + test backend (Go: `gofmt`, `go vet`, `golangci-lint`, `go test -race`) и frontend (Bun: `oxlint`, `oxfmt --check`, `vitest`, `nuxt build`), плюс сборка обоих Docker-образов.
+
+На push в `main` (и вручную через Run workflow) к этому добавляются ещё две джобы: `docker-build` пушит образы в GHCR тегами `sha-<short-sha>` и `latest`, а `deploy` гоняет `ansible-playbook playbooks/deploy.yml` на прод-VPS и проверяет `https://<домен>/healthz`. На pull request образы только собираются, деплоя нет. Подробности и список нужных секретов — [ansible/README.md → «Деплой из CI»](ansible/README.md).
 
 ## Прод-деплой
 
@@ -208,13 +210,12 @@ just install-hooks   # один раз на машину: git config core.hooksP
 - **Тесты**: unit на сервисах (моки репозиториев) + boundary-тесты на HTTP-слое (`httptest` + реальные сервисы + фейковые репозитории) — TDD-подход, проверяют реальные граничные случаи (404 вместо утечки 500, чужой родитель в nested-роуте не даёт хайджекнуть запись, неаутентифицированный запрос никогда не видит черновики блога).
 - **Админ-панель (UI)**: `/admin/login`, guard-middleware `admin-auth`, layout с навигацией/logout. CRUD-экраны на `useApi`/`useAdminAuth`/`useAdminResource` для всех сущностей выше, включая `page-content` (тексты + загрузка картинок) и `about-items`/`features`.
 - **Публичный frontend на реальных данных**: главная, блог (список + страница поста), курсы, мастер-классы, контакты — все берут данные из backend API, не моки.
-- **CI**: GitHub Actions — lint/build/test для backend (Go: `gofmt`/`go vet`/`golangci-lint`/`go test -race`) и frontend (Bun: `oxlint`/`oxfmt`/`vitest`/`nuxt build`), плюс сборка обоих Docker-образов. Деплой в пайплайн пока не подключён.
+- **CI/CD**: GitHub Actions — lint/build/test для backend (Go: `gofmt`/`go vet`/`golangci-lint`/`go test -race`) и frontend (Bun: `oxlint`/`oxfmt`/`vitest`/`nuxt build`), сборка обоих Docker-образов, а на `main` — публикация их в GHCR и автоматическая раскатка на прод через Ansible со смоук-проверкой `/healthz`. Ручной запуск с явным тегом образа = откат на предыдущий.
 - **Инфраструктура**: Ansible-плейбуки для бутстрапа VPS и деплоя, `docker-compose.prod.yml` с Caddy (авто-HTTPS) — см. `ansible/`.
 
 ## Что дальше
 
 - **Блок отзывов на главной** — дизайна карточек пока нет (см. `TODO` в `frontend/app/pages/index.vue`), в макете только заголовок секции.
-- **Деплой в CI** — сборка образов уже есть, но пуш в GHCR и прогон `ansible-playbook playbooks/deploy.yml` (или `ssh` + `docker compose pull && up -d`) по мерджу в `main` ещё не подключены; сейчас деплой запускается вручную, см. `ansible/README.md`.
 - **page_content: нет API для создания новых ключей** — ключи заводятся только через миграции (см. «Известные технические заметки»); если понадобится добавлять редактируемые текстовые/картиночные поля без деплоя бэкенда, потребуется `POST /page-content`.
 - **Локальный standalone-запуск backend без Docker требует ручной правки compose** — Garage не публикует порт на хост (см. предупреждение в разделе «Локальная разработка без Docker» выше).
 
