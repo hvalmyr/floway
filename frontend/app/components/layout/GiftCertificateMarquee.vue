@@ -63,7 +63,7 @@ function onHoverEnd() {
   <NuxtLink
     to="/sertifikaty"
     :aria-label="message"
-    class="group relative block w-full cursor-pointer overflow-hidden bg-primary py-12 motion-reduce:hover:animate-none hover:animate-[gift-marquee-shake_0.6s_ease-in-out_infinite]"
+    class="group relative block w-full cursor-pointer overflow-hidden bg-primary py-12 motion-reduce:hover:animate-none hover:animate-[gift-marquee-shake_0.6s_ease-in-out_1]"
     @mouseenter="onHoverStart"
     @mouseleave="onHoverEnd"
   >
