@@ -13,6 +13,7 @@ deploy_user: deploy
 deploy_user_ssh_public_key: |
   ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICZmi7F5zuJk/pZvi01lbRsyAmt7yKMfRed5LuMDMCcB jazz@cmc
   ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHYT81b4h6nuW+RhbzMewSUEgKW2KPjLXQrxxNzNuwww zornfeuer@vargasov-arch
+  ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMb5GknF8OTNHV097WHaJQc0OBabBM3raBYeL/l6OOdk github-actions@floway
 
 # --- SSH / фаервол ---
 ssh_port: 22
