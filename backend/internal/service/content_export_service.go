@@ -1,9 +1,11 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -11,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"floway-backend/internal/model"
+	"floway-backend/internal/storage"
 )
 
 // ContentExportVersion is bumped whenever the SiteContent shape changes in a
@@ -54,11 +57,12 @@ type ImportResult struct {
 // variants just for this one feature would be a far bigger, riskier change
 // than keeping it self-contained here.
 type ContentExportService struct {
-	db *pgxpool.Pool
+	db      *pgxpool.Pool
+	storage *storage.Client
 }
 
-func NewContentExportService(db *pgxpool.Pool) *ContentExportService {
-	return &ContentExportService{db: db}
+func NewContentExportService(db *pgxpool.Pool, storage *storage.Client) *ContentExportService {
+	return &ContentExportService{db: db, storage: storage}
 }
 
 // --- Export -----------------------------------------------------------
@@ -108,7 +112,41 @@ func (s *ContentExportService) Export(ctx context.Context) (model.SiteContent, e
 	if out.PageContent, err = queryAll(ctx, s.db, `SELECT key, label, value, type, updated_at FROM page_content ORDER BY key`, scanPageContent); err != nil {
 		return out, fmt.Errorf("export page content: %w", err)
 	}
+	if out.Files, err = s.exportFiles(ctx); err != nil {
+		return out, fmt.Errorf("export files: %w", err)
+	}
 	return out, nil
+}
+
+// exportFiles bundles every object in Garage/S3 storage, not just ones a
+// current DB row happens to reference — image paths can also live inside
+// free-text fields (blog post content, markdown descriptions) that this
+// service never parses, so enumerating the bucket directly is the only way
+// to guarantee "the whole export" actually includes every image.
+func (s *ContentExportService) exportFiles(ctx context.Context) ([]model.ExportFile, error) {
+	keys, err := s.storage.ListKeys(ctx)
+	if err != nil {
+		return nil, err
+	}
+	files := make([]model.ExportFile, 0, len(keys))
+	for _, key := range keys {
+		obj, err := s.storage.Download(ctx, key)
+		if err != nil {
+			return nil, fmt.Errorf("download %s: %w", key, err)
+		}
+		info, statErr := obj.Stat()
+		if statErr != nil {
+			_ = obj.Close()
+			return nil, fmt.Errorf("stat %s: %w", key, statErr)
+		}
+		data, readErr := io.ReadAll(obj)
+		_ = obj.Close()
+		if readErr != nil {
+			return nil, fmt.Errorf("read %s: %w", key, readErr)
+		}
+		files = append(files, model.ExportFile{Key: key, ContentType: info.ContentType, Data: data})
+	}
+	return files, nil
 }
 
 // --- Import -------------------------------------------------------------
@@ -241,7 +279,29 @@ func (s *ContentExportService) Import(ctx context.Context, data model.SiteConten
 	if err := tx.Commit(ctx); err != nil {
 		return ImportResult{}, err
 	}
+
+	// Files go to Garage after the DB transaction commits, not inside it —
+	// object storage isn't transactional with Postgres, so there's no way to
+	// roll both back atomically. Doing it last means a failure here can't
+	// undo content rows the admin already confirmed; it's reported as an
+	// error, and re-running the same import is safe (uploads overwrite by
+	// key, same as any other rerun of this feature).
+	if len(data.Files) > 0 {
+		if err := s.importFiles(ctx, data.Files); err != nil {
+			return result, fmt.Errorf("import files: %w", err)
+		}
+	}
+	result.Counts["files"] = len(data.Files)
 	return result, nil
+}
+
+func (s *ContentExportService) importFiles(ctx context.Context, files []model.ExportFile) error {
+	for _, f := range files {
+		if err := s.storage.Upload(ctx, f.Key, bytes.NewReader(f.Data), int64(len(f.Data)), f.ContentType); err != nil {
+			return fmt.Errorf("upload %s: %w", f.Key, err)
+		}
+	}
+	return nil
 }
 
 // importPageContent is its own function, not a bulkWrite call: page_content

@@ -302,10 +302,23 @@ type SocialLink struct {
 	UpdatedAt  time.Time `db:"updated_at" json:"updatedAt"`
 }
 
+// ExportFile is one object from Garage/S3 storage, bundled whole into a
+// content export so "download the export" is a real, self-contained backup
+// instead of a DB dump full of /uploads/<key> paths that resolve to nothing
+// once restored somewhere else. Data round-trips through JSON as base64
+// ([]byte's default encoding) — simple over efficient, since this travels as
+// one JSON document already (see ContentExportService).
+type ExportFile struct {
+	Key         string `json:"key"`
+	ContentType string `json:"contentType"`
+	Data        []byte `json:"data"`
+}
+
 // SiteContent is a full snapshot of every admin-managed content entity —
 // everything except accounts (AdminUser) and customer inquiries (Lead),
-// which aren't "site content". Used by ContentExportService for backup/
-// restore and for moving content between environments.
+// which aren't "site content" — plus every file in object storage (Files).
+// Used by ContentExportService for backup/restore and for moving content
+// between environments.
 type SiteContent struct {
 	Version        int             `json:"version"`
 	ExportedAt     time.Time       `json:"exportedAt"`
@@ -322,6 +335,7 @@ type SiteContent struct {
 	AboutItems     []AboutItem     `json:"aboutItems"`
 	SocialLinks    []SocialLink    `json:"socialLinks"`
 	PageContent    []PageContent   `json:"pageContent"`
+	Files          []ExportFile    `json:"files"`
 }
 
 type AdminUser struct {

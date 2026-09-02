@@ -23,11 +23,26 @@ import (
 // JSON endpoint.
 const maxRequestBodyBytes = 10 << 20 // 10 MB, matches upload_handler's own cap
 
+// maxContentImportBodyBytes is the one deliberate exception to
+// maxRequestBodyBytes: POST /admin/content/import carries every uploaded
+// site image, base64-encoded, inside its JSON body (see
+// ContentExportService/ExportFile) — the whole point of the feature is that
+// nothing gets left out. It's admin-only (behind requireAdminMiddleware) and
+// not reachable by anonymous traffic, so a bigger cap here doesn't widen the
+// public DoS surface the default limit exists for.
+const maxContentImportBodyBytes = 500 << 20 // 500 MB
+
 func limitBodySize(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.Body = http.MaxBytesReader(w, r.Body, maxRequestBodyBytes)
-		next.ServeHTTP(w, r)
-	})
+	return newBodySizeLimiter(maxRequestBodyBytes)(next)
+}
+
+func newBodySizeLimiter(max int64) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			r.Body = http.MaxBytesReader(w, r.Body, max)
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 type Services struct {
@@ -83,7 +98,13 @@ func NewRouter(services Services) http.Handler {
 	r.Use(injectLogger(logger))
 	r.Use(requestLoggerMiddleware)
 	r.Use(middleware.Recoverer)
-	r.Use(limitBodySize)
+	// limitBodySize is applied per-route-group below, not globally here —
+	// POST /admin/content/import needs a much higher cap than every other
+	// endpoint (see maxContentImportBodyBytes), and once a smaller
+	// http.MaxBytesReader has capped r.Body, wrapping it again with a larger
+	// one can't undo that: the inner reader still errors at its own limit.
+	// So the default cap has to be scoped to a sibling group that excludes
+	// that one route, rather than sitting on the router as a whole.
 	// CSRF: no anti-CSRF token by design, not by omission. The session
 	// cookie is SameSite=Lax (never sent on a cross-site POST/PUT/DELETE)
 	// plus this CORS policy allows exactly one origin with credentials —
@@ -108,36 +129,46 @@ func NewRouter(services Services) http.Handler {
 
 	admin := requireAdminMiddleware(services.Tokens, services.AdminUser)
 	uploads := newUploadHandler(services.Storage, admin)
-	r.Get("/uploads/{key}", uploads.serve)
 
 	loginLimiter := newIPRateLimiter(rate.Every(time.Minute/5), 5).middleware // 5/min/IP
 	leadLimiter := newIPRateLimiter(rate.Every(time.Hour/3), 3).middleware    // 3/hour/IP
 
-	r.Route("/api/v1", func(r chi.Router) {
-		r.Route("/admin", newAuthHandler(services.AdminUser, services.Tokens, services.SecureCookies, admin, loginLimiter).routes)
-		r.Route("/admin/uploads", uploads.adminRoutes)
-		r.Route("/faq", newFAQHandler(services.FAQ, admin).routes)
-		r.Route("/teachers", newTeacherHandler(services.Teacher, admin).routes)
-		r.Route("/blog-posts", newBlogPostHandler(services.BlogPost, services.Tokens, services.AdminUser, admin).routes)
-		r.Route("/masterclasses", newMasterclassHandler(services.Masterclass, admin).routes)
-		courseHdl := newCourseHandler(services.Course, services.CourseCatalog, admin)
-		r.Route("/course-sections", func(r chi.Router) {
-			newCourseSectionHandler(services.CourseSection, services.CourseCatalog, admin).routes(r)
-			r.Route("/{sectionId}/courses", courseHdl.routes)
+	r.Group(func(r chi.Router) {
+		r.Use(limitBodySize)
+		r.Get("/uploads/{key}", uploads.serve)
+
+		r.Route("/api/v1", func(r chi.Router) {
+			r.Route("/admin", newAuthHandler(services.AdminUser, services.Tokens, services.SecureCookies, admin, loginLimiter).routes)
+			r.Route("/admin/uploads", uploads.adminRoutes)
+			r.Route("/faq", newFAQHandler(services.FAQ, admin).routes)
+			r.Route("/teachers", newTeacherHandler(services.Teacher, admin).routes)
+			r.Route("/blog-posts", newBlogPostHandler(services.BlogPost, services.Tokens, services.AdminUser, admin).routes)
+			r.Route("/masterclasses", newMasterclassHandler(services.Masterclass, admin).routes)
+			courseHdl := newCourseHandler(services.Course, services.CourseCatalog, admin)
+			r.Route("/course-sections", func(r chi.Router) {
+				newCourseSectionHandler(services.CourseSection, services.CourseCatalog, admin).routes(r)
+				r.Route("/{sectionId}/courses", courseHdl.routes)
+			})
+			r.Route("/courses", func(r chi.Router) {
+				r.Get("/{slug}/full", courseHdl.getFullBySlug)
+				r.Route("/{courseId}/blocks", newCourseBlockHandler(services.CourseBlock, admin).routes)
+				r.Route("/{courseId}/lessons", newCourseLessonHandler(services.Lesson, admin).routes)
+			})
+			r.Route("/course-blocks/{blockId}/lessons", newLessonHandler(services.Lesson, admin).routes)
+			r.Route("/gallery-photos", newGalleryPhotoHandler(services.GalleryPhoto, admin).routes)
+			r.Route("/leads", newLeadHandler(services.Lead, admin, leadLimiter).routes)
+			r.Route("/page-content", newPageContentHandler(services.PageContent, admin).routes)
+			r.Route("/features", newFeatureHandler(services.Feature, admin).routes)
+			r.Route("/about-items", newAboutItemHandler(services.AboutItem, admin).routes)
+			r.Route("/social-links", newSocialLinkHandler(services.SocialLink, admin).routes)
 		})
-		r.Route("/courses", func(r chi.Router) {
-			r.Get("/{slug}/full", courseHdl.getFullBySlug)
-			r.Route("/{courseId}/blocks", newCourseBlockHandler(services.CourseBlock, admin).routes)
-			r.Route("/{courseId}/lessons", newCourseLessonHandler(services.Lesson, admin).routes)
-		})
-		r.Route("/course-blocks/{blockId}/lessons", newLessonHandler(services.Lesson, admin).routes)
-		r.Route("/gallery-photos", newGalleryPhotoHandler(services.GalleryPhoto, admin).routes)
-		r.Route("/leads", newLeadHandler(services.Lead, admin, leadLimiter).routes)
-		r.Route("/page-content", newPageContentHandler(services.PageContent, admin).routes)
-		r.Route("/features", newFeatureHandler(services.Feature, admin).routes)
-		r.Route("/about-items", newAboutItemHandler(services.AboutItem, admin).routes)
-		r.Route("/social-links", newSocialLinkHandler(services.SocialLink, admin).routes)
-		r.Route("/admin/content", newContentExportHandler(services.ContentExport, admin).routes)
+	})
+
+	// Its own group, with its own (much higher) body-size cap — see
+	// maxContentImportBodyBytes.
+	r.Group(func(r chi.Router) {
+		r.Use(newBodySizeLimiter(maxContentImportBodyBytes))
+		r.Route("/api/v1/admin/content", newContentExportHandler(services.ContentExport, admin).routes)
 	})
 
 	return r

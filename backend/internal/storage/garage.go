@@ -78,6 +78,21 @@ func (c *Client) Download(ctx context.Context, key string) (*minio.Object, error
 	return obj, nil
 }
 
+// ListKeys returns the key of every object in the bucket. Used by the
+// content export feature to bundle every uploaded file (not just ones
+// referenced by a current DB row — an orphaned upload is still something an
+// admin backing up "everything" would expect back).
+func (c *Client) ListKeys(ctx context.Context) ([]string, error) {
+	var keys []string
+	for obj := range c.mc.ListObjects(ctx, c.bucket, minio.ListObjectsOptions{Recursive: true}) {
+		if obj.Err != nil {
+			return nil, fmt.Errorf("list garage objects: %w", obj.Err)
+		}
+		keys = append(keys, obj.Key)
+	}
+	return keys, nil
+}
+
 func IsNotFound(err error) bool {
 	resp := minio.ToErrorResponse(err)
 	return resp.Code == "NoSuchKey"

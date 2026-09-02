@@ -78,7 +78,8 @@ const countEntries = computed(() => Object.entries(importResult.value?.counts ??
     <h1 class="text-2xl font-semibold">Экспорт и импорт контента</h1>
     <p class="mt-2 text-sm text-[var(--color-text-muted)]">
       Весь контент сайта целиком: курсы, мастер-классы, преподаватели, фотогалерея, FAQ, тексты
-      страниц и т.д. Аккаунты админов и заявки клиентов сюда не входят.
+      страниц и все загруженные картинки — в одном файле. Аккаунты админов и заявки клиентов сюда не
+      входят.
     </p>
 
     <section class="mt-8 rounded border border-gray-200 bg-white p-4">
