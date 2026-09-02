@@ -40,7 +40,7 @@ func TestLeadsBoundary_RateLimitedAfterBurst(t *testing.T) {
 	services := httpserver.Services{
 		Tokens:         auth.NewTokenManager("test-secret", time.Hour),
 		FrontendOrigin: "http://localhost:3000",
-		Lead:           service.NewLeadService(&fakeLeadRepository{}, nil),
+		Lead:           service.NewLeadService(&fakeLeadRepository{}, nil, nil, nil),
 	}
 	srv := httptest.NewServer(httpserver.NewRouter(services))
 	defer srv.Close()

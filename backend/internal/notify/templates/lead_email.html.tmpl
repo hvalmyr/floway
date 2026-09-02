@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title>Новая заявка — Floway</title>
+<!--[if mso]>
+<style type="text/css">
+table { border-collapse: collapse; }
+.fallback-font { font-family: Arial, sans-serif !important; }
+</style>
+<![endif]-->
+<style>
+  /* Same brand fonts as the site (self-hosted, see frontend/app/assets/styles/fonts.css),
+     embedded as base64 data URIs so they render with no external request at all — most
+     email clients (Outlook desktop, Gmail) ignore @font-face entirely regardless and just
+     use the Arial/Helvetica fallback below, but clients that do support it (Apple/iOS Mail,
+     some webmail) get the real brand type without depending on any server being reachable. */
+  @font-face {
+    font-family: 'Soyuz Grotesk';
+    src: url('data:font/woff;base64,{{.SoyuzGroteskBoldWoffBase64}}') format('woff');
+    font-weight: 700;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: 'Non Bureau';
+    src: url('data:font/woff2;base64,{{.NonBureauLightWoff2Base64}}') format('woff2');
+    font-weight: 300;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: 'Non Bureau';
+    src: url('data:font/woff2;base64,{{.NonBureauMediumWoff2Base64}}') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: 'Non Bureau';
+    src: url('data:font/woff2;base64,{{.NonBureauBoldWoff2Base64}}') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+  }
+  body, table, td { -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; }
+  img { border: 0; line-height: 100%; outline: none; text-decoration: none; }
+  a { text-decoration: none; }
+  @media only screen and (max-width: 600px) {
+    .container { width: 100% !important; }
+    .stack { display: block !important; width: 100% !important; }
+    .px { padding-left: 20px !important; padding-right: 20px !important; }
+    .btn-col { display: block !important; width: 100% !important; padding: 6px 0 !important; }
+  }
+</style>
+</head>
+<body style="margin:0; padding:0; background-color:#F7F5F3;">
+<span style="display:none; font-size:1px; color:#F7F5F3; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden;">Новая заявка на курс или мастер-класс — данные клиента внутри</span>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F7F5F3;">
+<tr><td align="center" style="padding:32px 16px;">
+
+<table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px; background-color:#FFFFFF; border-radius:15px; overflow:hidden;">
+
+  <!-- Header -->
+  <tr>
+    <td align="center" bgcolor="#82B1CC" style="background-color:#82B1CC; padding:28px 40px;">
+      <span style="font-family: 'Soyuz Grotesk', Arial, Helvetica, sans-serif; font-weight:bold; font-size:32px; line-height:100%; color:#FFFFFF; letter-spacing:0.5px;">фловей</span>
+    </td>
+  </tr>
+
+  <!-- Title -->
+  <tr>
+    <td class="px" align="center" style="padding:40px 40px 8px 40px; text-align:center;">
+      <span style="font-family: 'Soyuz Grotesk', Arial, Helvetica, sans-serif; font-weight:bold; font-size:28px; line-height:100%; color:#41342A;">новая заявка</span>
+    </td>
+  </tr>
+  <tr>
+    <td class="px" style="padding:0 40px 24px 40px;">
+      <span style="font-family: 'Non Bureau', Arial, Helvetica, sans-serif; font-weight:300; font-size:15px; line-height:150%; color:#41342A;">На сайте оформлена заявка на курс или мастер-класс. Ниже — данные клиента.</span>
+    </td>
+  </tr>
+
+  <!-- Info card -->
+  <tr>
+    <td class="px" style="padding:0 40px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F7F5F3; border-radius:15px;">
+        <tr>
+          <td style="padding:30px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+
+              <tr>
+                <td style="padding:0 0 20px 0; border-bottom:1px solid #E4DFD9;">
+                  <span style="font-family: 'Non Bureau', Arial, Helvetica, sans-serif; font-weight:500; font-size:12px; line-height:100%; color:#82B1CC; text-transform:uppercase; letter-spacing:0.5px;">Имя</span><br>
+                  <span style="font-family: 'Non Bureau', Arial, Helvetica, sans-serif; font-weight:bold; font-size:18px; line-height:150%; color:#41342A;">{{.Name}}</span>
+                </td>
+              </tr>
+
+              <tr><td style="height:20px; line-height:20px; font-size:0;">&nbsp;</td></tr>
+
+              <tr>
+                <td style="padding:0 0 20px 0; border-bottom:1px solid #E4DFD9;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td class="stack" width="50%" valign="top">
+                        <span style="font-family: 'Non Bureau', Arial, Helvetica, sans-serif; font-weight:500; font-size:12px; line-height:100%; color:#82B1CC; text-transform:uppercase; letter-spacing:0.5px;">Телефон</span><br>
+                        <span style="font-family: 'Non Bureau', Arial, Helvetica, sans-serif; font-weight:500; font-size:16px; line-height:150%; color:#41342A;">{{.Phone}}</span>
+                      </td>
+                      <td class="stack" width="50%" valign="top">
+                        <span style="font-family: 'Non Bureau', Arial, Helvetica, sans-serif; font-weight:500; font-size:12px; line-height:100%; color:#82B1CC; text-transform:uppercase; letter-spacing:0.5px;">Email</span><br>
+                        <span style="font-family: 'Non Bureau', Arial, Helvetica, sans-serif; font-weight:500; font-size:16px; line-height:150%; color:#41342A;">{{.EmailDisplay}}</span>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+              <tr><td style="height:20px; line-height:20px; font-size:0;">&nbsp;</td></tr>
+
+              <tr>
+                <td style="padding:0 0 20px 0; border-bottom:1px solid #E4DFD9;">
+                  <span style="font-family: 'Non Bureau', Arial, Helvetica, sans-serif; font-weight:500; font-size:12px; line-height:100%; color:#82B1CC; text-transform:uppercase; letter-spacing:0.5px;">Курс / мастер-класс</span><br>
+                  <span style="font-family: 'Non Bureau', Arial, Helvetica, sans-serif; font-weight:bold; font-size:18px; line-height:150%; color:#41342A;">{{.Program}}</span>
+                </td>
+              </tr>
+
+              <tr><td style="height:20px; line-height:20px; font-size:0;">&nbsp;</td></tr>
+
+              <tr>
+                <td style="padding:0 0 20px 0; border-bottom:1px solid #E4DFD9;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td class="stack" width="50%" valign="top">
+                        <span style="font-family: 'Non Bureau', Arial, Helvetica, sans-serif; font-weight:500; font-size:12px; line-height:100%; color:#82B1CC; text-transform:uppercase; letter-spacing:0.5px;">Дата и время</span><br>
+                        <span style="font-family: 'Non Bureau', Arial, Helvetica, sans-serif; font-weight:500; font-size:16px; line-height:150%; color:#41342A;">{{.SubmittedAt}}</span>
+                      </td>
+                      <td class="stack" width="50%" valign="top">
+                        <span style="font-family: 'Non Bureau', Arial, Helvetica, sans-serif; font-weight:500; font-size:12px; line-height:100%; color:#82B1CC; text-transform:uppercase; letter-spacing:0.5px;">Способ связи</span><br>
+                        <span style="font-family: 'Non Bureau', Arial, Helvetica, sans-serif; font-weight:500; font-size:16px; line-height:150%; color:#41342A;">{{.ContactMethodLabel}}</span>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+              <tr><td style="height:20px; line-height:20px; font-size:0;">&nbsp;</td></tr>
+
+              <tr>
+                <td style="padding:0;">
+                  <span style="font-family: 'Non Bureau', Arial, Helvetica, sans-serif; font-weight:500; font-size:12px; line-height:100%; color:#82B1CC; text-transform:uppercase; letter-spacing:0.5px;">Как узнали о школе</span><br>
+                  <span style="font-family: 'Non Bureau', Arial, Helvetica, sans-serif; font-weight:500; font-size:16px; line-height:150%; color:#41342A;">{{.SourceLabel}}</span>
+                </td>
+              </tr>
+
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- CTA buttons -->
+  <tr>
+    <td class="px" style="padding:32px 40px 8px 40px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          {{if .ShowCallButton}}
+          <td class="btn-col" align="center" width="34%" style="padding:0 5px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" bgcolor="#82B1CC" style="background-color:#82B1CC; border-radius:100px;">
+                  <a href="{{.PrimaryContactHref}}" style="display:block; padding:14px 12px; font-family: 'Soyuz Grotesk', Arial, Helvetica, sans-serif; font-weight:bold; font-size:14px; line-height:100%; color:#FFFFFF;">{{.PrimaryContactLabel}}</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+          <td class="btn-col" align="center" width="33%" style="padding:0 5px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" style="border:2px solid #41342A; border-radius:100px;">
+                  <a href="tel:{{.PhoneRaw}}" style="display:block; padding:12px 12px; font-family: 'Soyuz Grotesk', Arial, Helvetica, sans-serif; font-weight:bold; font-size:14px; line-height:100%; color:#41342A;">позвонить</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+          <td class="btn-col" align="center" width="33%" style="padding:0 5px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" style="border:2px solid #41342A; border-radius:100px;">
+                  <a href="{{.AdminURL}}" style="display:block; padding:12px 12px; font-family: 'Soyuz Grotesk', Arial, Helvetica, sans-serif; font-weight:bold; font-size:14px; line-height:100%; color:#41342A;">на сайт</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+          {{else}}
+          <td class="btn-col" align="center" width="50%" style="padding:0 5px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" bgcolor="#82B1CC" style="background-color:#82B1CC; border-radius:100px;">
+                  <a href="{{.PrimaryContactHref}}" style="display:block; padding:14px 12px; font-family: 'Soyuz Grotesk', Arial, Helvetica, sans-serif; font-weight:bold; font-size:14px; line-height:100%; color:#FFFFFF;">{{.PrimaryContactLabel}}</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+          <td class="btn-col" align="center" width="50%" style="padding:0 5px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" style="border:2px solid #41342A; border-radius:100px;">
+                  <a href="{{.AdminURL}}" style="display:block; padding:12px 12px; font-family: 'Soyuz Grotesk', Arial, Helvetica, sans-serif; font-weight:bold; font-size:14px; line-height:100%; color:#41342A;">на сайт</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+          {{end}}
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <tr><td style="height:16px; line-height:16px; font-size:0;">&nbsp;</td></tr>
+
+  <!-- Footer -->
+  <tr>
+    <td bgcolor="#41342A" style="background-color:#41342A; padding:30px 40px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td>
+            <span style="font-family: 'Soyuz Grotesk', Arial, Helvetica, sans-serif; font-weight:bold; font-size:32px; line-height:100%; color:#FFFFFF;">фловей</span><br>
+            <span style="font-family: 'Non Bureau', Arial, Helvetica, sans-serif; font-weight:300; font-size:12px; line-height:180%; color:#D8CFC6;">
+              Автоматическое уведомление системы заявок.<br>
+              Школа флористики Floway · Москва · {{.SubmittedYear}}
+            </span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+</table>
+
+</td></tr>
+</table>
+</body>
+</html>

@@ -117,15 +117,21 @@ UI-админка живёт на `/admin` (Nuxt, client-side): `/admin/login` �
 
 ### Email
 
-Локально уже работает из коробки — backend внутри docker-compose всегда шлёт на `mailhog:1025` (см. `SMTP_HOST` в `docker-compose.yml`, `.env`-значение `localhost` там переопределяется). Просто заполни `NOTIFY_EMAIL_TO` в `.env` (любой адрес, реальная доставка не нужна):
+`SMTP_HOST`/`SMTP_PORT`/`SMTP_FROM`/`SMTP_USER`/`SMTP_PASSWORD`/`NOTIFY_EMAIL_TO` в `.env` идут напрямую в backend — `docker-compose.yml` их больше не переопределяет. `SMTP_USER`/`SMTP_PASSWORD` опциональны: пусто — `internal/notify/email.go` шлёт через `smtp.SendMail` без auth (подходит для relay, доверяющего по IP/сети, либо для локальной пересылки через `sendmail`-совместимый relay на самом хосте); оба заполнены — используется `smtp.PlainAuth` (нужно для внешних провайдеров с логином, например mail.ru, Yandex).
+
+`smtp.SendMail` умеет только STARTTLS (апгрейд соединения до TLS после обычного handshake), а не implicit TLS — для провайдеров с портом 465 (SSL с самого начала соединения, например mail.ru) это не сработает («connection refused»/обрыв на handshake). Используй порт с STARTTLS (587 у большинства провайдеров, включая mail.ru).
+
+Для безопасного локального тестирования без реальной отправки — направь `.env` на Mailhog (поднимается вместе со всем стеком):
 
 ```bash
+SMTP_HOST=mailhog
+SMTP_PORT=1025
 NOTIFY_EMAIL_TO=manager@floway.local
 ```
 
 и пересобери backend: `docker compose up -d --build backend`. Письма смотреть в Mailhog UI — http://localhost:8025.
 
-В проде (`docker-compose.prod.yml`, без Mailhog) нужен настоящий SMTP-relay: `SMTP_HOST`/`SMTP_PORT`/`SMTP_FROM` — реквизиты relay'я, `NOTIFY_EMAIL_TO` — адрес менеджера. Аутентификации на SMTP сейчас нет (`internal/notify/email.go` вызывает `smtp.SendMail` без auth) — подходит для relay, доверяющего по IP/сети (типичная настройка для VPS-инстансов у большинства провайдеров), либо для локальной пересылки через `sendmail`-совместимый relay на самом хосте. Если понадобится relay с логином/паролем (например, внешний SMTP-сервис) — потребуется доработка `EmailNotifier` под `smtp.PlainAuth` и новые `SMTP_USER`/`SMTP_PASSWORD` в конфиге, сейчас их нет.
+В проде (`docker-compose.prod.yml`, без Mailhog) `.env`/секреты деплоя должны сразу указывать на настоящий SMTP-relay.
 
 ### Telegram
 

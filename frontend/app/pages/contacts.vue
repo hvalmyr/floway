@@ -6,8 +6,8 @@ import IconVk from "~/components/ui/IconVk.vue";
 import { contactInfo, socialLinks } from "~/constants/contact-info";
 
 useSeoMeta({
-  title: "Контакты — ФлоВей",
-  description: "Телефон, почта, мессенджеры и адрес школы флористики “ФлоВей” в Москве.",
+  title: "Контакты — Фловей",
+  description: "Телефон, почта, мессенджеры и адрес школы флористики “Фловей” в Москве.",
 });
 
 const { text } = await usePageContent();
@@ -89,7 +89,7 @@ const metroStations = computed(() =>
 
     <iframe
       :src="text('contact_map_iframe_url', '')"
-      title="Карта проезда до школы «ФлоВей»"
+      title="Карта проезда до школы «Фловей»"
       loading="lazy"
       width="100%"
       height="607"

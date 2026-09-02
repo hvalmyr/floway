@@ -13,19 +13,19 @@ ansible-deps:
 
 # Первый прогон бутстрапа против чистой VPS (пока нет пользователя deploy — коннект от root)
 bootstrap-first-run:
-    cd {{ansible_dir}} && ansible-playbook playbooks/bootstrap.yml -e ansible_user=root --ask-vault-pass
+    cd {{ansible_dir}} && ansible-playbook playbooks/bootstrap.yml -e ansible_user=root --vault-password-file .vault_pass
 
 # Повторный/идемпотентный прогон бутстрапа (уже под пользователем deploy)
 bootstrap:
-    cd {{ansible_dir}} && ansible-playbook playbooks/bootstrap.yml --ask-vault-pass
+    cd {{ansible_dir}} && ansible-playbook playbooks/bootstrap.yml --vault-password-file .vault_pass
 
 # Деплой приложения (образы должны быть уже собраны и запушены в GHCR)
 deploy:
-    cd {{ansible_dir}} && ansible-playbook playbooks/deploy.yml --ask-vault-pass
+    cd {{ansible_dir}} && ansible-playbook playbooks/deploy.yml --vault-password-file .vault_pass
 
 # Деплой конкретного тега образа вместо latest, например: just deploy-tag sha-abc1234
 deploy-tag tag:
-    cd {{ansible_dir}} && ansible-playbook playbooks/deploy.yml --ask-vault-pass -e image_tag={{tag}}
+    cd {{ansible_dir}} && ansible-playbook playbooks/deploy.yml --vault-password-file .vault_pass -e image_tag={{tag}}
 
 # Синтаксис-проверка обоих плейбуков
 ansible-check:
@@ -34,7 +34,7 @@ ansible-check:
 
 # Редактировать зашифрованные секреты
 vault-edit:
-    cd {{ansible_dir}} && ansible-vault edit group_vars/floway_prod/vault.yml
+    cd {{ansible_dir}} && ansible-vault edit --vault-password-file .vault_pass inventory/group_vars/floway_prod/vault.yml
 
 # --- Локальная разработка (см. README.md за подробностями) ---
 

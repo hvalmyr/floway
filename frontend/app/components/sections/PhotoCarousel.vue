@@ -536,21 +536,25 @@ onUnmounted(() => {
         <ChevronRight class="size-24" aria-hidden="true" />
       </button>
 
-      <div class="mt-16 flex flex-wrap justify-center gap-8">
-        <button
-          v-for="(photo, i) in photos"
-          :key="photo.id"
-          type="button"
-          :aria-label="`Перейти к фото ${i + 1} из ${photos.length}`"
-          :aria-current="i === activeDot"
-          class="grid place-items-center p-8"
-          @click="goTo(i)"
+      <div class="mt-16 px-16">
+        <div
+          class="flex w-full flex-wrap items-center justify-center gap-16 rounded-full bg-white/40 p-16 backdrop-blur-lg backdrop-saturate-150"
         >
-          <span
-            class="block size-8 rounded-full transition-colors"
-            :class="i === activeDot ? 'bg-primary' : 'bg-primary/30'"
-          />
-        </button>
+          <button
+            v-for="(photo, i) in photos"
+            :key="photo.id"
+            type="button"
+            :aria-label="`Перейти к фото ${i + 1} из ${photos.length}`"
+            :aria-current="i === activeDot"
+            class="grid place-items-center p-4"
+            @click="goTo(i)"
+          >
+            <span
+              class="block size-8 rounded-full transition-colors"
+              :class="i === activeDot ? 'bg-primary' : 'bg-primary/30'"
+            />
+          </button>
+        </div>
       </div>
     </template>
 

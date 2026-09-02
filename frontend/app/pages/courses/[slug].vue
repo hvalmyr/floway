@@ -12,7 +12,7 @@ if (!course.value) {
 }
 
 useSeoMeta({
-  title: () => `${course.value?.name} — ФлоВей`,
+  title: () => `${course.value?.name} — Фловей`,
   description: () => course.value?.description,
 });
 

@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 
 /**
- * Design-system theme for «ФлоВей». Values come from docs/floway-design.md.
+ * Design-system theme for «Фловей». Values come from docs/floway-design.md.
  *
  * `spacing`/`borderRadius` go through `extend` (not a full `theme` override)
  * on purpose: the pre-existing admin panel already uses Tailwind's default

@@ -22,9 +22,13 @@ vault_postgres_db: floway
 vault_jwt_secret: "CHANGE_ME_LONG_RANDOM_STRING"
 
 # SMTP для уведомлений о заявках (прод — реальный провайдер, не Mailhog)
+# vault_smtp_user/vault_smtp_password опциональны — пусто, если relay не
+# требует авторизации; заполни оба для провайдера с логином (mail.ru, Yandex, ...).
 vault_smtp_host: ""
 vault_smtp_port: "587"
 vault_smtp_from: "noreply@floway.example.com"
+vault_smtp_user: ""
+vault_smtp_password: ""
 vault_notify_email_to: ""
 
 # Telegram Bot API (уведомления о заявках)

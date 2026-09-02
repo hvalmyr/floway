@@ -4,7 +4,7 @@ import { contactInfo } from "~/constants/contact-info";
 // TODO: остальные обязательные реквизиты (юридический адрес, ФИО директора
 // и т.д.) заказчик не предоставлял — здесь только то, что видно на макете
 // футера/контактов.
-useSeoMeta({ title: "Реквизиты — ФлоВей" });
+useSeoMeta({ title: "Реквизиты — Фловей" });
 
 const { text } = await usePageContent();
 </script>

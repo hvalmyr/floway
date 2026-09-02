@@ -67,13 +67,14 @@ func run(logger *slog.Logger) error {
 	courseRepo := repository.NewCourseRepository(pool)
 	courseBlockRepo := repository.NewCourseBlockRepository(pool)
 	lessonRepo := repository.NewLessonRepository(pool)
+	masterclassRepo := repository.NewMasterclassRepository(pool)
 
 	// Both channels are optional and independent — SMTP_*/TELEGRAM_* are
 	// deliberately absent from config.Load()'s required checks, so an
 	// unconfigured channel is silently skipped rather than failing startup.
 	var leadNotifyChannels []notify.Channel
 	if cfg.SMTPHost != "" && cfg.NotifyEmailTo != "" {
-		leadNotifyChannels = append(leadNotifyChannels, notify.NewEmailNotifier(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPFrom, cfg.NotifyEmailTo))
+		leadNotifyChannels = append(leadNotifyChannels, notify.NewEmailNotifier(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPFrom, cfg.NotifyEmailTo, cfg.FrontendOrigin+"/admin/leads", cfg.SMTPUser, cfg.SMTPPassword))
 	}
 	if cfg.TelegramBotToken != "" && cfg.TelegramChatID != "" {
 		leadNotifyChannels = append(leadNotifyChannels, notify.NewTelegramNotifier(cfg.TelegramBotToken, cfg.TelegramChatID))
@@ -89,13 +90,13 @@ func run(logger *slog.Logger) error {
 		FAQ:           service.NewFAQService(repository.NewFAQRepository(pool)),
 		Teacher:       service.NewTeacherService(repository.NewTeacherRepository(pool)),
 		BlogPost:      service.NewBlogPostService(repository.NewBlogPostRepository(pool)),
-		Masterclass:   service.NewMasterclassService(repository.NewMasterclassRepository(pool)),
+		Masterclass:   service.NewMasterclassService(masterclassRepo),
 		CourseSection: service.NewCourseSectionService(courseSectionRepo),
 		Course:        service.NewCourseService(courseRepo),
 		CourseBlock:   service.NewCourseBlockService(courseBlockRepo),
 		Lesson:        service.NewLessonService(lessonRepo),
 		CourseCatalog: service.NewCourseCatalogService(courseSectionRepo, courseRepo, courseRepo, courseBlockRepo, courseBlockRepo, lessonRepo),
-		Lead:          service.NewLeadService(repository.NewLeadRepository(pool), leadNotifier),
+		Lead:          service.NewLeadService(repository.NewLeadRepository(pool), leadNotifier, courseRepo, masterclassRepo),
 		AdminUser:     service.NewAdminUserService(repository.NewAdminUserRepository(pool)),
 		PageContent:   service.NewPageContentService(repository.NewPageContentRepository(pool), garageClient),
 		Feature:       service.NewFeatureService(repository.NewFeatureRepository(pool)),

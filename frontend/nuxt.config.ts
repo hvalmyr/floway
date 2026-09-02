@@ -44,6 +44,13 @@ export default defineNuxtConfig({
       // моки из app/mocks/* используются только если явно включить флагом,
       // например для вёрстки без поднятого бэкенда.
       useMocks: process.env.NUXT_PUBLIC_USE_MOCKS === "true",
+      // Аналитика и подтверждение прав на сайт — все три необязательны и по
+      // умолчанию пустые (счётчик/мета-теги просто не рендерятся в dev).
+      // Читаются из окружения при старте контейнера (не на этапе сборки),
+      // как и остальные NUXT_PUBLIC_* — см. .env.example.
+      yandexMetrikaId: process.env.NUXT_PUBLIC_YANDEX_METRIKA_ID || "",
+      yandexVerification: process.env.NUXT_PUBLIC_YANDEX_VERIFICATION || "",
+      googleSiteVerification: process.env.NUXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "",
     },
   },
 

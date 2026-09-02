@@ -3,10 +3,10 @@
 # Docker, своп, автообновления безопасности, fail2ban, ufw, ssh-хардненинг.
 #
 # Первый запуск против чистой машины (пока нет пользователя deploy):
-#   ansible-playbook playbooks/bootstrap.yml -e ansible_user=root --ask-vault-pass
+#   ansible-playbook playbooks/bootstrap.yml -e ansible_user=root --vault-password-file .vault_pass
 #
 # Повторные запуски (после того как deploy_user создан и захардненен SSH):
-#   ansible-playbook playbooks/bootstrap.yml --ask-vault-pass
+#   ansible-playbook playbooks/bootstrap.yml --vault-password-file .vault_pass
 #
 # Роли идут в порядке, где самая рискованная (ssh_hardening) — последняя,
 # и только после того, как deploy_user с рабочим ключом уже создан.

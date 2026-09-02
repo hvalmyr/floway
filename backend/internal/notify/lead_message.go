@@ -40,8 +40,11 @@ func label[T ~string](value T, known map[T]string) string {
 
 // formatLeadText renders a plain-text summary shared by every notification
 // channel — email and Telegram both read fine as plain text, so one format
-// covers both rather than maintaining near-duplicate templates.
-func formatLeadText(lead model.Lead) string {
+// covers both rather than maintaining near-duplicate templates. programName
+// is the resolved course/masterclass title (empty for trial-lesson leads,
+// or if the lookup came back empty) — the caller resolves it since this
+// package has no repository dependency of its own.
+func formatLeadText(lead model.Lead, programName string) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "Новая заявка с сайта Floway\n\n")
 	fmt.Fprintf(&b, "Имя: %s\n", lead.Name)
@@ -52,7 +55,9 @@ func formatLeadText(lead model.Lead) string {
 	fmt.Fprintf(&b, "Способ связи: %s\n", label(lead.ContactMethod, contactMethodLabels))
 	fmt.Fprintf(&b, "Источник: %s\n", label(lead.Source, leadSourceLabels))
 	fmt.Fprintf(&b, "Запрос: %s\n", label(lead.RequestType, leadRequestTypeLabels))
-	if lead.RelatedSlug != "" {
+	if programName != "" {
+		fmt.Fprintf(&b, "Программа: %s\n", programName)
+	} else if lead.RelatedSlug != "" {
 		fmt.Fprintf(&b, "Страница: %s\n", lead.RelatedSlug)
 	}
 	return b.String()

@@ -7,7 +7,7 @@
 #   2. Образы должны быть собраны и запушены в GHCR (см. ansible/README.md —
 #      пока вручную, позже через GitHub Actions).
 #
-#   ansible-playbook playbooks/deploy.yml --ask-vault-pass
+#   ansible-playbook playbooks/deploy.yml --vault-password-file .vault_pass
 #
 # Повторные деплои — та же команда; -e image_tag=<sha> чтобы задеплоить
 # конкретный тег вместо latest.

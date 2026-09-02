@@ -131,7 +131,7 @@ const schoolLinks = [
     </div>
 
     <p class="container py-24 font-body text-body text-white/80">
-      &copy; {{ year }} ФлоВей — школа флористики
+      &copy; {{ year }} Фловей — школа флористики
     </p>
   </footer>
 </template>

@@ -6,7 +6,7 @@
 # bootstrap.yml против чистой VPS (когда пользователя deploy ещё не существует)
 # нужно переопределить пользователя:
 #
-#   ansible-playbook playbooks/bootstrap.yml -e ansible_user=root --ask-vault-pass
+#   ansible-playbook playbooks/bootstrap.yml -e ansible_user=root --vault-password-file .vault_pass
 #
 # (или -e ansible_user=root -e ansible_ssh_pass=... если провайдер выдал пароль,
 # либо ansible_ssh_private_key_file, если провайдер сразу принял твой публичный
@@ -14,6 +14,6 @@
 floway_prod:
   hosts:
     floway-vps:
-      ansible_host: "203.0.113.10" # TODO: замени на реальный белый IP VPS
+      ansible_host: "79.143.29.84"
       ansible_user: deploy
       ansible_python_interpreter: /usr/bin/python3

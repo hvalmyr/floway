@@ -1,6 +1,9 @@
 # Local env
 .env
 
+# Ansible vault password file (never commit — see ansible/README.md)
+ansible/.vault_pass
+
 # Go build artifacts
 /backend/floway-backend
 /backend/api

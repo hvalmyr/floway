@@ -4,7 +4,7 @@ import { masterclassDisplayStyleCycle } from "~/constants/display-style-colors";
 import { featureIconComponent } from "~/constants/feature-icons";
 
 useSeoMeta({
-  title: "Мастер-классы по флористике в Москве — ФлоВей",
+  title: "Мастер-классы по флористике в Москве — Фловей",
   description:
     "Мастер-классы по флористике в свободном графике: букеты и композиции, все материалы включены.",
 });
@@ -67,7 +67,7 @@ const features = computed(
     <section class="bg-surface/55 py-48 backdrop-blur backdrop-saturate-150 sm:py-64 lg:py-80">
       <div class="container flex flex-col gap-48">
         <SectionHeading color="primary" on-glass>
-          {{ text("masterclasses_features_heading", "Почему стоит выбрать мастер-класс “ФлоВей”") }}
+          {{ text("masterclasses_features_heading", "Почему стоит выбрать мастер-класс “Фловей”") }}
           <template #lead>{{
             text(
               "masterclasses_features_lead",

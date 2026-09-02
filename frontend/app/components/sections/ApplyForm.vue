@@ -100,16 +100,21 @@ const onSubmit = handleSubmit(async (values) => {
 
 <template>
   <div :class="bare ? 'w-full' : 'rounded-[30px] bg-white p-24 sm:p-48 lg:p-64'">
-    <div v-if="title || lead" class="mb-24 flex flex-col gap-12">
-      <h2 v-if="title" class="font-display text-h2 text-ink">{{ title }}</h2>
-      <p v-if="lead" class="font-body text-body text-ink">{{ lead }}</p>
-    </div>
-
-    <div v-if="status === 'success'" class="rounded-[15px] bg-surface p-24 sm:p-32" role="status">
-      <p class="font-display text-h4 text-primary">
+    <div
+      v-if="title || lead || status === 'success'"
+      class="mb-24 flex flex-col gap-12"
+      :class="
+        status === 'success' && bare
+          ? 'rounded-md bg-white/55 px-16 py-16 backdrop-blur backdrop-saturate-150'
+          : ''
+      "
+      :role="status === 'success' ? 'status' : undefined"
+    >
+      <h2 v-if="status === 'success'" class="font-display text-h2 text-ink">
         {{ text("apply_form_success_title", "заявка отправлена") }}
-      </p>
-      <p class="mt-8 font-body text-body text-ink">
+      </h2>
+      <h2 v-else-if="title" class="font-display text-h2 text-ink">{{ title }}</h2>
+      <p v-if="status === 'success'" class="font-body text-body text-ink">
         {{
           text(
             "apply_form_success_message",
@@ -117,6 +122,7 @@ const onSubmit = handleSubmit(async (values) => {
           )
         }}
       </p>
+      <p v-else-if="lead" class="font-body text-body text-ink">{{ lead }}</p>
     </div>
 
     <!-- `bare` (the trial-lesson embed) gives every field its own glass
@@ -124,7 +130,7 @@ const onSubmit = handleSubmit(async (values) => {
     vertical padding only, so the panels' edges stay flush with the form's
     own (no side inset, per the caller's layout). Non-bare callers already
     sit on a solid white card, so the wrapper is a plain unstyled div there. -->
-    <form v-else class="flex flex-col gap-16" novalidate @submit="onSubmit">
+    <form v-if="status !== 'success'" class="flex flex-col gap-16" novalidate @submit="onSubmit">
       <div
         :class="
           bare ? 'rounded-md bg-white/55 px-16 py-16 backdrop-blur backdrop-saturate-150' : ''

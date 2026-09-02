@@ -57,7 +57,6 @@ services:
       - .env
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-floway}:${POSTGRES_PASSWORD:-floway}@postgres:5432/${POSTGRES_DB:-floway}?sslmode=disable
-      SMTP_HOST: mailhog
       FRONTEND_ORIGIN: http://localhost:${FRONTEND_PORT:-3000}
       GARAGE_ENDPOINT: http://garage:3900
       GARAGE_REGION: garage

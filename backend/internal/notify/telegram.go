@@ -29,10 +29,10 @@ func newTelegramNotifierForTest(botToken, chatID, apiBase string, client *http.C
 	return &TelegramNotifier{botToken: botToken, chatID: chatID, apiBase: apiBase, client: client}
 }
 
-func (n *TelegramNotifier) NotifyNewLead(ctx context.Context, lead model.Lead) error {
+func (n *TelegramNotifier) NotifyNewLead(ctx context.Context, lead model.Lead, programName string) error {
 	payload, err := json.Marshal(map[string]string{
 		"chat_id": n.chatID,
-		"text":    formatLeadText(lead),
+		"text":    formatLeadText(lead, programName),
 	})
 	if err != nil {
 		return fmt.Errorf("encode telegram payload: %w", err)

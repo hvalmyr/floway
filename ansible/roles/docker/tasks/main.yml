@@ -29,6 +29,16 @@
     state: present
     update_cache: true
 
+# community.docker's Python-SDK-backed modules (e.g. docker_prune, used in
+# deploy_app) talk to the Docker Engine API directly rather than shelling
+# out — unlike docker_compose_v2, which just calls the `docker compose` CLI.
+- name: Install Python Docker SDK (needed by community.docker's API-based modules)
+  ansible.builtin.apt:
+    name:
+      - python3-docker
+      - python3-requests
+    state: present
+
 - name: Add deploy user to docker group
   ansible.builtin.user:
     name: "{{ deploy_user }}"

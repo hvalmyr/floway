@@ -13,7 +13,7 @@ if (!post.value) {
 }
 
 useSeoMeta({
-  title: () => `${post.value?.title} — блог ФлоВей`,
+  title: () => `${post.value?.title} — блог Фловей`,
   description: () => post.value?.title,
 });
 

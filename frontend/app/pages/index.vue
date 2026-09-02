@@ -4,7 +4,7 @@ import { featureIconComponent } from "~/constants/feature-icons";
 import type { CourseSectionWithCourses } from "~/types/api";
 
 useSeoMeta({
-  title: "ФлоВей — школа флористики в Москве",
+  title: "Фловей — школа флористики в Москве",
   description:
     "Курсы и мастер-классы по флористике в Москве: с нуля до уверенной самостоятельной работы.",
 });
@@ -114,7 +114,7 @@ function capitalizeName(name: string): string {
     <section class="bg-surface/55 py-48 backdrop-blur backdrop-saturate-150 sm:py-64 lg:py-80">
       <div class="container flex flex-col gap-48">
         <SectionHeading color="primary" on-glass>
-          {{ text("home_features_heading", "Почему стоит учиться в школе «ФлоВей»?") }}
+          {{ text("home_features_heading", "Почему стоит учиться в школе «Фловей»?") }}
           <template #lead>
             {{
               text(
@@ -291,7 +291,7 @@ function capitalizeName(name: string): string {
         <div class="mx-auto h-[950px] w-full max-w-[400px]">
           <iframe
             src="https://yandex.ru/maps-reviews-widget/83657275642?comments"
-            title="Отзывы о школе «ФлоВей» на Яндекс Картах"
+            title="Отзывы о школе «Фловей» на Яндекс Картах"
             loading="lazy"
             style="
               width: 100%;

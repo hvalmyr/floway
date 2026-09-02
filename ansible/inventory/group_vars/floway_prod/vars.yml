@@ -4,8 +4,7 @@
 
 # --- Пользователь для деплоя/эксплуатации ---
 deploy_user: deploy
-# TODO: замени на свой публичный SSH-ключ (не секрет, можно коммитить как есть).
-deploy_user_ssh_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... your-key-comment"
+deploy_user_ssh_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICZmi7F5zuJk/pZvi01lbRsyAmt7yKMfRed5LuMDMCcB jazz@cmc"
 
 # --- SSH / фаервол ---
 ssh_port: 22
@@ -19,8 +18,8 @@ swap_file_path: /swapfile
 # --- Домен и TLS (Caddy, автоматический Let's Encrypt) ---
 # ВАЖНО: A/AAAA-запись домена должна указывать на IP этой VPS ДО запуска
 # deploy.yml — иначе Caddy не сможет пройти ACME HTTP-01 challenge.
-floway_domain: "floway.example.com" # TODO: замени на реальный домен
-caddy_acme_email: "admin@example.com" # TODO: email для уведомлений Let's Encrypt
+floway_domain: "kursfloristiki.ru"
+caddy_acme_email: "floway-mos@mail.ru"
 
 # --- Образы (GHCR, публикуются через GitHub Actions — см. ansible/README.md) ---
 github_owner: "hvalmyr"
@@ -34,3 +33,9 @@ ghcr_login_required: false
 
 # --- Куда деплоим приложение на VPS ---
 deploy_path: /opt/floway
+
+# --- Аналитика и подтверждение прав на сайт (необязательно, не секреты) ---
+yandex_metrika_id: "40686419"
+yandex_verification: "5c52a869de8140b1"
+# TODO: код подтверждения прав на сайт из Google Search Console
+google_site_verification: ""

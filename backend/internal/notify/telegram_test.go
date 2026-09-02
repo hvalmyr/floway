@@ -36,7 +36,7 @@ func TestTelegramNotifier_NotifyNewLead_SendsExpectedRequest(t *testing.T) {
 
 	n := newTelegramNotifierForTest("test-token", "12345", srv.URL, srv.Client())
 
-	err := n.NotifyNewLead(context.Background(), testLead())
+	err := n.NotifyNewLead(context.Background(), testLead(), "")
 
 	require.NoError(t, err)
 	assert.Equal(t, "/bottest-token/sendMessage", gotPath)
@@ -54,7 +54,7 @@ func TestTelegramNotifier_NotifyNewLead_ReturnsErrorOnNonOKStatus(t *testing.T) 
 
 	n := newTelegramNotifierForTest("test-token", "12345", srv.URL, srv.Client())
 
-	err := n.NotifyNewLead(context.Background(), testLead())
+	err := n.NotifyNewLead(context.Background(), testLead(), "")
 
 	require.Error(t, err)
 }

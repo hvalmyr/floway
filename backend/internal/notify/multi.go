@@ -8,7 +8,7 @@ import (
 )
 
 type Channel interface {
-	NotifyNewLead(ctx context.Context, lead model.Lead) error
+	NotifyNewLead(ctx context.Context, lead model.Lead, programName string) error
 }
 
 // MultiNotifier fans a lead out to every configured channel independently —
@@ -22,10 +22,10 @@ func NewMultiNotifier(channels ...Channel) *MultiNotifier {
 	return &MultiNotifier{channels: channels}
 }
 
-func (m *MultiNotifier) NotifyNewLead(ctx context.Context, lead model.Lead) error {
+func (m *MultiNotifier) NotifyNewLead(ctx context.Context, lead model.Lead, programName string) error {
 	var errs []error
 	for _, ch := range m.channels {
-		if err := ch.NotifyNewLead(ctx, lead); err != nil {
+		if err := ch.NotifyNewLead(ctx, lead, programName); err != nil {
 			errs = append(errs, err)
 		}
 	}

@@ -29,7 +29,10 @@ just ansible-deps   # ansible-galaxy collection install -r requirements.yml
 
 1. **Inventory** (`inventory/production.yml`): впиши белый IP VPS в
    `ansible_host`.
-2. **Переменные** (`group_vars/floway_prod/vars.yml`):
+2. **Переменные** (`inventory/group_vars/floway_prod/vars.yml`) — эта
+   директория лежит рядом с файлом inventory намеренно: `group_vars`
+   подхватывается автоматически, только если он сосед inventory-файла или
+   плейбука, а не просто где-то в `ansible/`.
    - `deploy_user_ssh_public_key` — твой публичный SSH-ключ (не секрет).
    - `floway_domain` — домен сайта. **Заранее направь A/AAAA-запись на IP
      VPS** — без этого Caddy не сможет получить сертификат Let's Encrypt.
@@ -39,14 +42,22 @@ just ansible-deps   # ansible-galaxy collection install -r requirements.yml
 3. **Секреты** (vault):
 
    ```bash
-   cp group_vars/floway_prod/vault.yml.example group_vars/floway_prod/vault.yml
-   $EDITOR group_vars/floway_prod/vault.yml   # реальные пароли/токены
-   ansible-vault encrypt group_vars/floway_prod/vault.yml
+   cp inventory/group_vars/floway_prod/vault.yml.example inventory/group_vars/floway_prod/vault.yml
+   $EDITOR inventory/group_vars/floway_prod/vault.yml   # реальные пароли/токены
+   ansible-vault encrypt inventory/group_vars/floway_prod/vault.yml
    ```
 
    Зашифрованный `vault.yml` коммитить можно и нужно — секреты живут в git,
    но нечитаемы без пароля. Пароль от vault храни отдельно (менеджер паролей
    или секрет в CI), никогда не в репозитории.
+
+4. **Vault-пароль как файл** (чтобы не вводить его на каждый запуск):
+   создай `ansible/.vault_pass` с паролем внутри (одна строка, без
+   переноса на конце — `printf '%s' 'твой-пароль' > ansible/.vault_pass`),
+   и `chmod 600 ansible/.vault_pass`. Файл в `.gitignore`, коммитить нельзя.
+   `just`-рецепты (`bootstrap-first-run`, `bootstrap`, `deploy`, `vault-edit`)
+   используют `--vault-password-file .vault_pass` вместо интерактивного
+   `--ask-vault-pass`.
 
 ## Бутстрап VPS
 
@@ -55,7 +66,7 @@ just ansible-deps   # ansible-galaxy collection install -r requirements.yml
 
 ```bash
 just bootstrap-first-run
-# эквивалент: ansible-playbook playbooks/bootstrap.yml -e ansible_user=root --ask-vault-pass
+# эквивалент: ansible-playbook playbooks/bootstrap.yml -e ansible_user=root --vault-password-file .vault_pass
 ```
 
 **Перед тем как закрывать эту сессию** — открой отдельный терминал и

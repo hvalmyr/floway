@@ -6,5 +6,6 @@
       <slot />
     </main>
     <AppFooter />
+    <CookieConsentBanner />
   </div>
 </template>
