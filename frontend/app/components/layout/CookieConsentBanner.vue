@@ -42,7 +42,13 @@ watch(status, (value) => {
   </div>
 </template>
 
-<style scoped>
+<!-- Not scoped, deliberately: Vue renames keyframes declared in a scoped
+block (appends the component's data-v-xxx suffix), but the animation is
+applied via a Tailwind arbitrary-value class in the template
+(`animate-[cookie-banner-in_...]`), which Tailwind generates unaware of that
+renaming — the two names would stop matching and the animation would
+silently never play. -->
+<style>
 @keyframes cookie-banner-in {
   from {
     transform: translateY(100%);

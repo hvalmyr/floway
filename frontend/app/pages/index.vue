@@ -186,6 +186,8 @@ function capitalizeName(name: string): string {
       </div>
     </section>
 
+    <GiftCertificateMarquee />
+
     <section id="trial" class="scroll-mt-64 py-48 sm:py-64 lg:scroll-mt-96 lg:py-80">
       <div class="container flex flex-col gap-48">
         <SectionHeading color="primary">

@@ -2,17 +2,17 @@
 import { Gift } from "lucide-vue-next";
 
 /**
- * Full-width scrolling promo strip for gift certificates, sat between the
- * header and page content on every page (see layouts/default.vue) — same
- * spot conceptually as a "free shipping" ticker.
+ * Full-width scrolling promo strip for gift certificates — homepage only,
+ * placed right after the courses section (see pages/index.vue), same spot
+ * conceptually as a "free shipping" ticker.
  *
  * The whole strip is one link (single accessible name via aria-label); the
  * scrolling text itself is aria-hidden since it's the same sentence
  * repeated many times purely for the continuous-scroll effect, which would
  * otherwise be read out loud once per repeat.
  *
- * Seamless loop: REPEAT_COUNT copies of one unit (icon + text + dot) sit in
- * a `w-max` row, animated from translateX(0) to translateX(-50%). Because
+ * Seamless loop: REPEAT_COUNT copies of one unit (icon + text) sit in a
+ * `w-max` row, animated from translateX(0) to translateX(-50%). Because
  * every copy is identical, sliding by exactly half the track's width lands
  * on a pixel-identical frame to the start — this only self-aligns when
  * REPEAT_COUNT is even, so it must stay even if ever changed.
@@ -38,13 +38,18 @@ const message = computed(() =>
       <span v-for="n in REPEAT_COUNT" :key="n" class="flex shrink-0 items-center gap-12">
         <Gift class="size-24 shrink-0 text-white" aria-hidden="true" />
         <span class="font-display text-h4 text-white">{{ message }}</span>
-        <span class="font-display text-h4 text-white/50">•</span>
       </span>
     </div>
   </NuxtLink>
 </template>
 
-<style scoped>
+<!-- Not scoped, deliberately: Vue renames keyframes declared in a scoped
+block (appends the component's data-v-xxx suffix), but the animation is
+applied via a Tailwind arbitrary-value class in the template
+(`animate-[gift-marquee_...]`), which Tailwind generates unaware of that
+renaming — the two names would stop matching and the animation would
+silently never play. -->
+<style>
 @keyframes gift-marquee {
   from {
     transform: translateX(0);
