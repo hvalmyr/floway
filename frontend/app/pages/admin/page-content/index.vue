@@ -5,7 +5,7 @@ interface PageContentItem {
   key: string;
   label: string;
   value: string;
-  type: "text" | "image" | "icon";
+  type: "text" | "image";
   updatedAt: string;
 }
 
@@ -51,11 +51,6 @@ function onImageUploaded(item: PageContentItem, url: string) {
   item.value = url;
   save(item);
 }
-
-function onIconSelected(item: PageContentItem, value: string) {
-  item.value = value;
-  save(item);
-}
 </script>
 
 <template>
@@ -84,15 +79,10 @@ function onIconSelected(item: PageContentItem, value: string) {
           :label="item.label"
           @update:model-value="(url) => onImageUploaded(item, url)"
         />
-        <AdminIconPicker
-          v-else-if="item.type === 'icon'"
-          :model-value="item.value"
-          @update:model-value="(value) => onIconSelected(item, value)"
-        />
         <AdminMarkdownField v-else :id="`field-${item.key}`" v-model="item.value" :rows="3" />
         <div class="mt-2 flex items-center gap-3">
           <button
-            v-if="item.type !== 'image' && item.type !== 'icon'"
+            v-if="item.type !== 'image'"
             type="button"
             :disabled="savingKey === item.key"
             class="rounded bg-[var(--color-primary)] px-4 py-2 text-sm text-white disabled:opacity-50"

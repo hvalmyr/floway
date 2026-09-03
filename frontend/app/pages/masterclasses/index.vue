@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import type { Component } from "vue";
 import { masterclassDisplayStyleCycle } from "~/constants/display-style-colors";
+import { featureIconComponent } from "~/constants/feature-icons";
 
 useSeoMeta({
   title: "Мастер-классы по флористике в Москве — Фловей",
@@ -26,7 +28,12 @@ const features = computed(
     featuresData.value
       ?.slice()
       .sort((a, b) => a.sortOrder - b.sortOrder)
-      .map((f) => ({ icon: f.icon, title: f.title, description: f.description })) ?? [],
+      .map((f) => ({
+        icon: featureIconComponent(f.icon),
+        title: f.title,
+        description: f.description,
+      }))
+      .filter((f): f is typeof f & { icon: Component } => f.icon !== undefined) ?? [],
 );
 </script>
 

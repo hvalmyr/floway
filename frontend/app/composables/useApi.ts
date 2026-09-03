@@ -11,7 +11,6 @@ import type {
   Feature,
   FeaturePage,
   GalleryPhoto,
-  Icon,
   Lead,
   Masterclass,
   PageContent,
@@ -158,20 +157,6 @@ export function useApi() {
   }
 
   /**
-   * GET /api/v1/icons — public, no auth (icon_handler.go's list route has
-   * no admin middleware, same as features/gallery-photos). The uploaded
-   * icon library — see the Icon type doc comment for how a Feature/
-   * PageContent icon value references one of these.
-   */
-  async function getIcons(): Promise<Icon[]> {
-    try {
-      return await client<Icon[]>("/api/v1/icons");
-    } catch (err) {
-      throw toApiError(err);
-    }
-  }
-
-  /**
    * GET /api/v1/blog-posts?status=published — draft posts are never
    * returned (see blog_post_handler.go). No mocks fallback: there's no
    * design brief for the blog yet, so this always hits the real backend.
@@ -210,7 +195,6 @@ export function useApi() {
     getFAQItems,
     getFeatures,
     getAboutItems,
-    getIcons,
     getPageContent,
     getBlogPosts,
     getBlogPost,

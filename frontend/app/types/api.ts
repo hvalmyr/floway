@@ -143,7 +143,7 @@ export interface Masterclass {
  * usePageContent(). `value` may contain markdown; render it with
  * <MarkdownContent> where the surrounding markup allows block content.
  */
-export type PageContentType = "text" | "image" | "icon";
+export type PageContentType = "text" | "image";
 
 export interface PageContent {
   key: string;
@@ -156,22 +156,9 @@ export interface PageContent {
 export type FeaturePage = "home" | "masterclasses";
 
 /**
- * An icon value (Feature.icon, a page_content row of type "icon") is either
- * a bare key into FEATURE_ICONS (constants/feature-icons.ts, e.g. "gift")
- * or "icon:<id>" referencing an uploaded Icon below — see AppIcon.vue,
- * which resolves either form to something renderable.
- */
-export interface Icon {
-  id: number;
-  name: string;
-  svg: string;
-  createdAt: string;
-}
-
-/**
  * Shape returned by the public GET /api/v1/features?page=home|masterclasses
- * (list, no auth, pre-sorted by sortOrder). `icon` is not a rendered value —
- * see the Icon doc comment above for the two forms it can take.
+ * (list, no auth, pre-sorted by sortOrder). `icon` is a key into
+ * FEATURE_ICONS (constants/feature-icons.ts), not a rendered value.
  */
 export interface Feature {
   id: number;

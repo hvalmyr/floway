@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { Component } from "vue";
+import { featureIconComponent } from "~/constants/feature-icons";
 import type { CourseSectionWithCourses } from "~/types/api";
 
 useSeoMeta({
@@ -47,7 +49,12 @@ const features = computed(
     featuresData.value
       ?.slice()
       .sort((a, b) => a.sortOrder - b.sortOrder)
-      .map((f) => ({ icon: f.icon, title: f.title, description: f.description })) ?? [],
+      .map((f) => ({
+        icon: featureIconComponent(f.icon),
+        title: f.title,
+        description: f.description,
+      }))
+      .filter((f): f is typeof f & { icon: Component } => f.icon !== undefined) ?? [],
 );
 
 const { data: aboutItemsData } = await useAsyncData("home-about-items", () => api.getAboutItems());

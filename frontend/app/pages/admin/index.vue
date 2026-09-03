@@ -21,7 +21,6 @@ const editingGroups: EditingGroup[] = [
       { to: "/admin/features", label: "Преимущества" },
       { to: "/admin/page-content/hero", label: "Hero-блок" },
       { to: "/admin/gallery-photos", label: "Фотогалерея" },
-      { to: "/admin/icons", label: "Библиотека иконок" },
     ],
   },
   {
@@ -31,7 +30,6 @@ const editingGroups: EditingGroup[] = [
       { to: "/admin/teachers", label: "Преподаватели" },
       { to: "/admin/about-items", label: "О школе" },
       { to: "/admin/page-content/apply-form", label: "Форма заявки" },
-      { to: "/admin/page-content/marquee", label: "Бегущая строка сертификатов" },
     ],
   },
   {
