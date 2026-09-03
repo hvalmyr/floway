@@ -63,7 +63,13 @@ const colorClasses = displayStyleColorClasses;
 </script>
 
 <template>
-  <UiCard variant="custom" :class="[colorClasses[displayStyle], 'flex flex-col']">
+  <UiCard
+    variant="custom"
+    :class="[
+      colorClasses[displayStyle],
+      'flex w-full flex-col sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-22px)]',
+    ]"
+  >
     <template #title>{{ name }}</template>
 
     <div v-if="blockLabel || lessonCount || timeLength" class="mb-16 flex flex-col gap-4">
