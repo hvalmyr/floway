@@ -12,6 +12,8 @@
  *
  * This hook runs at the outer Nitro app level, right before any response
  * is sent, so it reliably overrides whatever the broken inner path did.
+ * (See ipx-cache.ts for a related but separate fix: that one's about the
+ * response body never being reused across requests at all, not headers.)
  *
  * Cache-Control is unconditional: every uploaded image is immutable
  * (UUID-keyed, never edited in place — see upload_handler.go), and IPX's
