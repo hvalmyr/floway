@@ -82,6 +82,13 @@ services:
       # SSR внутри контейнера должно идти на backend по docker-сети, не по
       # localhost (см. комментарий в frontend/app/composables/useApiClient.ts).
       NUXT_API_BASE_INTERNAL: http://backend:${HTTP_PORT:-8080}
+      # @nuxt/image (IPX) фетчит оригиналы сам, всегда из процесса Nitro —
+      # тот же internal-адрес, что и выше, но обязан быть public (см.
+      # комментарий у mediaOptimizeBase в nuxt.config.ts). Без явного
+      # значения тут контейнер стартует со значением, запечённым при сборке
+      # образа (nuxt build идёт без .env — см. Dockerfile), а это
+      # localhost:8080, который внутри контейнера указывает сам на себя.
+      NUXT_PUBLIC_MEDIA_OPTIMIZE_BASE: http://backend:${HTTP_PORT:-8080}
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     depends_on:

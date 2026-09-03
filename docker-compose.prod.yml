@@ -91,6 +91,14 @@ services:
       # а не через публичный домен/Caddy (см. комментарий в
       # frontend/app/composables/useApiClient.ts).
       NUXT_API_BASE_INTERNAL: http://backend:8080
+      # @nuxt/image (IPX) фетчит оригиналы сам, всегда из процесса Nitro —
+      # тот же internal-адрес, что и выше, но обязан быть public (см.
+      # комментарий у mediaOptimizeBase в nuxt.config.ts). Без явного
+      # значения тут контейнер стартует со значением, запечённым при сборке
+      # образа в CI (nuxt build идёт без этих переменных — см. Dockerfile),
+      # а это localhost:8080, который внутри контейнера указывает сам на
+      # себя — из-за этого на проде не грузилась ни одна картинка.
+      NUXT_PUBLIC_MEDIA_OPTIMIZE_BASE: http://backend:8080
       # Все три необязательны (см. ansible/inventory/group_vars/floway_prod/vars.yml) —
       # пустое значение просто не рендерит счётчик/мета-тег.
       NUXT_PUBLIC_YANDEX_METRIKA_ID: ${NUXT_PUBLIC_YANDEX_METRIKA_ID:-}
