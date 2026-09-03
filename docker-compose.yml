@@ -89,6 +89,25 @@ services:
       # образа (nuxt build идёт без .env — см. Dockerfile), а это
       # localhost:8080, который внутри контейнера указывает сам на себя.
       NUXT_PUBLIC_MEDIA_OPTIMIZE_BASE: http://backend:${HTTP_PORT:-8080}
+      # ipx (used by @nuxt/image) is supposed to derive its own Cache-Control
+      # from a HEAD probe against mediaOptimizeBase — but that HEAD still
+      # wasn't reaching a usable answer even after the backend started
+      # answering it correctly on its own (curl confirmed 200 + a real
+      # Cache-Control; images kept re-downloading on every reload anyway —
+      # root cause of that gap unresolved). ipxHttpStorage.getMeta()
+      # swallows any failed/erroring probe into `{}`, which then falls
+      # through to createIPX's own top-level maxAge default (IPX_MAX_AGE,
+      # not IPX_HTTP_MAX_AGE — that one only kicks in when the probe
+      # *succeeds* but the upstream response itself lacks Cache-Control) —
+      # confirmed locally: setting IPX_MAX_AGE is what actually produced a
+      # real Cache-Control header end to end. Uploaded images are immutable
+      # (UUID keys, never edited in place — see upload_handler.go), so a
+      # static 1-year value is the objectively correct policy regardless of
+      # whether the dynamic probe ever gets sorted out. Both env vars read
+      # directly by ipx itself (no NUXT_/NITRO_ prefix — see its own
+      # getEnv), set together as a safety net either way.
+      IPX_MAX_AGE: "31536000"
+      IPX_HTTP_MAX_AGE: "31536000"
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     depends_on:
