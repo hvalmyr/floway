@@ -5,6 +5,9 @@
 const { public: publicConfig } = useRuntimeConfig();
 
 useHead({
+  htmlAttrs: {
+    lang: "ru",
+  },
   meta: [
     ...(publicConfig.yandexVerification
       ? [{ name: "yandex-verification", content: publicConfig.yandexVerification }]
