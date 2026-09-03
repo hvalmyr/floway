@@ -219,13 +219,17 @@ function capitalizeName(name: string): string {
           и ширину пропорционально, так что соотношение сторон не ломается
           (стандартное поведение aspect-ratio + max-height у браузера, без
           JS). mx-auto центрирует, когда из-за max-h ширина не дотягивает до
-          полной колонки. -->
+          полной колонки. min-h-0 — эта колонка ещё и grid-item, а
+          min-height:auto по умолчанию у grid/flex-item позволяет
+          собственному соотношению сторон загруженного фото (если оно не
+          9:16) перебить aspect-ratio и растянуть блок; см. коммит с
+          разбором в CourseCard.vue. -->
           <NuxtImg
             v-if="text('home_trial_image')"
             :src="resolveOptimizedMediaUrl(text('home_trial_image'))"
             format="webp"
             alt=""
-            class="order-1 mx-auto aspect-[9/16] max-h-[80vh] max-w-full rounded-lg object-cover md:sticky md:top-96 md:order-2"
+            class="order-1 mx-auto aspect-[9/16] max-h-[80vh] max-w-full min-h-0 rounded-lg object-cover md:sticky md:top-96 md:order-2"
             sizes="400:100vw md:50vw"
             loading="lazy"
           />
@@ -251,7 +255,7 @@ function capitalizeName(name: string): string {
               :src="resolveOptimizedMediaUrl(teacher.photo)"
               format="webp"
               :alt="teacher.name"
-              class="aspect-square w-full rounded-lg object-cover"
+              class="aspect-square w-full min-h-0 rounded-lg object-cover"
               sizes="400:100vw md:33vw"
               loading="lazy"
             />

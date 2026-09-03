@@ -14,6 +14,12 @@ import type { CourseBlockDisplayStyle, Masterclass } from "~/types/api";
  * leftover flex space for `mt-auto` to push against (the button would then
  * end up jammed right under the last paragraph with no gap at all).
  *
+ * The image's `min-h-0` matters below `sm` (column layout, no explicit
+ * shrink-0 there): flex items default to `min-height: auto`, which for a
+ * cover photo taller than the `aspect-[4/5]` box lets its own intrinsic
+ * ratio win over the aspect-ratio CSS and stretch the box — see the same
+ * fix's comment in CourseCard.vue for a confirmed-live repro.
+ *
  * @example
  * <MasterclassCard :masterclass="mc" display-style="beige-blue" @apply="..." />
  */
@@ -69,7 +75,7 @@ const colorClasses: Record<CourseBlockDisplayStyle, string> = {
       :src="resolveOptimizedMediaUrl(masterclass.coverImage)"
       format="webp"
       :alt="masterclass.title"
-      class="aspect-[4/5] w-full rounded-sm object-cover sm:w-[38%] sm:shrink-0"
+      class="aspect-[4/5] w-full min-h-0 rounded-sm object-cover sm:w-[38%] sm:shrink-0"
       sizes="400:100vw sm:38vw"
       loading="lazy"
     />

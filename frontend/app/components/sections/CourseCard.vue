@@ -27,6 +27,15 @@ import type { CourseBlockDisplayStyle } from "~/types/api";
  * (see UiButton.vue), so it automatically matches whichever of the 4
  * `colorClasses` below is active instead of needing a color per style here.
  *
+ * The cover link's `min-h-0` isn't decorative — flex items default to
+ * `min-height: auto`, which for a portrait-cropped photo (taller than the
+ * square `aspect-square` box) let the image's own intrinsic ratio win over
+ * the aspect-ratio CSS, stretching the whole card (confirmed live: a
+ * non-square upload rendered its cover 293×440 instead of 293×293 until
+ * this was added). Square/landscape uploads never showed it — it only
+ * bites a portrait one — so don't drop this because everything looks fine
+ * with whatever photo you're testing against.
+ *
  * @example
  * <CourseCard
  *   name="Основы флористики"
@@ -91,7 +100,7 @@ const colorClasses = displayStyleColorClasses;
       {{ description }}
     </p>
 
-    <component :is="NuxtLink" :to="to" class="mt-auto mb-24 block aspect-square w-full">
+    <component :is="NuxtLink" :to="to" class="mt-auto mb-24 block aspect-square w-full min-h-0">
       <NuxtImg
         v-if="coverImage"
         :src="resolveOptimizedMediaUrl(coverImage)"
