@@ -70,12 +70,16 @@ const AUTOPLAY_MS = 4000;
 // rather than a drag — see openLightbox's `didDrag` check.
 const DRAG_CLICK_THRESHOLD_PX = 6;
 // Cards in the row are tall (up to 66vh, see the slide's height classes
-// below), not small — no reason to make the browser pull down the same
-// multi-hundred-KB full-size file (the one the lightbox/zoom need) when a
-// lighter rendition looks identical at card size. Picks a width generous
-// enough for the tallest (lg) card on a retina display; @nuxt/image (see
-// resolveOptimizedMediaUrl) does the actual resize + webp conversion.
-const THUMBNAIL_WIDTH = 900;
+// below) but narrow (aspect-[3/4]) — no reason to make the browser pull
+// down the same multi-hundred-KB full-size file (the one the lightbox/
+// zoom need) when a lighter rendition looks identical at card size. Fed
+// to NuxtImg's `sizes` (not `width`) — `width` alone makes it emit a bare
+// 1x/2x density srcset with no `sizes` attribute, so the browser picks by
+// screen DPR alone with no idea the image only renders this small; a
+// real `sizes` value lets it size correctly against the DPR it actually
+// has (confirmed live: bare `width` was shipping 1800px files to a ~300px
+// slide on a real mobile audit).
+const THUMBNAIL_WIDTH = 400;
 // Matches the track's `duration-500` class, plus a small buffer so the
 // snap-back never fires before the (possibly reduced-motion-skipped) CSS
 // transition has actually finished.
@@ -504,7 +508,7 @@ onUnmounted(() => {
           <NuxtImg
             :src="thumbUrl(photo)"
             format="webp"
-            :width="THUMBNAIL_WIDTH"
+            :sizes="`${THUMBNAIL_WIDTH}px`"
             alt=""
             draggable="false"
             class="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
