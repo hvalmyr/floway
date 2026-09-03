@@ -248,11 +248,11 @@ function capitalizeName(name: string): string {
     <section class="py-48 sm:py-64 lg:py-80">
       <div class="container flex flex-col gap-48">
         <SectionHeading>Педагоги</SectionHeading>
-        <div class="grid grid-cols-1 gap-24 md:grid-cols-3">
+        <div class="flex flex-wrap justify-center gap-24">
           <div
             v-for="(teacher, index) in teachers"
             :key="teacher.id"
-            class="flex flex-col items-center gap-16"
+            class="flex w-full flex-col items-center gap-16 md:w-[calc((100%-48px)/3)]"
           >
             <img
               v-if="teacher.photo"
