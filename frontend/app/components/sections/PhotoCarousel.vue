@@ -38,7 +38,13 @@ import type { GalleryPhoto } from "~/types/api";
  * Also draggable — press and hold (mouse) or touch-and-drag (finger) to
  * scroll it directly, same as a native horizontal strip, rather than only
  * a single step per swipe. See `startDrag`/`moveDrag`/`endDrag` for the
- * shared core both input types feed into.
+ * shared core both input types feed into. The track is `touch-pan-y`
+ * (not the CSS default `auto`) so the browser's own gesture recognizer
+ * commits to vertical panning immediately and leaves horizontal motion to
+ * `onTouchMove`'s axis lock — without it, mobile Safari/Chrome fight the JS
+ * drag for the first several frames of every gesture (visible stutter) and,
+ * worse, can read a drag starting near the screen edge as its own
+ * back/forward swipe gesture instead of scrolling the carousel.
  *
  * Autoplay pauses for as long as the user is hovering, has keyboard focus
  * inside, is dragging, or has a photo open fullscreen, and resumes the
@@ -486,7 +492,7 @@ onUnmounted(() => {
       <div
         ref="trackRef"
         data-no-orbit
-        class="flex select-none gap-24 motion-reduce:transition-none"
+        class="flex touch-pan-y select-none gap-24 motion-reduce:transition-none"
         :class="[
           jumping || dragging ? '' : 'transition-transform duration-500 ease-out',
           dragging ? 'cursor-grabbing' : 'cursor-grab',

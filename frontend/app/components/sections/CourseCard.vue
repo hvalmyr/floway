@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { NuxtLink } from "#components";
 import { displayStyleColorClasses } from "~/constants/display-style-colors";
 import type { CourseBlockDisplayStyle } from "~/types/api";
 
@@ -84,13 +85,15 @@ const colorClasses = displayStyleColorClasses;
       {{ description }}
     </p>
 
-    <img
-      v-if="coverImage"
-      :src="resolveMediaUrl(coverImage)"
-      :alt="name"
-      class="mt-auto mb-24 aspect-square w-full rounded-sm object-cover"
-    />
-    <div v-else class="mt-auto mb-24 aspect-square w-full rounded-sm border-2 border-current" />
+    <component :is="NuxtLink" :to="to" class="mt-auto mb-24 block aspect-square w-full">
+      <img
+        v-if="coverImage"
+        :src="resolveMediaUrl(coverImage)"
+        :alt="name"
+        class="size-full rounded-sm object-cover"
+      />
+      <div v-else class="size-full rounded-sm border-2 border-current" />
+    </component>
 
     <UiButton variant="outline" transparent :to="to" class="w-full justify-center">{{
       ctaLabel
