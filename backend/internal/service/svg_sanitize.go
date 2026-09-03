@@ -142,12 +142,14 @@ func sanitizeSVG(input string) (string, error) {
 
 func escapeAttr(s string) string {
 	var b strings.Builder
-	xml.EscapeText(&b, []byte(s))
+	// strings.Builder.Write never errors, so xml.EscapeText can't either
+	// (it only ever fails if the underlying writer does).
+	_ = xml.EscapeText(&b, []byte(s))
 	return b.String()
 }
 
 func escapeText(s string) string {
 	var b strings.Builder
-	xml.EscapeText(&b, []byte(s))
+	_ = xml.EscapeText(&b, []byte(s))
 	return b.String()
 }
