@@ -24,7 +24,7 @@ const formError = ref("");
 
 await fetchAll();
 
-const { draggingIndex, onDragStart, onDragOver, onDrop } = useAdminDragReorder(items, (item) =>
+const { draggingIndex, onPointerDown } = useAdminDragReorder(items, (item) =>
   update(item.id, item),
 );
 
@@ -126,14 +126,13 @@ async function onDelete(id: number) {
         <tr
           v-for="(item, index) in items"
           :key="item.id"
-          draggable="true"
+          :data-row-index="index"
           class="border-b border-gray-100 last:border-0"
           :class="draggingIndex === index ? 'opacity-50' : ''"
-          @dragstart="onDragStart(index)"
-          @dragover.prevent="onDragOver(index)"
-          @drop.prevent="onDrop"
         >
-          <td class="px-4 py-2"><AdminDragHandle /></td>
+          <td class="px-4 py-2">
+            <AdminDragHandle @pointerdown="onPointerDown(index, $event)" />
+          </td>
           <td class="px-4 py-2">{{ item.badge }}</td>
           <td class="flex gap-3 px-4 py-2 text-right">
             <button class="text-[var(--color-primary)] hover:underline" @click="startEdit(item)">

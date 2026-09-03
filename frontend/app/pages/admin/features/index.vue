@@ -235,14 +235,13 @@ async function onDelete(id: number) {
             <tr
               v-for="(item, index) in group.items.value"
               :key="item.id"
-              draggable="true"
+              :data-row-index="index"
               class="border-b border-gray-100 last:border-0"
               :class="group.reorder.draggingIndex.value === index ? 'opacity-50' : ''"
-              @dragstart="group.reorder.onDragStart(index)"
-              @dragover.prevent="group.reorder.onDragOver(index)"
-              @drop.prevent="group.reorder.onDrop"
             >
-              <td class="px-4 py-2"><AdminDragHandle /></td>
+              <td class="px-4 py-2">
+                <AdminDragHandle @pointerdown="group.reorder.onPointerDown(index, $event)" />
+              </td>
               <td class="px-4 py-2">
                 <AppIcon :icon="item.icon" class="size-6 text-[var(--color-primary)]" />
               </td>

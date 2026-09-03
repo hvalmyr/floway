@@ -54,7 +54,7 @@ const formError = ref("");
 
 await fetchAll();
 
-const { draggingIndex, onDragStart, onDragOver, onDrop } = useAdminDragReorder(items, (item) =>
+const { draggingIndex, onPointerDown } = useAdminDragReorder(items, (item) =>
   update(item.id, item),
 );
 
@@ -301,14 +301,13 @@ async function onBulkDelete() {
         <tr
           v-for="(course, index) in filteredItems"
           :key="course.id"
-          :draggable="dragEnabled"
+          :data-row-index="index"
           class="border-b border-gray-100 last:border-0"
           :class="draggingIndex === index ? 'opacity-50' : ''"
-          @dragstart="dragEnabled && onDragStart(index)"
-          @dragover.prevent="dragEnabled && onDragOver(index)"
-          @drop.prevent="dragEnabled && onDrop()"
         >
-          <td class="px-4 py-2"><AdminDragHandle /></td>
+          <td class="px-4 py-2">
+            <AdminDragHandle v-if="dragEnabled" @pointerdown="onPointerDown(index, $event)" />
+          </td>
           <td class="px-4 py-2">
             <input
               type="checkbox"

@@ -50,7 +50,7 @@ const formError = ref("");
 
 await fetchAll();
 
-const { draggingIndex, onDragStart, onDragOver, onDrop } = useAdminDragReorder(items, (item) =>
+const { draggingIndex, onPointerDown } = useAdminDragReorder(items, (item) =>
   update(item.id, item),
 );
 
@@ -204,14 +204,13 @@ async function onToggleVisible(block: CourseBlock) {
         <tr
           v-for="(block, index) in items"
           :key="block.id"
-          draggable="true"
+          :data-row-index="index"
           class="border-b border-gray-100 last:border-0"
           :class="draggingIndex === index ? 'opacity-50' : ''"
-          @dragstart="onDragStart(index)"
-          @dragover.prevent="onDragOver(index)"
-          @drop.prevent="onDrop"
         >
-          <td class="px-4 py-2"><AdminDragHandle /></td>
+          <td class="px-4 py-2">
+            <AdminDragHandle @pointerdown="onPointerDown(index, $event)" />
+          </td>
           <td class="px-4 py-2">{{ block.blockName || "—" }}</td>
           <td class="px-4 py-2">{{ block.lessonCount }}</td>
           <td class="px-4 py-2">{{ block.timeLength }}</td>
