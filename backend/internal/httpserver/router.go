@@ -137,6 +137,9 @@ func NewRouter(services Services) http.Handler {
 	r.Group(func(r chi.Router) {
 		r.Use(limitBodySize)
 		r.Get("/uploads/{key}", uploads.serve)
+		// @nuxt/image's IPX probes with HEAD before transforming — see the
+		// comment in upload_handler.go's serve().
+		r.Head("/uploads/{key}", uploads.serve)
 
 		r.Route("/api/v1", func(r chi.Router) {
 			r.Route("/admin", newAuthHandler(services.AdminUser, services.Tokens, services.SecureCookies, admin, loginLimiter).routes)

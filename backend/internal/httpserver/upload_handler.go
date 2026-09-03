@@ -212,6 +212,17 @@ func (h *uploadHandler) serve(w http.ResponseWriter, r *http.Request) {
 	// class of bug.
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 
+	// @nuxt/image's IPX sends a HEAD request for exactly these three headers
+	// before ever fetching/transforming an image, to decide its own
+	// Cache-Control — this route only had GET registered, so that HEAD
+	// 405'd, IPX silently treated the failure as "no cache metadata", and
+	// every transformed image it served came back with no Cache-Control at
+	// all (confirmed live: every reload re-downloaded every image). No body
+	// for HEAD, same as any well-behaved static-file-like endpoint.
+	if r.Method == http.MethodHead {
+		return
+	}
+
 	// `?w=` lets a caller ask for a small thumbnail-sized rendition instead
 	// of the full (already upload-time-capped) image — the homepage gallery
 	// strip uses it so its several-photos-in-a-row thumbnails don't each
