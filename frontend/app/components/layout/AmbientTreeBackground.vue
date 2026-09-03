@@ -694,7 +694,11 @@ onMounted(() => {
   const key = new THREE.DirectionalLight(0xffffff, 1.8);
   key.position.set(4, 7, 5);
   key.castShadow = true;
-  key.shadow.mapSize.set(1024, 1024);
+  // 512 not 1024 — a soft, diffuse contact shadow doesn't need 1K
+  // resolution, and the shadow pass cost scales with map area (this alone
+  // cuts it to a quarter). See the render-cost comment by the renderer
+  // below for the fuller picture.
+  key.shadow.mapSize.set(512, 512);
   key.shadow.bias = -0.0003;
   const shadowSpan = sphere.radius * 2.2;
   key.shadow.camera.left = -shadowSpan;
@@ -709,8 +713,16 @@ onMounted(() => {
   fill.position.set(-5, 3, -4);
   scene.add(fill);
 
-  renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  // This renders continuously forever (see the render loop below —
+  // autoRotate means there's always something to redraw), so per-frame
+  // cost matters far more here than for a one-off render: a real mobile
+  // Lighthouse audit traced the site's whole main-thread/CPU-idle failure
+  // to this loop never letting the CPU rest. antialias off and a capped
+  // pixel ratio are the two biggest per-frame levers — the scene sits at
+  // 70% opacity behind blurred "glass" UI (see the template), so neither
+  // is very visible here even though they would be on focal content.
+  renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -818,10 +830,25 @@ onMounted(() => {
   resizeObserver = new ResizeObserver(fit);
   resizeObserver.observe(parent);
 
-  const loop = () => {
+  // The actual GPU draw (renderer.render, below) is what a real mobile
+  // Lighthouse audit traced this component's whole CPU-idle failure to —
+  // this runs forever (autoRotate means there's always something to
+  // redraw), so at an uncapped rAF rate that's shadow-mapped draw calls
+  // every ~8-16ms, indefinitely, on every page. A slow ambient rotation
+  // doesn't need 60-120fps to read as smooth, so only the render call
+  // itself is throttled to ~30fps — controls.update() (cheap vector math,
+  // not a GPU cost) still runs every real frame so the damping/rotation
+  // math stays exactly as smooth and doesn't visibly slow down.
+  const RENDER_INTERVAL_MS = 1000 / 30;
+  let lastRenderTime = 0;
+
+  const loop = (now: number) => {
     if (disposed) return;
     frameId = requestAnimationFrame(loop);
     if (document.hidden || !controls || !renderer || !scene || !camera) return;
+    controls.update();
+    if (now - lastRenderTime < RENDER_INTERVAL_MS) return;
+    lastRenderTime = now;
     if (activationRing && ringAnimPhase !== "idle") {
       const t = Math.min((performance.now() - ringAnimStart) / RING_ANIM_MS, 1);
       const mat = activationRing.material as THREE.MeshBasicMaterial;
@@ -845,10 +872,9 @@ onMounted(() => {
         activationRing.visible = false;
       }
     }
-    controls.update();
     renderer.render(scene, camera);
   };
-  loop();
+  loop(performance.now());
 });
 
 onBeforeUnmount(() => {
