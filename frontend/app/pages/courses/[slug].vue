@@ -45,10 +45,9 @@ const openLessonIds = ref<Record<number, Array<string | number>>>(
         <UiButton variant="primary" to="#apply">Оставить заявку</UiButton>
       </template>
       <template v-if="course.blocks[0]?.blockCover" #media>
-        <img
-          :src="resolveMediaUrl(course.blocks[0].blockCover)"
+        <UiHeroPicture
+          :src="resolveOptimizedMediaUrl(course.blocks[0].blockCover)"
           :alt="course.name"
-          class="aspect-square w-full rounded-lg object-cover"
         />
       </template>
     </Hero>

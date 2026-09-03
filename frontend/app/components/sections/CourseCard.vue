@@ -86,11 +86,14 @@ const colorClasses = displayStyleColorClasses;
     </p>
 
     <component :is="NuxtLink" :to="to" class="mt-auto mb-24 block aspect-square w-full">
-      <img
+      <NuxtImg
         v-if="coverImage"
-        :src="resolveMediaUrl(coverImage)"
+        :src="resolveOptimizedMediaUrl(coverImage)"
+        format="webp"
         :alt="name"
         class="size-full rounded-sm object-cover"
+        sizes="400:100vw sm:50vw lg:400px"
+        loading="lazy"
       />
       <div v-else class="size-full rounded-sm border-2 border-current" />
     </component>

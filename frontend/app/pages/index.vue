@@ -103,11 +103,7 @@ function capitalizeName(name: string): string {
         <UiButton variant="outline" to="/#trial">Пробное занятие</UiButton>
       </template>
       <template v-if="text('home_hero_image')" #media>
-        <img
-          :src="resolveMediaUrl(text('home_hero_image'))"
-          alt=""
-          class="aspect-square w-full rounded-lg object-cover"
-        />
+        <UiHeroPicture :src="resolveOptimizedMediaUrl(text('home_hero_image'))" alt="" />
       </template>
     </Hero>
 
@@ -231,11 +227,14 @@ function capitalizeName(name: string): string {
           (стандартное поведение aspect-ratio + max-height у браузера, без
           JS). mx-auto центрирует, когда из-за max-h ширина не дотягивает до
           полной колонки. -->
-          <img
+          <NuxtImg
             v-if="text('home_trial_image')"
-            :src="resolveMediaUrl(text('home_trial_image'))"
+            :src="resolveOptimizedMediaUrl(text('home_trial_image'))"
+            format="webp"
             alt=""
             class="order-1 mx-auto aspect-[9/16] max-h-[80vh] max-w-full rounded-lg object-cover md:sticky md:top-96 md:order-2"
+            sizes="400:100vw md:50vw"
+            loading="lazy"
           />
           <div
             v-else
@@ -254,11 +253,14 @@ function capitalizeName(name: string): string {
             :key="teacher.id"
             class="flex w-full flex-col items-center gap-16 md:w-[calc((100%-48px)/3)]"
           >
-            <img
+            <NuxtImg
               v-if="teacher.photo"
-              :src="resolveMediaUrl(teacher.photo)"
+              :src="resolveOptimizedMediaUrl(teacher.photo)"
+              format="webp"
               :alt="teacher.name"
               class="aspect-square w-full rounded-lg object-cover"
+              sizes="400:100vw md:33vw"
+              loading="lazy"
             />
             <div
               v-else

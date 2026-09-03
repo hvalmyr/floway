@@ -64,11 +64,14 @@ const colorClasses: Record<CourseBlockDisplayStyle, string> = {
     class="flex flex-col gap-32 rounded-md p-40 sm:flex-row sm:gap-48"
     :class="colorClasses[displayStyle]"
   >
-    <img
+    <NuxtImg
       v-if="masterclass.coverImage"
-      :src="resolveMediaUrl(masterclass.coverImage)"
+      :src="resolveOptimizedMediaUrl(masterclass.coverImage)"
+      format="webp"
       :alt="masterclass.title"
       class="aspect-[4/5] w-full rounded-sm object-cover sm:w-[38%] sm:shrink-0"
+      sizes="400:100vw sm:38vw"
+      loading="lazy"
     />
     <div
       v-else

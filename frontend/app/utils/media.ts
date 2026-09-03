@@ -10,3 +10,17 @@ export function resolveMediaUrl(path: string): string {
   const config = useRuntimeConfig();
   return `${config.public.apiBase}${path}`;
 }
+
+/**
+ * Same idea as resolveMediaUrl, but for images passed into NuxtImg/
+ * NuxtPicture. Those fetch the original themselves, server-side (either
+ * during SSR or when the browser later hits the /_ipx/** URL they
+ * generate) — so, unlike a plain <img src>, the URL has to stay reachable
+ * from the Nuxt server process itself, in every environment. See
+ * mediaOptimizeBase's comment in nuxt.config.ts.
+ */
+export function resolveOptimizedMediaUrl(path: string): string {
+  if (!path || !path.startsWith("/")) return path;
+  const config = useRuntimeConfig();
+  return `${config.public.mediaOptimizeBase}${path}`;
+}

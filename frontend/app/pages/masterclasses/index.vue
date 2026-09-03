@@ -56,11 +56,7 @@ const features = computed(
         <UiButton variant="outline" to="#apply">Оставить заявку</UiButton>
       </template>
       <template v-if="text('masterclasses_hero_image')" #media>
-        <img
-          :src="resolveMediaUrl(text('masterclasses_hero_image'))"
-          alt=""
-          class="aspect-square w-full rounded-lg object-cover"
-        />
+        <UiHeroPicture :src="resolveOptimizedMediaUrl(text('masterclasses_hero_image'))" alt="" />
       </template>
     </Hero>
 

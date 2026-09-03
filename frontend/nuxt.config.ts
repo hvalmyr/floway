@@ -1,3 +1,14 @@
+// @nuxt/image's IPX provider fetches originals itself (server-side, either
+// during SSR or when the browser later requests the /_ipx/** URL it
+// generated) — the public apiBase domain either isn't known yet at build
+// time (prod deploys a prebuilt image, the real domain only exists at
+// deploy time) or isn't reachable from inside the frontend container (dev
+// Docker). apiBaseInternal already solves exactly this for API calls (see
+// useApiClient.ts) — reused here so image optimization gets a base that's
+// always server-reachable, in every environment, without per-deploy config.
+const mediaOptimizeBase =
+  process.env.NUXT_API_BASE_INTERNAL || process.env.NUXT_PUBLIC_API_BASE || "http://localhost:8080";
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
@@ -39,6 +50,14 @@ export default defineNuxtConfig({
       "http://localhost:8080",
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || "http://localhost:8080",
+      // Отдельная от apiBase база — специально для картинок, идущих через
+      // @nuxt/image (см. комментарий у mediaOptimizeBase выше). В отличие
+      // от apiBaseInternal она обязана быть public: NuxtImg/NuxtPicture
+      // рендерят src и на сервере, и (при повторном рендере на клиенте)
+      // в браузере, а результат должен совпадать один в один — иначе Vue
+      // на каждой картинке ловит hydration mismatch. apiBase здесь не
+      // подходит по той же причине, что и для API-запросов.
+      mediaOptimizeBase: mediaOptimizeBase,
       // Бэкенд теперь отдаёт публичные эндпоинты по slug (GET
       // /api/v1/courses/{slug}/full, GET /api/v1/masterclasses/{slug}) —
       // моки из app/mocks/* используются только если явно включить флагом,
@@ -69,6 +88,12 @@ export default defineNuxtConfig({
 
   image: {
     format: ["webp"],
+    quality: 80,
+    // Allowlist for IPX's remote fetch (SSRF guard) — the host(s)
+    // mediaOptimizeBase can actually resolve to across environments (see
+    // its comment above). Static and stable across every deploy of this
+    // repo's docker-compose setup, unlike the public domain.
+    domains: [new URL(mediaOptimizeBase).host, "backend:8080", "localhost:8080"],
   },
 
   typescript: {
