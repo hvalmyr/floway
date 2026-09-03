@@ -72,10 +72,9 @@ const DRAG_CLICK_THRESHOLD_PX = 6;
 // Cards in the row are tall (up to 66vh, see the slide's height classes
 // below), not small — no reason to make the browser pull down the same
 // multi-hundred-KB full-size file (the one the lightbox/zoom need) when a
-// lighter rendition looks identical at card size. The backend's `?w=`
-// resize-on-serve (see upload_handler.go) does the actual work; this picks
-// a width generous enough for the tallest (lg) card on a retina display
-// without exceeding the backend's own thumbnailMaxWidth cap.
+// lighter rendition looks identical at card size. Picks a width generous
+// enough for the tallest (lg) card on a retina display; @nuxt/image (see
+// resolveOptimizedMediaUrl) does the actual resize + webp conversion.
 const THUMBNAIL_WIDTH = 900;
 // Matches the track's `duration-500` class, plus a small buffer so the
 // snap-back never fires before the (possibly reduced-motion-skipped) CSS
@@ -166,8 +165,7 @@ function onArrowClick(action: () => void) {
 }
 
 function thumbUrl(photo: GalleryPhoto): string {
-  const base = resolveMediaUrl(photo.image);
-  return `${base}${base.includes("?") ? "&" : "?"}w=${THUMBNAIL_WIDTH}`;
+  return resolveOptimizedMediaUrl(photo.image);
 }
 
 // See the component doc comment: the "danger zone" is the whole leading/
@@ -453,14 +451,6 @@ onMounted(() => {
   if (trackRef.value) resizeObserver.observe(trackRef.value);
   if (viewportRef.value) resizeObserver.observe(viewportRef.value);
   startAutoplay();
-
-  // Every photo is already an `eager`-loading `<img>` in the thumbnail
-  // track, so the browser fetches them all anyway — this just makes that
-  // explicit and independent of the thumbnail markup, so opening the
-  // lightbox and clicking through every photo (even before the strip has
-  // had time to render/decode them all) hits the browser's HTTP cache
-  // instead of starting a fresh download mid-click.
-  for (const photo of props.photos) preload(resolveMediaUrl(photo.image));
 });
 onUnmounted(() => {
   stopAutoplay();
@@ -511,12 +501,14 @@ onUnmounted(() => {
           :aria-label="`Открыть фото ${(i % photos.length) + 1} из ${photos.length} на весь экран`"
           @click="openLightbox(i % photos.length)"
         >
-          <img
+          <NuxtImg
             :src="thumbUrl(photo)"
+            format="webp"
+            :width="THUMBNAIL_WIDTH"
             alt=""
             draggable="false"
             class="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
-            loading="eager"
+            loading="lazy"
           />
         </button>
       </div>
