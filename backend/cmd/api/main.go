@@ -103,6 +103,7 @@ func run(logger *slog.Logger) error {
 		AboutItem:     service.NewAboutItemService(repository.NewAboutItemRepository(pool)),
 		SocialLink:    service.NewSocialLinkService(repository.NewSocialLinkRepository(pool)),
 		GalleryPhoto:  service.NewGalleryPhotoService(repository.NewGalleryPhotoRepository(pool)),
+		Icon:          service.NewIconService(repository.NewIconRepository(pool)),
 		ContentExport: service.NewContentExportService(pool, garageClient),
 
 		Storage: garageClient,

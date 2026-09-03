@@ -270,9 +270,24 @@ type PageContent struct {
 	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
 }
 
+// Icon is an admin-uploaded SVG, usable anywhere a "built-in" icon key
+// (FEATURE_ICONS on the frontend) is accepted — see the icons table's
+// migration comment for the "icon:<id>" value convention that references
+// one of these. `SVG` is already sanitized (see IconService.Create) by the
+// time it reaches this struct — every reader may safely render it with
+// v-html.
+type Icon struct {
+	ID        int64     `db:"id" json:"id"`
+	Name      string    `db:"name" json:"name"`
+	SVG       string    `db:"svg" json:"svg"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt"`
+}
+
 type Feature struct {
-	ID          int64     `db:"id" json:"id"`
-	Page        string    `db:"page" json:"page"`
+	ID   int64  `db:"id" json:"id"`
+	Page string `db:"page" json:"page"`
+	// Either a bare FEATURE_ICONS key (e.g. "gift") or "icon:<id>"
+	// referencing an uploaded Icon — see that type's doc comment.
 	Icon        string    `db:"icon" json:"icon"`
 	Title       string    `db:"title" json:"title"`
 	Description string    `db:"description" json:"description"`

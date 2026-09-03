@@ -55,5 +55,23 @@ export function useAdminPageContent(keys: string[]) {
     save(item);
   }
 
-  return { items, loading, error, savingKey, savedKey, fetchAll, save, onImageUploaded };
+  // Same immediate-save UX as onImageUploaded above — picking a different
+  // icon (unlike editing free text) is already a complete, deliberate
+  // action, so it shouldn't need a separate "Save" click on top of it.
+  function onIconSelected(item: PageContent, value: string) {
+    item.value = value;
+    save(item);
+  }
+
+  return {
+    items,
+    loading,
+    error,
+    savingKey,
+    savedKey,
+    fetchAll,
+    save,
+    onImageUploaded,
+    onIconSelected,
+  };
 }

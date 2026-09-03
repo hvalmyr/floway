@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { Gift } from "lucide-vue-next";
-
 /**
  * Full-width scrolling promo strip for gift certificates — homepage only,
  * placed right after the courses section (see pages/index.vue), same spot
@@ -33,6 +31,7 @@ const { text } = await usePageContent();
 const message = computed(() =>
   text("gift_certificate_marquee_text", "Подарочные сертификаты — порадуйте близких цветами"),
 );
+const icon = computed(() => text("gift_certificate_marquee_icon", "gift"));
 
 const trackEl = ref<HTMLElement | null>(null);
 let scrollAnimation: Animation | null = null;
@@ -69,7 +68,7 @@ function onHoverEnd() {
   >
     <div ref="trackEl" aria-hidden="true" class="flex w-max items-center gap-48 whitespace-nowrap">
       <span v-for="n in REPEAT_COUNT" :key="n" class="flex shrink-0 items-center gap-12">
-        <Gift class="size-24 shrink-0 text-white" aria-hidden="true" />
+        <AppIcon :icon="icon" class="size-24 shrink-0 text-white" />
         <span class="font-display text-h4 text-white">{{ message }}</span>
       </span>
     </div>

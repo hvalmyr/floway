@@ -13,10 +13,12 @@ import IconTulips from "~/components/ui/IconTulips.vue";
 import IconTwoFormats from "~/components/ui/IconTwoFormats.vue";
 
 /**
- * Icon set available to `features` rows (see model.Feature on the backend).
- * The DB only stores the key (`feature.icon`) — this is the one place that
- * maps it to an actual icon component, both for public rendering and for
- * the admin panel's icon picker. Add new icons here, not per-page.
+ * Site-wide "built-in" icon set — every place that accepts an icon value
+ * (features, the gift-certificate marquee, ...) resolves a value that isn't
+ * an uploaded icon ("icon:<id>", see useIconLibrary/AppIcon.vue) against
+ * this map instead. Add a new built-in icon here, not per-page; a one-off
+ * icon that doesn't need to live in code at all can just be uploaded
+ * through the admin icon library instead.
  */
 export const FEATURE_ICONS: Record<string, { component: Component; label: string }> = {
   "two-formats": { component: IconTwoFormats, label: "Два формата" },

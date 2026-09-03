@@ -146,11 +146,7 @@ async function onDelete(id: number) {
         <option value="home">Главная</option>
         <option value="masterclasses">Мастер-классы</option>
       </select>
-      <select v-model="form.icon" class="rounded border border-gray-300 px-3 py-2">
-        <option v-for="opt in iconOptions" :key="opt.value" :value="opt.value">
-          {{ opt.label }}
-        </option>
-      </select>
+      <AdminIconPicker v-model="form.icon" class="sm:col-span-2" />
       <input
         v-model="form.title"
         type="text"
@@ -247,7 +243,9 @@ async function onDelete(id: number) {
               @drop.prevent="group.reorder.onDrop"
             >
               <td class="px-4 py-2"><AdminDragHandle /></td>
-              <td class="px-4 py-2">{{ FEATURE_ICONS[item.icon]?.label ?? item.icon }}</td>
+              <td class="px-4 py-2">
+                <AppIcon :icon="item.icon" class="size-6 text-[var(--color-primary)]" />
+              </td>
               <td class="px-4 py-2">{{ item.title }}</td>
               <td class="flex gap-3 px-4 py-2 text-right">
                 <button

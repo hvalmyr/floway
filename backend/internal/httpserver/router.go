@@ -62,6 +62,7 @@ type Services struct {
 	AboutItem     *service.AboutItemService
 	SocialLink    *service.SocialLinkService
 	GalleryPhoto  *service.GalleryPhotoService
+	Icon          *service.IconService
 	ContentExport *service.ContentExportService
 
 	Storage *storage.Client
@@ -161,6 +162,7 @@ func NewRouter(services Services) http.Handler {
 			r.Route("/features", newFeatureHandler(services.Feature, admin).routes)
 			r.Route("/about-items", newAboutItemHandler(services.AboutItem, admin).routes)
 			r.Route("/social-links", newSocialLinkHandler(services.SocialLink, admin).routes)
+			r.Route("/icons", newIconHandler(services.Icon, admin).routes)
 		})
 	})
 

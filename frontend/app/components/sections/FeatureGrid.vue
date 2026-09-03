@@ -1,15 +1,14 @@
 <script setup lang="ts">
-import type { Component } from "vue";
-
 /**
  * 3→2→1 column grid of icon+title+description cards ("Почему стоит учиться",
- * masterclass listing advantages).
+ * masterclass listing advantages). `icon` is a raw icon value (built-in key
+ * or "icon:<id>") — see AppIcon.vue for how it resolves to a rendered icon.
  *
  * @example
- * <FeatureGrid :items="[{ icon: IconFlexStart, title: 'Гибкий старт', description: '...' }]" />
+ * <FeatureGrid :items="[{ icon: 'flex-start', title: 'Гибкий старт', description: '...' }]" />
  */
 defineProps<{
-  items: { icon: Component; title: string; description: string }[];
+  items: { icon: string; title: string; description: string }[];
 }>();
 </script>
 
@@ -22,7 +21,7 @@ defineProps<{
     >
       <!-- Фиксированная высота (а не size-*), т.к. иконки разной ширины должны
       выглядеть одной высоты, а не влезать в одинаковый квадрат. -->
-      <component :is="item.icon" class="h-40 w-auto text-primary" aria-hidden="true" />
+      <AppIcon :icon="item.icon" class="h-40 w-auto text-primary" />
       <h3 class="font-display text-h4 text-primary">{{ item.title }}</h3>
       <p class="whitespace-pre-line font-body text-body text-ink">{{ item.description }}</p>
     </div>
