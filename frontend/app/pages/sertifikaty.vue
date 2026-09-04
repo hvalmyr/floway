@@ -73,7 +73,10 @@ const advantages = [
       </div>
     </section>
 
-    <section id="apply" class="scroll-mt-64 py-48 sm:py-64 lg:scroll-mt-96 lg:py-80">
+    <section
+      id="apply"
+      class="scroll-mt-64 bg-surface/55 py-48 backdrop-blur backdrop-saturate-150 sm:py-64 lg:scroll-mt-96 lg:py-80"
+    >
       <div class="container">
         <div class="mx-auto max-w-[720px]">
           <ApplyForm
