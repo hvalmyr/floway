@@ -230,9 +230,13 @@ const (
 type LeadStatus string
 
 const (
-	LeadStatusNew        LeadStatus = "new"
-	LeadStatusInProgress LeadStatus = "in_progress"
-	LeadStatusClosed     LeadStatus = "closed"
+	LeadStatusNew           LeadStatus = "new"
+	LeadStatusInProgress    LeadStatus = "in_progress"
+	LeadStatusWaitingClient LeadStatus = "waiting_client"
+	LeadStatusBooked        LeadStatus = "booked"
+	LeadStatusPostponed     LeadStatus = "postponed"
+	LeadStatusClosedWon     LeadStatus = "closed_won"
+	LeadStatusClosedLost    LeadStatus = "closed_lost"
 )
 
 type Lead struct {
@@ -251,6 +255,90 @@ type Lead struct {
 	RelatedSlug string     `db:"related_slug" json:"relatedSlug"`
 	Status      LeadStatus `db:"status" json:"status"`
 	CreatedAt   time.Time  `db:"created_at" json:"createdAt"`
+	// ClientID points at the deduped client profile this submission belongs
+	// to (see ClientRepository.FindByPhoneOrEmail) — Name/Phone/Email above
+	// stay an untouched historical snapshot of what was submitted this one
+	// time, distinct from the client's current-best-known contact info.
+	ClientID int64 `db:"client_id" json:"clientId"`
+	// NeedsStatusReview is set on leads auto-migrated from the old 3-value
+	// status enum (old "closed" -> closed_won, see migration 00031) and
+	// cleared the moment someone explicitly picks a status for the lead.
+	NeedsStatusReview bool `db:"needs_status_review" json:"needsStatusReview"`
+}
+
+// Client is the deduped customer profile a Lead attaches to — see
+// LeadService.Create for the phone/email matching that decides whether a
+// new submission joins an existing Client or creates a new one.
+type Client struct {
+	ID    int64  `db:"id" json:"id"`
+	Name  string `db:"name" json:"name"`
+	Phone string `db:"phone" json:"phone"`
+	// PhoneNormalized is digits-only (RU "8" dialing prefix folded to "7")
+	// — the matching key used by FindByPhoneOrEmail. Not exposed over JSON;
+	// Phone above is what the UI shows.
+	PhoneNormalized string    `db:"phone_normalized" json:"-"`
+	Email           string    `db:"email" json:"email"`
+	CreatedAt       time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt       time.Time `db:"updated_at" json:"updatedAt"`
+}
+
+// TagType selects which of the two independent tag tables a Tag belongs
+// to. The two are never mixed — see migration 00032.
+type TagType string
+
+const (
+	TagTypeProduct    TagType = "product"
+	TagTypeClientType TagType = "client_type"
+)
+
+type Tag struct {
+	ID   int64  `db:"id" json:"id"`
+	Name string `db:"name" json:"name"`
+}
+
+// ClientComment has no author field by design — single-admin system, no
+// one to attribute a comment to.
+type ClientComment struct {
+	ID        int64     `db:"id" json:"id"`
+	ClientID  int64     `db:"client_id" json:"clientId"`
+	Text      string    `db:"text" json:"text"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt"`
+}
+
+// Reminder is a "contact this client again by RemindAt" flag. RemindAt is
+// date-granularity (not a timestamp) — "N days from now" and a "due today"
+// badge don't need time-of-day precision, and this sidesteps timezone
+// complexity entirely.
+type Reminder struct {
+	ID          int64      `db:"id" json:"id"`
+	ClientID    int64      `db:"client_id" json:"clientId"`
+	RemindAt    time.Time  `db:"remind_at" json:"remindAt"`
+	Note        string     `db:"note" json:"note"`
+	CompletedAt *time.Time `db:"completed_at" json:"completedAt,omitempty"`
+	CreatedAt   time.Time  `db:"created_at" json:"createdAt"`
+}
+
+// LeadListItem is what GET /leads returns: a Lead enriched with everything
+// its list-page card needs in one response, so the frontend never has to
+// N+1 across /clients, /tags, /comments per row.
+type LeadListItem struct {
+	Lead
+	Client            Client     `json:"client"`
+	ProductTags       []Tag      `json:"productTags"`
+	ClientTypeTags    []Tag      `json:"clientTypeTags"`
+	LatestCommentText string     `json:"latestCommentText,omitempty"`
+	LatestCommentAt   *time.Time `json:"latestCommentAt,omitempty"`
+	NextReminderAt    *time.Time `json:"nextReminderAt,omitempty"`
+}
+
+// ClientDetail backs the client detail page in one round trip.
+type ClientDetail struct {
+	Client
+	Requests       []Lead          `json:"requests"`
+	Comments       []ClientComment `json:"comments"`
+	ProductTags    []Tag           `json:"productTags"`
+	ClientTypeTags []Tag           `json:"clientTypeTags"`
+	Reminders      []Reminder      `json:"reminders"`
 }
 
 type FAQItem struct {

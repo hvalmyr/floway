@@ -23,10 +23,14 @@ func newLeadHandler(svc *service.LeadService, admin, limiter func(http.Handler) 
 
 func (h *leadHandler) routes(r chi.Router) {
 	r.With(h.admin).Get("/", h.list)
+	// Static segment ahead of the /{id}/... routes below — safe in chi's
+	// trie since there's no bare GET /{id} for leads to collide with.
+	r.With(h.admin).Get("/stats/conversion", h.conversionStats)
 	// Public and free to hit — rate-limited per IP (architecture review
 	// finding #8), otherwise it's an open spam sink.
 	r.With(h.limiter).Post("/", h.create)
 	r.With(h.admin).Patch("/{id}/status", h.updateStatus)
+	r.With(h.admin).Patch("/{id}/review", h.dismissReview)
 	r.With(h.admin).Delete("/{id}", h.delete)
 }
 
@@ -97,6 +101,36 @@ func (h *leadHandler) updateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, item)
+}
+
+func (h *leadHandler) dismissReview(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	item, err := h.svc.DismissReview(r.Context(), id)
+	if err != nil {
+		writeServiceError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, item)
+}
+
+type conversionStatsResponse struct {
+	ClosedWon      int      `json:"closedWon"`
+	ClosedLost     int      `json:"closedLost"`
+	ConversionRate *float64 `json:"conversionRate"`
+}
+
+func (h *leadHandler) conversionStats(w http.ResponseWriter, r *http.Request) {
+	won, lost, rate, err := h.svc.ConversionRate(r.Context())
+	if err != nil {
+		writeInternalError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, conversionStatsResponse{ClosedWon: won, ClosedLost: lost, ConversionRate: rate})
 }
 
 func (h *leadHandler) delete(w http.ResponseWriter, r *http.Request) {

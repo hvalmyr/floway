@@ -18,7 +18,9 @@ import (
 
 type fakeLeadRepository struct{ nextID int64 }
 
-func (f *fakeLeadRepository) List(ctx context.Context) ([]model.Lead, error) { return nil, nil }
+func (f *fakeLeadRepository) ListWithClient(ctx context.Context) ([]model.LeadListItem, error) {
+	return nil, nil
+}
 
 func (f *fakeLeadRepository) Create(ctx context.Context, item model.Lead) (model.Lead, error) {
 	f.nextID++
@@ -30,7 +32,32 @@ func (f *fakeLeadRepository) UpdateStatus(ctx context.Context, id int64, status 
 	return model.Lead{}, service.ErrNotFound
 }
 
+func (f *fakeLeadRepository) DismissReview(ctx context.Context, id int64) (model.Lead, error) {
+	return model.Lead{}, service.ErrNotFound
+}
+
+func (f *fakeLeadRepository) CountByStatus(ctx context.Context, statuses ...model.LeadStatus) (map[model.LeadStatus]int, error) {
+	return nil, nil
+}
+
 func (f *fakeLeadRepository) Delete(ctx context.Context, id int64) error { return service.ErrNotFound }
+
+type fakeClientRepository struct{ nextID int64 }
+
+func (f *fakeClientRepository) FindByPhoneOrEmail(ctx context.Context, phoneNormalized, email string) (model.Client, error) {
+	return model.Client{}, service.ErrNotFound
+}
+
+func (f *fakeClientRepository) Create(ctx context.Context, item model.Client) (model.Client, error) {
+	f.nextID++
+	item.ID = f.nextID
+	return item, nil
+}
+
+func (f *fakeClientRepository) RefreshContactInfo(ctx context.Context, id int64, item model.Client) (model.Client, error) {
+	item.ID = id
+	return item, nil
+}
 
 // The public lead-submission endpoint costs a spammer nothing to hit —
 // architecture review finding #8. A burst past the configured limit from
@@ -40,7 +67,7 @@ func TestLeadsBoundary_RateLimitedAfterBurst(t *testing.T) {
 	services := httpserver.Services{
 		Tokens:         auth.NewTokenManager("test-secret", time.Hour),
 		FrontendOrigin: "http://localhost:3000",
-		Lead:           service.NewLeadService(&fakeLeadRepository{}, nil, nil, nil),
+		Lead:           service.NewLeadService(&fakeLeadRepository{}, &fakeClientRepository{}, nil, nil, nil),
 	}
 	srv := httptest.NewServer(httpserver.NewRouter(services))
 	defer srv.Close()

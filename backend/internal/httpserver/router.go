@@ -56,6 +56,8 @@ type Services struct {
 	Lesson        *service.LessonService
 	CourseCatalog *service.CourseCatalogService
 	Lead          *service.LeadService
+	Client        *service.ClientService
+	Tag           *service.TagService
 	AdminUser     *service.AdminUserService
 	PageContent   *service.PageContentService
 	Feature       *service.FeatureService
@@ -161,6 +163,8 @@ func NewRouter(services Services) http.Handler {
 			r.Route("/course-blocks/{blockId}/lessons", newLessonHandler(services.Lesson, admin).routes)
 			r.Route("/gallery-photos", newGalleryPhotoHandler(services.GalleryPhoto, admin).routes)
 			r.Route("/leads", newLeadHandler(services.Lead, admin, leadLimiter).routes)
+			r.Route("/clients", newClientHandler(services.Client, admin).routes)
+			r.Route("/tags", newTagHandler(services.Tag, admin).routes)
 			r.Route("/page-content", newPageContentHandler(services.PageContent, admin).routes)
 			r.Route("/features", newFeatureHandler(services.Feature, admin).routes)
 			r.Route("/about-items", newAboutItemHandler(services.AboutItem, admin).routes)

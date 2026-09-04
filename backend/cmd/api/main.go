@@ -68,6 +68,10 @@ func run(logger *slog.Logger) error {
 	courseBlockRepo := repository.NewCourseBlockRepository(pool)
 	lessonRepo := repository.NewLessonRepository(pool)
 	masterclassRepo := repository.NewMasterclassRepository(pool)
+	leadRepo := repository.NewLeadRepository(pool)
+	clientRepo := repository.NewClientRepository(pool)
+	productTagRepo := repository.NewProductTagRepository(pool)
+	clientTypeTagRepo := repository.NewClientTypeTagRepository(pool)
 
 	// Both channels are optional and independent — SMTP_*/TELEGRAM_* are
 	// deliberately absent from config.Load()'s required checks, so an
@@ -96,7 +100,16 @@ func run(logger *slog.Logger) error {
 		CourseBlock:   service.NewCourseBlockService(courseBlockRepo),
 		Lesson:        service.NewLessonService(lessonRepo),
 		CourseCatalog: service.NewCourseCatalogService(courseSectionRepo, courseRepo, courseRepo, courseBlockRepo, courseBlockRepo, lessonRepo),
-		Lead:          service.NewLeadService(repository.NewLeadRepository(pool), leadNotifier, courseRepo, masterclassRepo),
+		Lead:          service.NewLeadService(leadRepo, clientRepo, leadNotifier, courseRepo, masterclassRepo),
+		Client: service.NewClientService(
+			clientRepo,
+			leadRepo,
+			productTagRepo,
+			clientTypeTagRepo,
+			repository.NewClientCommentRepository(pool),
+			repository.NewReminderRepository(pool),
+		),
+		Tag:           service.NewTagService(productTagRepo, clientTypeTagRepo),
 		AdminUser:     service.NewAdminUserService(repository.NewAdminUserRepository(pool)),
 		PageContent:   service.NewPageContentService(repository.NewPageContentRepository(pool), garageClient),
 		Feature:       service.NewFeatureService(repository.NewFeatureRepository(pool)),
