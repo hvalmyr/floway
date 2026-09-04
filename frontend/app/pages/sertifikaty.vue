@@ -5,31 +5,20 @@ useSeoMeta({
     "Подарите мастер-класс по флористике: сертификат школы «Фловей» на любую сумму, курс или мастер-класс.",
 });
 
+const api = useApi();
 const { text } = await usePageContent();
 
-const advantages = [
-  {
-    icon: "gift",
-    title: "Любая сумма или мастер-класс",
-    description:
-      "Оформим сертификат на конкретный мастер-класс или на сумму — получатель выберет сам.",
-  },
-  {
-    icon: "flex-start",
-    title: "Свободная дата записи",
-    description: "Получатель сам выберет удобный день и время — без привязки к конкретной дате.",
-  },
-  {
-    icon: "checklist",
-    title: "Все материалы включены",
-    description: "Всё необходимое для мастер-класса уже включено в стоимость сертификата.",
-  },
-  {
-    icon: "calendar-check",
-    title: "Долгий срок действия",
-    description: "Достаточно времени, чтобы выбрать удобный момент и записаться.",
-  },
-];
+const { data: featuresData } = await useAsyncData("gift-certificate-features", () =>
+  api.getFeatures("gift_certificate"),
+);
+
+const advantages = computed(
+  () =>
+    featuresData.value
+      ?.slice()
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((f) => ({ icon: f.icon, title: f.title, description: f.description })) ?? [],
+);
 </script>
 
 <template>

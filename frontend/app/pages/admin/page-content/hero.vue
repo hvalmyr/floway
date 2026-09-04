@@ -48,6 +48,16 @@ const selectedBlock = computed(() =>
 function fieldFor(key: string) {
   return items.value.find((item) => item.key === key);
 }
+
+// The block is already named once in the list on the left, so repeating it
+// in every field's own label ("Главная — заголовок Hero") is redundant —
+// just "Заголовок"/"Описание" here. The underlying page_content `label`
+// (still block-specific) stays as-is for the flat "все тексты сайта" list,
+// which has no such grouping to lean on.
+const titleAndLeadFields = computed(() => [
+  { key: selectedBlock.value.titleKey, caption: "Заголовок" },
+  { key: selectedBlock.value.leadKey, caption: "Описание" },
+]);
 </script>
 
 <template>
@@ -82,25 +92,29 @@ function fieldFor(key: string) {
       </div>
 
       <div class="flex flex-col gap-4">
-        <template v-for="key in [selectedBlock.titleKey, selectedBlock.leadKey]" :key="key">
-          <div v-if="fieldFor(key)" class="rounded border border-gray-200 bg-white p-4">
+        <template v-for="field in titleAndLeadFields" :key="field.key">
+          <div v-if="fieldFor(field.key)" class="rounded border border-gray-200 bg-white p-4">
             <div class="mb-2 flex items-center justify-between gap-4">
-              <label :for="`field-${key}`" class="text-sm font-medium">{{
-                fieldFor(key)!.label
+              <label :for="`field-${field.key}`" class="text-sm font-medium">{{
+                field.caption
               }}</label>
-              <span class="font-mono text-xs text-[var(--color-text-muted)]">{{ key }}</span>
+              <span class="font-mono text-xs text-[var(--color-text-muted)]">{{ field.key }}</span>
             </div>
-            <AdminMarkdownField :id="`field-${key}`" v-model="fieldFor(key)!.value" :rows="3" />
+            <AdminMarkdownField
+              :id="`field-${field.key}`"
+              v-model="fieldFor(field.key)!.value"
+              :rows="3"
+            />
             <div class="mt-2 flex items-center gap-3">
               <button
                 type="button"
-                :disabled="savingKey === key"
+                :disabled="savingKey === field.key"
                 class="rounded bg-[var(--color-primary)] px-4 py-2 text-sm text-white disabled:opacity-50"
-                @click="save(fieldFor(key)!)"
+                @click="save(fieldFor(field.key)!)"
               >
-                {{ savingKey === key ? "Сохранение…" : "Сохранить" }}
+                {{ savingKey === field.key ? "Сохранение…" : "Сохранить" }}
               </button>
-              <span v-if="savedKey === key" class="text-sm text-green-600">Сохранено</span>
+              <span v-if="savedKey === field.key" class="text-sm text-green-600">Сохранено</span>
             </div>
           </div>
         </template>
@@ -110,14 +124,14 @@ function fieldFor(key: string) {
           class="rounded border border-gray-200 bg-white p-4"
         >
           <div class="mb-2 flex items-center justify-between gap-4">
-            <span class="text-sm font-medium">{{ fieldFor(selectedBlock.imageKey)!.label }}</span>
+            <span class="text-sm font-medium">Фотография</span>
             <span class="font-mono text-xs text-[var(--color-text-muted)]">{{
               selectedBlock.imageKey
             }}</span>
           </div>
           <AdminImageUpload
             :model-value="fieldFor(selectedBlock.imageKey)!.value"
-            :label="fieldFor(selectedBlock.imageKey)!.label"
+            label="Фотография"
             @update:model-value="(url) => onImageUploaded(fieldFor(selectedBlock.imageKey)!, url)"
           />
         </div>

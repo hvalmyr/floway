@@ -1,30 +1,38 @@
 <script setup lang="ts">
 import { FEATURE_ICONS } from "~/constants/feature-icons";
+import type { FeaturePage } from "~/types/api";
 
 definePageMeta({ layout: "admin", middleware: "admin-auth" });
 
 interface FeatureEntity {
   id: number;
-  page: "home" | "masterclasses";
+  page: FeaturePage;
   icon: string;
   title: string;
   description: string;
   sortOrder: number;
 }
 
-const pageLabels: Record<FeatureEntity["page"], string> = {
-  home: "Главная",
-  masterclasses: "Мастер-классы",
-};
+/**
+ * Every page that renders a FeatureGrid stores its heading/lead as
+ * `<prefix>heading`/`<prefix>lead` page_content keys, plus its own slice of
+ * `features` rows (scoped by `page`). One block per page — a list on the
+ * left, one add/edit form + heading/lead fields + items table on the right
+ * for whichever block is selected — same pattern as the Hero admin page,
+ * instead of stacking every page's section one after another.
+ */
+const pageBlocks: { id: FeaturePage; label: string; prefix: string }[] = [
+  { id: "home", label: "Главная", prefix: "home_features_" },
+  { id: "masterclasses", label: "Мастер-классы", prefix: "masterclasses_features_" },
+  { id: "gift_certificate", label: "Подарочные сертификаты", prefix: "gift_certificate_features_" },
+];
 
 const iconOptions = Object.entries(FEATURE_ICONS).map(([value, { label }]) => ({ value, label }));
 
 const emptyForm = () => ({
-  page: "home" as FeatureEntity["page"],
   icon: iconOptions[0]?.value ?? "",
   title: "",
   description: "",
-  sortOrder: 0,
 });
 
 const { items, loading, error, fetchAll, create, update, remove } =
@@ -37,10 +45,6 @@ const formError = ref("");
 
 await fetchAll();
 
-// Each page's block heading/lead ("Почему стоит учиться"/"Почему стоит
-// выбрать мастер-класс...") lives here, right above that page's item list,
-// rather than mixed into the Hero admin page — it's the intro text for
-// *this* block, not the page's hero.
 const {
   items: blockContentItems,
   loading: blockContentLoading,
@@ -48,17 +52,13 @@ const {
   savedKey: blockContentSavedKey,
   fetchAll: fetchBlockContent,
   save: saveBlockContent,
-} = useAdminPageContent([
-  "home_features_heading",
-  "home_features_lead",
-  "masterclasses_features_heading",
-  "masterclasses_features_lead",
-]);
+} = useAdminPageContent(
+  pageBlocks.flatMap((block) => [`${block.prefix}heading`, `${block.prefix}lead`]),
+);
 
 await fetchBlockContent();
 
-function blockContentFor(page: FeatureEntity["page"]) {
-  const prefix = page === "home" ? "home_features_" : "masterclasses_features_";
+function blockContentFor(prefix: string) {
   return [
     blockContentItems.value.find((item) => item.key === `${prefix}heading`),
     blockContentItems.value.find((item) => item.key === `${prefix}lead`),
@@ -69,8 +69,8 @@ function blockContentFor(page: FeatureEntity["page"]) {
 // `ORDER BY page, sort_order, id`) — each page's features are numbered
 // independently, so dragging must stay within one page's group. A writable
 // computed reads/writes that page's slice of the shared `items` ref, leaving
-// the other page's rows untouched.
-function pageGroup(page: FeatureEntity["page"]) {
+// the other pages' rows untouched.
+function pageGroup(page: FeaturePage) {
   return computed<FeatureEntity[]>({
     get: () =>
       items.value.filter((item) => item.page === page).sort((a, b) => a.sortOrder - b.sortOrder),
@@ -80,25 +80,28 @@ function pageGroup(page: FeatureEntity["page"]) {
   });
 }
 
-const homeItems = pageGroup("home");
-const masterclassItems = pageGroup("masterclasses");
-const homeReorder = useAdminDragReorder(homeItems, (item) => update(item.id, item));
-const masterclassReorder = useAdminDragReorder(masterclassItems, (item) => update(item.id, item));
+const featureGroups = pageBlocks.map((block) => {
+  const groupItems = pageGroup(block.id);
+  return {
+    ...block,
+    items: groupItems,
+    reorder: useAdminDragReorder(groupItems, (item) => update(item.id, item)),
+  };
+});
 
-const featureGroups = [
-  { page: "home" as const, items: homeItems, reorder: homeReorder },
-  { page: "masterclasses" as const, items: masterclassItems, reorder: masterclassReorder },
-];
+const selectedPageId = ref(pageBlocks[0]!.id);
+const selectedGroup = computed(() =>
+  featureGroups.find((group) => group.id === selectedPageId.value)!,
+);
+
+function selectPage(pageId: FeaturePage) {
+  selectedPageId.value = pageId;
+  cancelEdit();
+}
 
 function startEdit(item: FeatureEntity) {
   editingId.value = item.id;
-  form.value = {
-    page: item.page,
-    icon: item.icon,
-    title: item.title,
-    description: item.description,
-    sortOrder: item.sortOrder,
-  };
+  form.value = { icon: item.icon, title: item.title, description: item.description };
 }
 
 function cancelEdit() {
@@ -111,10 +114,10 @@ async function onSubmit() {
   saving.value = true;
   try {
     if (editingId.value === null) {
-      const sortOrder = items.value.filter((item) => item.page === form.value.page).length;
-      await create({ ...form.value, sortOrder });
+      const sortOrder = selectedGroup.value.items.value.length;
+      await create({ ...form.value, page: selectedPageId.value, sortOrder });
     } else {
-      await update(editingId.value, form.value);
+      await update(editingId.value, { ...form.value, page: selectedPageId.value });
     }
     cancelEdit();
   } catch {
@@ -135,68 +138,42 @@ async function onDelete(id: number) {
   <div>
     <h1 class="text-2xl font-semibold">Карточки преимуществ</h1>
     <p class="mt-2 text-sm text-[var(--color-text-muted)]">
-      Блок «Почему стоит учиться» на главной и блок преимуществ на странице мастер-классов.
+      Блок «Почему стоит учиться» / «Почему это отличный подарок» и т.п. — свой набор карточек для
+      каждой страницы.
     </p>
-
-    <form
-      class="mt-6 grid gap-3 rounded border border-gray-200 bg-white p-4 sm:grid-cols-2"
-      @submit.prevent="onSubmit"
-    >
-      <select v-model="form.page" class="rounded border border-gray-300 px-3 py-2">
-        <option value="home">Главная</option>
-        <option value="masterclasses">Мастер-классы</option>
-      </select>
-      <AdminIconPicker v-model="form.icon" class="sm:col-span-2" />
-      <input
-        v-model="form.title"
-        type="text"
-        placeholder="Заголовок"
-        required
-        class="rounded border border-gray-300 px-3 py-2 sm:col-span-2"
-      />
-      <AdminMarkdownField
-        v-model="form.description"
-        placeholder="Описание"
-        :rows="3"
-        required
-        class="sm:col-span-2"
-      />
-      <p v-if="formError" class="text-sm text-red-600 sm:col-span-2">{{ formError }}</p>
-
-      <div class="flex gap-2 sm:col-span-2">
-        <button
-          type="submit"
-          :disabled="saving"
-          class="rounded bg-[var(--color-primary)] px-4 py-2 text-white disabled:opacity-50"
-        >
-          {{ editingId === null ? "Добавить" : "Сохранить" }}
-        </button>
-        <button
-          v-if="editingId !== null"
-          type="button"
-          class="rounded border border-gray-300 px-4 py-2"
-          @click="cancelEdit"
-        >
-          Отмена
-        </button>
-      </div>
-    </form>
 
     <p v-if="loading || blockContentLoading" class="mt-6 text-[var(--color-text-muted)]">
       Загрузка…
     </p>
     <p v-else-if="error" class="mt-6 text-red-600">{{ error }}</p>
-    <template v-else>
-      <div v-for="group in featureGroups" :key="group.page" class="mt-6">
-        <h2 class="mb-2 font-medium">{{ pageLabels[group.page] }}</h2>
+    <div v-else class="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-[200px_1fr]">
+      <div class="flex flex-row gap-2 sm:flex-col">
+        <button
+          v-for="block in pageBlocks"
+          :key="block.id"
+          type="button"
+          class="rounded border px-3 py-2 text-left text-sm"
+          :class="
+            block.id === selectedPageId
+              ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 font-medium'
+              : 'border-gray-200 bg-white hover:border-[var(--color-primary)]'
+          "
+          @click="selectPage(block.id)"
+        >
+          {{ block.label }}
+        </button>
+      </div>
 
+      <div class="flex flex-col gap-4">
         <div
-          v-for="item in blockContentFor(group.page)"
+          v-for="item in blockContentFor(selectedGroup.prefix)"
           :key="item.key"
-          class="mb-3 rounded border border-gray-200 bg-white p-4"
+          class="rounded border border-gray-200 bg-white p-4"
         >
           <div class="mb-2 flex items-center justify-between gap-4">
-            <label :for="`field-${item.key}`" class="text-sm font-medium">{{ item.label }}</label>
+            <label :for="`field-${item.key}`" class="text-sm font-medium">{{
+              item.key.endsWith("heading") ? "Заголовок" : "Описание"
+            }}</label>
             <span class="font-mono text-xs text-[var(--color-text-muted)]">{{ item.key }}</span>
           </div>
           <input
@@ -220,6 +197,46 @@ async function onDelete(id: number) {
           </div>
         </div>
 
+        <form
+          class="grid gap-3 rounded border border-gray-200 bg-white p-4 sm:grid-cols-2"
+          @submit.prevent="onSubmit"
+        >
+          <AdminIconPicker v-model="form.icon" class="sm:col-span-2" />
+          <input
+            v-model="form.title"
+            type="text"
+            placeholder="Заголовок"
+            required
+            class="rounded border border-gray-300 px-3 py-2 sm:col-span-2"
+          />
+          <AdminMarkdownField
+            v-model="form.description"
+            placeholder="Описание"
+            :rows="3"
+            required
+            class="sm:col-span-2"
+          />
+          <p v-if="formError" class="text-sm text-red-600 sm:col-span-2">{{ formError }}</p>
+
+          <div class="flex gap-2 sm:col-span-2">
+            <button
+              type="submit"
+              :disabled="saving"
+              class="rounded bg-[var(--color-primary)] px-4 py-2 text-white disabled:opacity-50"
+            >
+              {{ editingId === null ? "Добавить" : "Сохранить" }}
+            </button>
+            <button
+              v-if="editingId !== null"
+              type="button"
+              class="rounded border border-gray-300 px-4 py-2"
+              @click="cancelEdit"
+            >
+              Отмена
+            </button>
+          </div>
+        </form>
+
         <table
           class="w-full border-collapse overflow-hidden rounded border border-gray-200 bg-white text-sm"
         >
@@ -233,14 +250,16 @@ async function onDelete(id: number) {
           </thead>
           <tbody>
             <tr
-              v-for="(item, index) in group.items.value"
+              v-for="(item, index) in selectedGroup.items.value"
               :key="item.id"
               :data-row-index="index"
               class="border-b border-gray-100 last:border-0"
-              :class="group.reorder.draggingIndex.value === index ? 'opacity-50' : ''"
+              :class="selectedGroup.reorder.draggingIndex.value === index ? 'opacity-50' : ''"
             >
               <td class="px-4 py-2">
-                <AdminDragHandle @pointerdown="group.reorder.onPointerDown(index, $event)" />
+                <AdminDragHandle
+                  @pointerdown="selectedGroup.reorder.onPointerDown(index, $event)"
+                />
               </td>
               <td class="px-4 py-2">
                 <AppIcon :icon="item.icon" class="size-6 text-[var(--color-primary)]" />
@@ -258,7 +277,7 @@ async function onDelete(id: number) {
                 </button>
               </td>
             </tr>
-            <tr v-if="group.items.value.length === 0">
+            <tr v-if="selectedGroup.items.value.length === 0">
               <td colspan="4" class="px-4 py-6 text-center text-[var(--color-text-muted)]">
                 Пока пусто
               </td>
@@ -266,6 +285,6 @@ async function onDelete(id: number) {
           </tbody>
         </table>
       </div>
-    </template>
+    </div>
   </div>
 </template>

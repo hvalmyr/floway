@@ -153,7 +153,7 @@ export interface PageContent {
   updatedAt: string;
 }
 
-export type FeaturePage = "home" | "masterclasses";
+export type FeaturePage = "home" | "masterclasses" | "gift_certificate";
 
 /**
  * An icon value (Feature.icon, a page_content row of type "icon") is either
