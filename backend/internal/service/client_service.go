@@ -11,6 +11,7 @@ import (
 
 type ClientLookupRepository interface {
 	FindByID(ctx context.Context, id int64) (model.Client, error)
+	List(ctx context.Context) ([]model.ClientListItem, error)
 }
 
 type ClientLeadRepository interface {
@@ -59,6 +60,10 @@ func NewClientService(
 		comments:    comments,
 		reminders:   reminders,
 	}
+}
+
+func (s *ClientService) List(ctx context.Context) ([]model.ClientListItem, error) {
+	return s.clients.List(ctx)
 }
 
 func (s *ClientService) GetDetail(ctx context.Context, id int64) (model.ClientDetail, error) {

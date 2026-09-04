@@ -22,12 +22,22 @@ func newClientHandler(svc *service.ClientService, admin func(http.Handler) http.
 func (h *clientHandler) routes(r chi.Router) {
 	// Every client route is admin-only — there's no public surface here.
 	r.Use(h.admin)
+	r.Get("/", h.list)
 	r.Get("/{id}", h.detail)
 	r.Put("/{id}/tags/product", h.setProductTags)
 	r.Put("/{id}/tags/client-type", h.setClientTypeTags)
 	r.Post("/{id}/comments", h.addComment)
 	r.Post("/{id}/reminders", h.addReminder)
 	r.Patch("/{id}/reminders/{reminderId}/complete", h.completeReminder)
+}
+
+func (h *clientHandler) list(w http.ResponseWriter, r *http.Request) {
+	items, err := h.svc.List(r.Context())
+	if err != nil {
+		writeInternalError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, items)
 }
 
 func (h *clientHandler) detail(w http.ResponseWriter, r *http.Request) {

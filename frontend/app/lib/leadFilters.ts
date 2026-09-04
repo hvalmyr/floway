@@ -17,7 +17,11 @@ export function lastContactAt(item: LeadListItem): string {
  * comments get their own dedicated feed on the client detail page. */
 export function formatLeadExcerpt(item: LeadListItem): string {
   const parts = [requestTypeLabels[item.requestType] ?? item.requestType];
-  if (item.relatedSlug) parts.push(item.relatedSlug);
+  // Prefer the resolved course/masterclass title; fall back to the raw
+  // slug only if resolution came back empty (e.g. the program was since
+  // deleted/renamed — see model.Lead.RelatedName on the backend).
+  const program = item.relatedName || item.relatedSlug;
+  if (program) parts.push(program);
   parts.push(sourceLabels[item.source] ?? item.source);
   return parts.join(" · ");
 }

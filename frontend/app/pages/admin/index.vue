@@ -51,12 +51,18 @@ const editingOpen = ref(false);
   <div>
     <h1 class="text-3xl font-semibold">Админ-панель</h1>
 
-    <div class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <NuxtLink
         to="/admin/leads"
         class="rounded border border-gray-200 bg-white px-4 py-8 text-center text-lg font-medium hover:border-[var(--color-primary)]"
       >
         Заявки
+      </NuxtLink>
+      <NuxtLink
+        to="/admin/clients"
+        class="rounded border border-gray-200 bg-white px-4 py-8 text-center text-lg font-medium hover:border-[var(--color-primary)]"
+      >
+        Клиенты
       </NuxtLink>
       <button
         type="button"

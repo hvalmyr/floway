@@ -78,6 +78,17 @@ async function addTag(name: string) {
 async function removeTag(id: number) {
   await applyNames(modelValue.value.filter((t) => t.id !== id).map((t) => t.name));
 }
+
+// Deletes the tag definition itself (not just this client's assignment) —
+// it disappears from every client that had it and from the autocomplete
+// entirely. The backend cascades the unassignment server-side, so this
+// just mirrors that locally rather than issuing a second PUT.
+async function deleteTagDefinition(tag: Tag) {
+  if (!confirm(`Удалить тег «${tag.name}» полностью — он исчезнет у всех клиентов?`)) return;
+  await api(`/api/v1/tags/${tag.id}`, { method: "DELETE", query: { type: props.tagType } });
+  suggestions.value = suggestions.value.filter((t) => t.id !== tag.id);
+  modelValue.value = modelValue.value.filter((t) => t.id !== tag.id);
+}
 </script>
 
 <template>
@@ -108,15 +119,23 @@ async function removeTag(id: number) {
       v-if="open && (suggestions.length > 0 || inputValue.trim())"
       class="absolute inset-x-0 top-full z-10 mt-1 rounded border border-gray-200 bg-white text-sm shadow-md"
     >
-      <button
+      <div
         v-for="tag in suggestions"
         :key="tag.id"
-        type="button"
-        class="block w-full px-3 py-2 text-left hover:bg-gray-50"
-        @click="addTag(tag.name)"
+        class="flex items-center justify-between gap-2 hover:bg-gray-50"
       >
-        {{ tag.name }}
-      </button>
+        <button type="button" class="flex-1 px-3 py-2 text-left" @click="addTag(tag.name)">
+          {{ tag.name }}
+        </button>
+        <button
+          type="button"
+          title="Удалить тег полностью"
+          class="px-3 py-2 text-gray-400 hover:text-red-600"
+          @click="deleteTagDefinition(tag)"
+        >
+          ×
+        </button>
+      </div>
       <button
         v-if="
           inputValue.trim() &&

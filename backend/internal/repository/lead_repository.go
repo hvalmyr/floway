@@ -20,6 +20,23 @@ func NewLeadRepository(db *pgxpool.Pool) *LeadRepository {
 
 const leadColumns = "id, name, phone, email, contact_method, source, request_type, related_id, related_slug, status, created_at, client_id, needs_status_review"
 
+// leadColumnsQualified is the same column list, table-qualified for use in
+// queries that join leads against other tables (course/masterclass name
+// resolution below) — bare column names would otherwise collide with
+// identically-named columns on courses/masterclasses (id, name).
+const leadColumnsQualified = "l.id, l.name, l.phone, l.email, l.contact_method, l.source, l.request_type, l.related_id, l.related_slug, l.status, l.created_at, l.client_id, l.needs_status_review"
+
+// relatedNameJoin resolves a lead's RelatedSlug to the human-readable
+// course/masterclass title it points at, gated by RequestType since the
+// same slug column is shared between the two entity types. LEFT JOINs (not
+// inner) so a lead with a blank slug, a trial-lesson lead, or a slug whose
+// course/masterclass was since deleted/renamed still returns a row — just
+// with related_name empty, and the frontend falls back to the raw slug.
+const relatedNameJoin = `
+	LEFT JOIN courses crs ON l.request_type = 'course' AND l.related_slug <> '' AND crs.slug = l.related_slug
+	LEFT JOIN masterclasses mc ON l.request_type = 'masterclass' AND l.related_slug <> '' AND mc.slug = l.related_slug
+`
+
 func scanLead(row pgx.Row) (model.Lead, error) {
 	var item model.Lead
 	err := row.Scan(
@@ -40,13 +57,35 @@ func scanLead(row pgx.Row) (model.Lead, error) {
 	return item, err
 }
 
+func scanLeadWithRelatedName(row pgx.Row) (model.Lead, error) {
+	var item model.Lead
+	err := row.Scan(
+		&item.ID,
+		&item.Name,
+		&item.Phone,
+		&item.Email,
+		&item.ContactMethod,
+		&item.Source,
+		&item.RequestType,
+		&item.RelatedID,
+		&item.RelatedSlug,
+		&item.Status,
+		&item.CreatedAt,
+		&item.ClientID,
+		&item.NeedsStatusReview,
+		&item.RelatedName,
+	)
+	return item, err
+}
+
 // ListByClientID backs the client detail page's request history.
 func (r *LeadRepository) ListByClientID(ctx context.Context, clientID int64) ([]model.Lead, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT `+leadColumns+`
-		FROM leads
-		WHERE client_id = $1
-		ORDER BY created_at DESC
+		SELECT `+leadColumnsQualified+`, COALESCE(crs.name, mc.title, '') AS related_name
+		FROM leads l
+		`+relatedNameJoin+`
+		WHERE l.client_id = $1
+		ORDER BY l.created_at DESC
 	`, clientID)
 	if err != nil {
 		return nil, err
@@ -55,7 +94,7 @@ func (r *LeadRepository) ListByClientID(ctx context.Context, clientID int64) ([]
 
 	items := []model.Lead{}
 	for rows.Next() {
-		item, err := scanLead(rows)
+		item, err := scanLeadWithRelatedName(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -75,6 +114,7 @@ func (r *LeadRepository) ListWithClient(ctx context.Context) ([]model.LeadListIt
 		SELECT
 			l.id, l.name, l.phone, l.email, l.contact_method, l.source, l.request_type,
 			l.related_id, l.related_slug, l.status, l.created_at, l.client_id, l.needs_status_review,
+			COALESCE(crs.name, mc.title, '') AS related_name,
 			c.id, c.name, c.phone, c.phone_normalized, c.email, c.created_at, c.updated_at,
 			COALESCE((
 				SELECT jsonb_agg(jsonb_build_object('id', pt.id, 'name', pt.name) ORDER BY pt.name)
@@ -91,6 +131,7 @@ func (r *LeadRepository) ListWithClient(ctx context.Context) ([]model.LeadListIt
 			(SELECT MIN(rm.remind_at) FROM reminders rm WHERE rm.client_id = c.id AND rm.completed_at IS NULL) AS next_reminder_at
 		FROM leads l
 		JOIN clients c ON c.id = l.client_id
+		`+relatedNameJoin+`
 		ORDER BY l.created_at DESC
 	`)
 	if err != nil {
@@ -109,6 +150,7 @@ func (r *LeadRepository) ListWithClient(ctx context.Context) ([]model.LeadListIt
 		if err := rows.Scan(
 			&item.ID, &item.Name, &item.Phone, &item.Email, &item.ContactMethod, &item.Source, &item.RequestType,
 			&item.RelatedID, &item.RelatedSlug, &item.Status, &item.CreatedAt, &item.ClientID, &item.NeedsStatusReview,
+			&item.RelatedName,
 			&item.Client.ID, &item.Client.Name, &item.Client.Phone, &item.Client.PhoneNormalized, &item.Client.Email, &item.Client.CreatedAt, &item.Client.UpdatedAt,
 			&productTagsJSON, &clientTypeTagsJSON,
 			&latestCommentText, &item.LatestCommentAt,

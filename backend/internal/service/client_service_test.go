@@ -33,6 +33,14 @@ func (f *fakeClientLookupRepository) FindByID(ctx context.Context, id int64) (mo
 	return c, nil
 }
 
+func (f *fakeClientLookupRepository) List(ctx context.Context) ([]model.ClientListItem, error) {
+	items := make([]model.ClientListItem, 0, len(f.byID))
+	for _, c := range f.byID {
+		items = append(items, model.ClientListItem{Client: c})
+	}
+	return items, nil
+}
+
 type fakeClientLeadRepository struct {
 	byClientID map[int64][]model.Lead
 }
@@ -141,6 +149,16 @@ func newTestClientService() (*service.ClientService, *fakeClientLookupRepository
 	reminders := newFakeReminderRepository()
 	svc := service.NewClientService(clients, leads, productTags, typeTags, comments, reminders)
 	return svc, clients, leads, productTags, typeTags, comments, reminders
+}
+
+func TestClientService_List(t *testing.T) {
+	svc, _, _, _, _, _, _ := newTestClientService()
+
+	items, err := svc.List(context.Background())
+
+	require.NoError(t, err)
+	require.Len(t, items, 1)
+	assert.Equal(t, "Иван", items[0].Name)
 }
 
 func TestClientService_SetProductTags(t *testing.T) {

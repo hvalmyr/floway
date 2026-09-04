@@ -179,7 +179,9 @@ const openReminders = computed(() => detail.value?.reminders.filter((r) => !r.co
             </div>
             <p class="mt-1 text-[var(--color-text-muted)]">
               {{ requestTypeLabels[request.requestType] ?? request.requestType }}
-              <template v-if="request.relatedSlug"> · {{ request.relatedSlug }}</template>
+              <template v-if="request.relatedName || request.relatedSlug">
+                · {{ request.relatedName || request.relatedSlug }}</template
+              >
               · {{ sourceLabels[request.source] ?? request.source }} ·
               {{ contactMethodLabels[request.contactMethod] ?? request.contactMethod }}
             </p>

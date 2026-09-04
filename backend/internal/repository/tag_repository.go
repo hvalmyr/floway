@@ -99,6 +99,15 @@ func (r *TagRepository) SetForClient(ctx context.Context, clientID int64, tagIDs
 	return tx.Commit(ctx)
 }
 
+// Delete removes the tag definition itself (not just one client's
+// assignment) — cascades to every client_product_tags/client_client_type_
+// tags row referencing it (ON DELETE CASCADE, migration 00032), so any
+// client currently tagged with it silently loses that assignment.
+func (r *TagRepository) Delete(ctx context.Context, id int64) error {
+	tag, err := r.db.Exec(ctx, fmt.Sprintf(`DELETE FROM %s WHERE id = $1`, r.table), id)
+	return checkDeleted(tag, err)
+}
+
 func (r *TagRepository) ListForClient(ctx context.Context, clientID int64) ([]model.Tag, error) {
 	rows, err := r.db.Query(ctx, fmt.Sprintf(`
 		SELECT t.id, t.name

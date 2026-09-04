@@ -276,6 +276,11 @@ export interface Lead extends ApplicationPayload {
   /** Set on leads auto-migrated from the old 3-value status enum, cleared
    * the moment someone explicitly picks a status for the lead. */
   needsStatusReview: boolean;
+  /** Resolved course/masterclass title for relatedSlug — only present on
+   * enriched list responses (GET /leads, client detail's requests). Empty
+   * when relatedSlug is blank or the course/masterclass was since deleted;
+   * fall back to relatedSlug in that case. */
+  relatedName?: string;
 }
 
 /** The deduped customer profile a Lead attaches to — see ClientRepository
@@ -334,6 +339,16 @@ export interface ClientDetail extends Client {
   productTags: Tag[];
   clientTypeTags: Tag[];
   reminders: Reminder[];
+}
+
+/** What GET /api/v1/clients returns — backs the client-list page's cards. */
+export interface ClientListItem extends Client {
+  productTags: Tag[];
+  clientTypeTags: Tag[];
+  requestCount: number;
+  latestStatus?: LeadStatus;
+  latestRequestAt?: string;
+  latestCommentAt?: string;
 }
 
 /** Normalized error shape used by useApi() so components never touch raw $fetch errors. */

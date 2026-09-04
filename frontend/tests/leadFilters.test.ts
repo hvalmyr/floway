@@ -298,10 +298,21 @@ describe("lastContactAt", () => {
 });
 
 describe("formatLeadExcerpt", () => {
-  it("joins request type, program slug, and source", () => {
+  it("prefers the resolved program name over the raw slug", () => {
     const item = makeItem({
       requestType: "course",
       relatedSlug: "aktualnaya-floristika",
+      relatedName: "Актуальная флористика",
+      source: "ads",
+    });
+    expect(formatLeadExcerpt(item)).toBe("Курс · Актуальная флористика · Реклама");
+  });
+
+  it("falls back to the raw slug when the program couldn't be resolved", () => {
+    const item = makeItem({
+      requestType: "course",
+      relatedSlug: "aktualnaya-floristika",
+      relatedName: undefined,
       source: "ads",
     });
     expect(formatLeadExcerpt(item)).toBe("Курс · aktualnaya-floristika · Реклама");

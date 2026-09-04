@@ -1,8 +1,23 @@
 <script setup lang="ts">
 import { LEAD_STATUSES, LEAD_STATUS_LABELS } from "~/lib/leadStatus";
-import { contactMethodLabels } from "~/lib/leadLabels";
+import { contactMethodLabels, requestTypeLabels, sourceLabels } from "~/lib/leadLabels";
 import { filterLeads, formatLeadExcerpt, lastContactAt, sortLeads } from "~/lib/leadFilters";
-import type { LeadListItem, LeadSortMode, LeadStatus, Tag } from "~/types/api";
+import type {
+  ContactMethod,
+  LeadListItem,
+  LeadRequestType,
+  LeadSortMode,
+  LeadSource,
+  LeadStatus,
+  Tag,
+} from "~/types/api";
+
+// Ordered option lists for the manual "add lead" form below — same values
+// the public ApplyForm offers, plus trial_lesson/course/masterclass for
+// request type (ApplyForm fixes that per-page instead of offering a choice).
+const CONTACT_METHODS: ContactMethod[] = ["call", "telegram", "whatsapp", "max"];
+const SOURCES: LeadSource[] = ["referral", "ads", "internet", "social", "maps"];
+const REQUEST_TYPES: LeadRequestType[] = ["trial_lesson", "course", "masterclass"];
 
 definePageMeta({ layout: "admin", middleware: "admin-auth" });
 
@@ -47,6 +62,68 @@ async function fetchConversion() {
 }
 
 await Promise.all([fetchAll(), fetchTagOptions(), fetchConversion()]);
+
+// Manual lead entry — for when someone calls in directly instead of
+// submitting the site form. Posts to the same public POST /leads endpoint
+// the site's ApplyForm uses (dedup-by-phone/email, client creation and
+// notification all happen there already), just from an authenticated admin
+// request instead of an anonymous one.
+const showCreateForm = ref(false);
+const createForm = reactive({
+  name: "",
+  phone: "",
+  email: "",
+  contactMethod: "call" as ContactMethod,
+  source: "referral" as LeadSource,
+  requestType: "trial_lesson" as LeadRequestType,
+  relatedSlug: "",
+});
+const creating = ref(false);
+const createError = ref("");
+
+function resetCreateForm() {
+  createForm.name = "";
+  createForm.phone = "";
+  createForm.email = "";
+  createForm.contactMethod = "call";
+  createForm.source = "referral";
+  createForm.requestType = "trial_lesson";
+  createForm.relatedSlug = "";
+  createError.value = "";
+}
+
+async function onCreateLead() {
+  if (!createForm.name.trim() || !createForm.phone.trim()) {
+    createError.value = "Укажите имя и телефон";
+    return;
+  }
+  creating.value = true;
+  createError.value = "";
+  try {
+    await api("/api/v1/leads", {
+      method: "POST",
+      body: {
+        name: createForm.name.trim(),
+        phone: createForm.phone.trim(),
+        email: createForm.email.trim() || undefined,
+        contactMethod: createForm.contactMethod,
+        source: createForm.source,
+        requestType: createForm.requestType,
+        relatedSlug:
+          createForm.requestType === "trial_lesson"
+            ? undefined
+            : createForm.relatedSlug.trim() || undefined,
+      },
+    });
+    await fetchAll();
+    showCreateForm.value = false;
+    resetCreateForm();
+  } catch {
+    createError.value = "Не удалось создать заявку";
+  } finally {
+    creating.value = false;
+  }
+}
 
 // Filter/sort state lives in the URL query string so it survives a trip to
 // a client's detail page and back, instead of resetting on every navigation.
@@ -178,16 +255,112 @@ async function onBulkStatusChange(status: string) {
   <div>
     <div class="flex flex-wrap items-center justify-between gap-3">
       <h1 class="text-2xl font-semibold">Заявки</h1>
-      <p v-if="conversion" class="text-sm text-[var(--color-text-muted)]">
-        Конверсия:
-        {{
-          conversion.conversionRate === null
-            ? "—"
-            : `${Math.round(conversion.conversionRate * 100)}%`
-        }}
-        ({{ conversion.closedWon }} успешно / {{ conversion.closedLost }} отказ)
-      </p>
+      <div class="flex flex-wrap items-center gap-3">
+        <p v-if="conversion" class="text-sm text-[var(--color-text-muted)]">
+          Конверсия:
+          {{
+            conversion.conversionRate === null
+              ? "—"
+              : `${Math.round(conversion.conversionRate * 100)}%`
+          }}
+          ({{ conversion.closedWon }} успешно / {{ conversion.closedLost }} отказ)
+        </p>
+        <button
+          type="button"
+          class="rounded bg-[var(--color-primary)] px-3 py-2 text-sm text-white"
+          @click="showCreateForm = !showCreateForm"
+        >
+          {{ showCreateForm ? "Отмена" : "+ Добавить заявку" }}
+        </button>
+      </div>
     </div>
+
+    <form
+      v-if="showCreateForm"
+      class="mt-4 grid gap-3 rounded border border-gray-200 bg-white p-4 sm:grid-cols-2"
+      @submit.prevent="onCreateLead"
+    >
+      <p class="text-sm text-[var(--color-text-muted)] sm:col-span-2">
+        Например, если клиент позвонил напрямую — запишите заявку вручную.
+      </p>
+      <div>
+        <label class="text-xs text-[var(--color-text-muted)]">Имя*</label>
+        <input
+          v-model="createForm.name"
+          type="text"
+          required
+          class="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+        />
+      </div>
+      <div>
+        <label class="text-xs text-[var(--color-text-muted)]">Телефон*</label>
+        <input
+          v-model="createForm.phone"
+          type="tel"
+          required
+          class="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+        />
+      </div>
+      <div>
+        <label class="text-xs text-[var(--color-text-muted)]">Почта</label>
+        <input
+          v-model="createForm.email"
+          type="email"
+          class="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+        />
+      </div>
+      <div>
+        <label class="text-xs text-[var(--color-text-muted)]">Способ связи</label>
+        <select
+          v-model="createForm.contactMethod"
+          class="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+        >
+          <option v-for="m in CONTACT_METHODS" :key="m" :value="m">
+            {{ contactMethodLabels[m] }}
+          </option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs text-[var(--color-text-muted)]">Источник</label>
+        <select
+          v-model="createForm.source"
+          class="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+        >
+          <option v-for="s in SOURCES" :key="s" :value="s">{{ sourceLabels[s] }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs text-[var(--color-text-muted)]">Что интересует</label>
+        <select
+          v-model="createForm.requestType"
+          class="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+        >
+          <option v-for="t in REQUEST_TYPES" :key="t" :value="t">
+            {{ requestTypeLabels[t] }}
+          </option>
+        </select>
+      </div>
+      <div v-if="createForm.requestType !== 'trial_lesson'">
+        <label class="text-xs text-[var(--color-text-muted)]"
+          >Slug курса/мастер-класса (необязательно)</label
+        >
+        <input
+          v-model="createForm.relatedSlug"
+          type="text"
+          class="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+        />
+      </div>
+      <p v-if="createError" class="text-sm text-red-600 sm:col-span-2">{{ createError }}</p>
+      <div class="sm:col-span-2">
+        <button
+          type="submit"
+          :disabled="creating"
+          class="rounded bg-[var(--color-primary)] px-4 py-2 text-sm text-white disabled:opacity-50"
+        >
+          {{ creating ? "Сохранение…" : "Сохранить заявку" }}
+        </button>
+      </div>
+    </form>
 
     <div
       v-if="dueTodayItems.length > 0"

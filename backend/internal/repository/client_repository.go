@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -54,6 +55,62 @@ func (r *ClientRepository) Create(ctx context.Context, item model.Client) (model
 		RETURNING id, created_at, updated_at
 	`, item.Name, item.Phone, item.PhoneNormalized, item.Email).Scan(&item.ID, &item.CreatedAt, &item.UpdatedAt)
 	return item, err
+}
+
+// List is the source for GET /clients: every client enriched with both tag
+// lists and a summary of their most recent activity, for the client-list
+// page's cards. Mirrors LeadRepository.ListWithClient's shape (scalar
+// subqueries, not a plain join, to avoid fanning out rows).
+func (r *ClientRepository) List(ctx context.Context) ([]model.ClientListItem, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT
+			`+clientColumns+`,
+			COALESCE((
+				SELECT jsonb_agg(jsonb_build_object('id', pt.id, 'name', pt.name) ORDER BY pt.name)
+				FROM client_product_tags cpt JOIN product_tags pt ON pt.id = cpt.product_tag_id
+				WHERE cpt.client_id = c.id
+			), '[]') AS product_tags,
+			COALESCE((
+				SELECT jsonb_agg(jsonb_build_object('id', ct.id, 'name', ct.name) ORDER BY ct.name)
+				FROM client_client_type_tags cctt JOIN client_type_tags ct ON ct.id = cctt.client_type_tag_id
+				WHERE cctt.client_id = c.id
+			), '[]') AS client_type_tags,
+			(SELECT count(*) FROM leads l WHERE l.client_id = c.id) AS request_count,
+			(SELECT l.status FROM leads l WHERE l.client_id = c.id ORDER BY l.created_at DESC LIMIT 1) AS latest_status,
+			(SELECT l.created_at FROM leads l WHERE l.client_id = c.id ORDER BY l.created_at DESC LIMIT 1) AS latest_request_at,
+			(SELECT cm.created_at FROM client_comments cm WHERE cm.client_id = c.id ORDER BY cm.created_at DESC LIMIT 1) AS latest_comment_at
+		FROM clients c
+		ORDER BY c.updated_at DESC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	items := []model.ClientListItem{}
+	for rows.Next() {
+		var item model.ClientListItem
+		var productTagsJSON, clientTypeTagsJSON []byte
+		var latestStatus *model.LeadStatus
+		if err := rows.Scan(
+			&item.ID, &item.Name, &item.Phone, &item.PhoneNormalized, &item.Email, &item.CreatedAt, &item.UpdatedAt,
+			&productTagsJSON, &clientTypeTagsJSON,
+			&item.RequestCount, &latestStatus, &item.LatestRequestAt, &item.LatestCommentAt,
+		); err != nil {
+			return nil, err
+		}
+		if latestStatus != nil {
+			item.LatestStatus = *latestStatus
+		}
+		if err := json.Unmarshal(productTagsJSON, &item.ProductTags); err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal(clientTypeTagsJSON, &item.ClientTypeTags); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
 }
 
 // RefreshContactInfo overwrites the client's profile with the latest

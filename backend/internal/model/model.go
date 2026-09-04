@@ -252,7 +252,14 @@ type Lead struct {
 	// submitted — sent straight from the frontend page, not looked up via
 	// RelatedID, so the admin panel can show it without a join. Blank for
 	// trial_lesson leads (no specific entity to name).
-	RelatedSlug string     `db:"related_slug" json:"relatedSlug"`
+	RelatedSlug string `db:"related_slug" json:"relatedSlug"`
+	// RelatedName is the resolved course/masterclass title for RelatedSlug
+	// — not a real column (db:"-"), populated only by the enriched list
+	// queries (LeadRepository.ListWithClient/ListByClientID) via a join,
+	// since that's the only place a human-readable name is actually
+	// needed. Empty when RelatedSlug is blank or the course/masterclass
+	// was since deleted/renamed — callers should fall back to RelatedSlug.
+	RelatedName string     `db:"-" json:"relatedName,omitempty"`
 	Status      LeadStatus `db:"status" json:"status"`
 	CreatedAt   time.Time  `db:"created_at" json:"createdAt"`
 	// ClientID points at the deduped client profile this submission belongs
@@ -339,6 +346,19 @@ type ClientDetail struct {
 	ProductTags    []Tag           `json:"productTags"`
 	ClientTypeTags []Tag           `json:"clientTypeTags"`
 	Reminders      []Reminder      `json:"reminders"`
+}
+
+// ClientListItem is what GET /clients returns: a Client enriched with
+// everything the client-list-page card needs (both tag lists, and a
+// summary of their most recent activity) in one response.
+type ClientListItem struct {
+	Client
+	ProductTags     []Tag      `json:"productTags"`
+	ClientTypeTags  []Tag      `json:"clientTypeTags"`
+	RequestCount    int        `json:"requestCount"`
+	LatestStatus    LeadStatus `json:"latestStatus,omitempty"`
+	LatestRequestAt *time.Time `json:"latestRequestAt,omitempty"`
+	LatestCommentAt *time.Time `json:"latestCommentAt,omitempty"`
 }
 
 type FAQItem struct {
