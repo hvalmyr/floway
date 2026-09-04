@@ -23,24 +23,53 @@ const ALLOWED_TAGS = new Set([
 
 const ALLOWED_URL_SCHEMES = new Set(["http:", "https:", "mailto:"]);
 
-function isSafeUrl(value: string, base: string): boolean {
+/**
+ * Resolves a URL typed or pasted by an admin into something that actually
+ * points where they meant. A bare domain like "vk.com/floway" (no scheme)
+ * has no special meaning to the URL parser — resolved against the site's
+ * own origin it turns into a same-site relative path, which parses as
+ * "safe" but silently points at the wrong place once rendered. Site-relative
+ * links ("/blog", "#section") are the one case where that resolution is
+ * actually what's wanted, so those pass through unchanged; anything else
+ * without an explicit scheme is assumed to be an external link and gets
+ * "https://" prepended.
+ */
+function normalizeUrl(value: string, base: string): string | null {
+  const trimmed = value.trim();
+  if (trimmed === "") return null;
+  if (trimmed.startsWith("/") || trimmed.startsWith("#")) {
+    try {
+      new URL(trimmed, base);
+      return trimmed;
+    } catch {
+      return null;
+    }
+  }
+  const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(trimmed);
+  const candidate = hasScheme ? trimmed : `https://${trimmed}`;
   try {
-    const url = new URL(value, base);
-    return ALLOWED_URL_SCHEMES.has(url.protocol) || value.startsWith("/");
+    const url = new URL(candidate, base);
+    return ALLOWED_URL_SCHEMES.has(url.protocol) ? candidate : null;
   } catch {
-    return false;
+    return null;
   }
 }
 
 function sanitizeElement(el: Element, baseUrl: string) {
   for (const attr of Array.from(el.attributes)) {
-    let keep = false;
+    let newValue: string | null = null;
     if (el.tagName === "A" && attr.name === "href") {
-      keep = isSafeUrl(attr.value, baseUrl);
-    } else if (el.tagName === "IMG" && (attr.name === "src" || attr.name === "alt")) {
-      keep = attr.name === "alt" || isSafeUrl(attr.value, baseUrl);
+      newValue = normalizeUrl(attr.value, baseUrl);
+    } else if (el.tagName === "IMG" && attr.name === "src") {
+      newValue = normalizeUrl(attr.value, baseUrl);
+    } else if (el.tagName === "IMG" && attr.name === "alt") {
+      newValue = attr.value;
     }
-    if (!keep) el.removeAttribute(attr.name);
+    if (newValue === null) {
+      el.removeAttribute(attr.name);
+    } else if (newValue !== attr.value) {
+      el.setAttribute(attr.name, newValue);
+    }
   }
   if (el.tagName === "A" && el.hasAttribute("href")) {
     el.setAttribute("target", "_blank");
@@ -64,6 +93,11 @@ function walk(node: Node, baseUrl: string) {
     }
     sanitizeElement(el, baseUrl);
   }
+}
+
+export function normalizeLinkUrl(value: string): string | null {
+  if (typeof window === "undefined") return value;
+  return normalizeUrl(value, window.location.origin);
 }
 
 export function sanitizeRichTextHtml(html: string): string {

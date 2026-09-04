@@ -8,7 +8,7 @@ import {
   Quote,
 } from "lucide-vue-next";
 import { onMounted, ref } from "vue";
-import { sanitizeRichTextHtml } from "~/lib/richTextSanitize";
+import { normalizeLinkUrl, sanitizeRichTextHtml } from "~/lib/richTextSanitize";
 
 /**
  * Minimalist WYSIWYG editor for long-form content (blog posts) — a
@@ -111,8 +111,13 @@ function onQuote() {
 }
 
 function onLink() {
-  const url = window.prompt("Ссылка (URL):");
-  if (!url) return;
+  const input = window.prompt("Ссылка (URL):");
+  if (!input) return;
+  const url = normalizeLinkUrl(input);
+  if (!url) {
+    window.alert("Не похоже на ссылку — проверьте адрес.");
+    return;
+  }
   focusEditor();
   const selection = window.getSelection();
   if (selection && !selection.isCollapsed) {
