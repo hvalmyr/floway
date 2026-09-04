@@ -134,6 +134,27 @@ func TestCourseCatalogService_GetFullBySlug_AssemblesBlocksAndLessons(t *testing
 	assert.ElementsMatch(t, []int64{10, 11}, lessons.lastBlockIDs)
 }
 
+// Regression test: a block with zero lessons must come back as an empty
+// slice, not nil — a nil Lessons field serializes to JSON `null`, which
+// crashed the frontend's `block.lessons.length` (see [slug].vue).
+func TestCourseCatalogService_GetFullBySlug_BlockWithNoLessonsGetsEmptySlice(t *testing.T) {
+	courses := &fakeCourseLookupRepo{courses: map[string]model.Course{
+		"svadebnaya": {ID: 2, Slug: "svadebnaya", Name: "Свадебная флористика", Visible: true},
+	}}
+	blocks := &fakeCourseBlockListRepo{blocksByCourseID: map[int64][]model.CourseBlock{
+		2: {{ID: 21, CourseID: 2, BlockName: "Для флористов", Visible: true}},
+	}}
+	lessons := &fakeLessonBatchRepo{lessonsByBlock: map[int64][]model.Lesson{}}
+	svc := service.NewCourseCatalogService(nil, courses, nil, blocks, nil, lessons)
+
+	detail, err := svc.GetFullBySlug(context.Background(), "svadebnaya")
+
+	require.NoError(t, err)
+	require.Len(t, detail.Blocks, 1)
+	assert.NotNil(t, detail.Blocks[0].Lessons)
+	assert.Empty(t, detail.Blocks[0].Lessons)
+}
+
 func TestCourseCatalogService_GetFullBySlug_PropagatesNotFound(t *testing.T) {
 	courses := &fakeCourseLookupRepo{courses: map[string]model.Course{}}
 	svc := service.NewCourseCatalogService(nil, courses, nil, &fakeCourseBlockListRepo{}, nil, &fakeLessonBatchRepo{})

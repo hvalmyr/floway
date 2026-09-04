@@ -155,7 +155,17 @@ func (s *CourseCatalogService) GetFullBySlug(ctx context.Context, slug string) (
 
 	blocksWithLessons := make([]model.CourseBlockWithLessons, len(blocks))
 	for i, block := range blocks {
-		blocksWithLessons[i] = model.CourseBlockWithLessons{CourseBlock: block, Lessons: lessonsByBlock[block.ID]}
+		// A block with no lessons yet has no entry in lessonsByBlock — a bare
+		// map lookup would hand back a nil slice, which encoding/json renders
+		// as `null` rather than `[]`, crashing frontend code that assumes an
+		// array (e.g. `block.lessons.length`). `[]model.Lesson{}` keeps the
+		// same "always an initialized slice" convention every repository
+		// List() method follows (see their own doc comments).
+		blockLessons := lessonsByBlock[block.ID]
+		if blockLessons == nil {
+			blockLessons = []model.Lesson{}
+		}
+		blocksWithLessons[i] = model.CourseBlockWithLessons{CourseBlock: block, Lessons: blockLessons}
 	}
 
 	return model.CourseWithBlocks{Course: course, BlockCount: len(blocks), Blocks: blocksWithLessons}, nil
