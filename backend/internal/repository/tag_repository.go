@@ -35,7 +35,7 @@ func NewClientTypeTagRepository(db *pgxpool.Pool) *TagRepository {
 // client-detail autocomplete (as-you-type query).
 func (r *TagRepository) Search(ctx context.Context, query string) ([]model.Tag, error) {
 	rows, err := r.db.Query(ctx, fmt.Sprintf(`
-		SELECT id, name FROM %s WHERE name ILIKE '%%' || $1 || '%%' ORDER BY name LIMIT 20
+		SELECT id, name, color FROM %s WHERE name ILIKE '%%' || $1 || '%%' ORDER BY name LIMIT 20
 	`, r.table), query)
 	if err != nil {
 		return nil, err
@@ -45,7 +45,7 @@ func (r *TagRepository) Search(ctx context.Context, query string) ([]model.Tag, 
 	items := []model.Tag{}
 	for rows.Next() {
 		var item model.Tag
-		if err := rows.Scan(&item.ID, &item.Name); err != nil {
+		if err := rows.Scan(&item.ID, &item.Name, &item.Color); err != nil {
 			return nil, err
 		}
 		items = append(items, item)
@@ -55,10 +55,12 @@ func (r *TagRepository) Search(ctx context.Context, query string) ([]model.Tag, 
 
 // FindOrCreateByName matches case-insensitively so "Свадьба" and "свадьба"
 // resolve to the same row — the backend half of "autocomplete, create a
-// new tag on the fly" (no separate tag-management screen).
+// new tag on the fly" (no separate tag-management screen). A newly created
+// tag gets the table's default color (migration 00035); use UpdateColor
+// afterward to pick a specific one.
 func (r *TagRepository) FindOrCreateByName(ctx context.Context, name string) (model.Tag, error) {
 	var item model.Tag
-	err := r.db.QueryRow(ctx, fmt.Sprintf(`SELECT id, name FROM %s WHERE lower(name) = lower($1)`, r.table), name).Scan(&item.ID, &item.Name)
+	err := r.db.QueryRow(ctx, fmt.Sprintf(`SELECT id, name, color FROM %s WHERE lower(name) = lower($1)`, r.table), name).Scan(&item.ID, &item.Name, &item.Color)
 	if err == nil {
 		return item, nil
 	}
@@ -70,9 +72,20 @@ func (r *TagRepository) FindOrCreateByName(ctx context.Context, name string) (mo
 	err = r.db.QueryRow(ctx, fmt.Sprintf(`
 		INSERT INTO %s (name) VALUES ($1)
 		ON CONFLICT (lower(name)) DO UPDATE SET name = EXCLUDED.name
-		RETURNING id, name
-	`, r.table), name).Scan(&item.ID, &item.Name)
+		RETURNING id, name, color
+	`, r.table), name).Scan(&item.ID, &item.Name, &item.Color)
 	return item, err
+}
+
+// UpdateColor sets a tag's background color — the color is a property of
+// the tag definition itself, so this changes it everywhere the tag is
+// shown, not just for one client.
+func (r *TagRepository) UpdateColor(ctx context.Context, id int64, color string) (model.Tag, error) {
+	var item model.Tag
+	err := r.db.QueryRow(ctx, fmt.Sprintf(`
+		UPDATE %s SET color = $1 WHERE id = $2 RETURNING id, name, color
+	`, r.table), color, id).Scan(&item.ID, &item.Name, &item.Color)
+	return item, translateNotFound(err)
 }
 
 // SetForClient replaces the full set of this tag type assigned to a
@@ -110,7 +123,7 @@ func (r *TagRepository) Delete(ctx context.Context, id int64) error {
 
 func (r *TagRepository) ListForClient(ctx context.Context, clientID int64) ([]model.Tag, error) {
 	rows, err := r.db.Query(ctx, fmt.Sprintf(`
-		SELECT t.id, t.name
+		SELECT t.id, t.name, t.color
 		FROM %s j JOIN %s t ON t.id = j.%s
 		WHERE j.client_id = $1
 		ORDER BY t.name
@@ -123,7 +136,7 @@ func (r *TagRepository) ListForClient(ctx context.Context, clientID int64) ([]mo
 	items := []model.Tag{}
 	for rows.Next() {
 		var item model.Tag
-		if err := rows.Scan(&item.ID, &item.Name); err != nil {
+		if err := rows.Scan(&item.ID, &item.Name, &item.Color); err != nil {
 			return nil, err
 		}
 		items = append(items, item)

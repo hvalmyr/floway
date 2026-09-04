@@ -301,6 +301,9 @@ export type TagType = "product" | "client_type";
 export interface Tag {
   id: number;
   name: string;
+  /** "#rrggbb" background color — defaults to a neutral gray until
+   * explicitly set (see AdminTagCombobox.vue). */
+  color: string;
 }
 
 /** No author field by design — single-admin system, nothing to attribute a

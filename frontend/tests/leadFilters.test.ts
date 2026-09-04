@@ -93,8 +93,8 @@ describe("filterLeads", () => {
   describe("tag filters", () => {
     it("keeps items matching any selected product tag", () => {
       const items = [
-        makeItem({ productTags: [{ id: 1, name: "Курс" }] }),
-        makeItem({ productTags: [{ id: 2, name: "МК" }] }),
+        makeItem({ productTags: [{ id: 1, name: "Курс", color: "#f3f4f6" }] }),
+        makeItem({ productTags: [{ id: 2, name: "МК", color: "#f3f4f6" }] }),
       ];
       const result = filterLeads(items, {
         query: "",
@@ -109,8 +109,8 @@ describe("filterLeads", () => {
 
     it("keeps items matching any selected client-type tag, independent of product tags", () => {
       const items = [
-        makeItem({ clientTypeTags: [{ id: 10, name: "Постоянный" }] }),
-        makeItem({ clientTypeTags: [{ id: 20, name: "Корпоратив" }] }),
+        makeItem({ clientTypeTags: [{ id: 10, name: "Постоянный", color: "#f3f4f6" }] }),
+        makeItem({ clientTypeTags: [{ id: 20, name: "Корпоратив", color: "#f3f4f6" }] }),
       ];
       const result = filterLeads(items, {
         query: "",
@@ -126,12 +126,12 @@ describe("filterLeads", () => {
     it("combines both tag filters as AND across types", () => {
       const items = [
         makeItem({
-          productTags: [{ id: 1, name: "Курс" }],
-          clientTypeTags: [{ id: 10, name: "Постоянный" }],
+          productTags: [{ id: 1, name: "Курс", color: "#f3f4f6" }],
+          clientTypeTags: [{ id: 10, name: "Постоянный", color: "#f3f4f6" }],
         }),
         makeItem({
-          productTags: [{ id: 1, name: "Курс" }],
-          clientTypeTags: [{ id: 20, name: "Корпоратив" }],
+          productTags: [{ id: 1, name: "Курс", color: "#f3f4f6" }],
+          clientTypeTags: [{ id: 20, name: "Корпоратив", color: "#f3f4f6" }],
         }),
       ];
       const result = filterLeads(items, {

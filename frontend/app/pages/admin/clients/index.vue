@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { LEAD_STATUS_LABELS } from "~/lib/leadStatus";
 import { filterClients, sortClients } from "~/lib/clientFilters";
+import { readableTextColor } from "~/lib/tagColor";
 import type { ClientListItem, ClientSortMode, Tag } from "~/types/api";
 
 definePageMeta({ layout: "admin", middleware: "admin-auth" });
@@ -177,7 +178,8 @@ const filteredItems = computed(() =>
           <span
             v-for="tag in [...client.productTags, ...client.clientTypeTags]"
             :key="tag.id"
-            class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-[var(--color-text-muted)]"
+            class="rounded-full px-2 py-0.5 text-xs"
+            :style="{ backgroundColor: tag.color, color: readableTextColor(tag.color) }"
           >
             {{ tag.name }}
           </span>

@@ -3,13 +3,20 @@ package service
 import (
 	"context"
 	"errors"
+	"regexp"
 
 	"floway-backend/internal/model"
 )
 
+// hexColor matches a strict "#rrggbb" hex string — the only shape the
+// frontend's <input type="color"> ever produces, so this is a sanity check
+// against malformed input rather than a real color-format parser.
+var hexColor = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
+
 type TagSearchRepository interface {
 	Search(ctx context.Context, query string) ([]model.Tag, error)
 	Delete(ctx context.Context, id int64) error
+	UpdateColor(ctx context.Context, id int64, color string) (model.Tag, error)
 }
 
 // TagService fronts both independent tag tables for the autocomplete/filter
@@ -48,5 +55,24 @@ func (s *TagService) Delete(ctx context.Context, tagType model.TagType, id int64
 		return s.typeTags.Delete(ctx, id)
 	default:
 		return errors.Join(ErrValidation, errors.New("invalid tag type"))
+	}
+}
+
+// SetColor sets a tag's background color, e.g. "#f3d9c4" — the color lives
+// on the tag definition, so it changes everywhere the tag is shown at once.
+func (s *TagService) SetColor(ctx context.Context, tagType model.TagType, id int64, color string) (model.Tag, error) {
+	if id == 0 {
+		return model.Tag{}, errors.Join(ErrValidation, errors.New("id is required"))
+	}
+	if !hexColor.MatchString(color) {
+		return model.Tag{}, errors.Join(ErrValidation, errors.New("color must be a #rrggbb hex string"))
+	}
+	switch tagType {
+	case model.TagTypeProduct:
+		return s.productTags.UpdateColor(ctx, id, color)
+	case model.TagTypeClientType:
+		return s.typeTags.UpdateColor(ctx, id, color)
+	default:
+		return model.Tag{}, errors.Join(ErrValidation, errors.New("invalid tag type"))
 	}
 }

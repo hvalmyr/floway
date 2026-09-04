@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onClickOutside } from "@vueuse/core";
+import { readableTextColor } from "~/lib/tagColor";
 import type { Tag, TagType } from "~/types/api";
 
 /**
@@ -89,6 +90,34 @@ async function deleteTagDefinition(tag: Tag) {
   suggestions.value = suggestions.value.filter((t) => t.id !== tag.id);
   modelValue.value = modelValue.value.filter((t) => t.id !== tag.id);
 }
+
+// A single hidden <input type="color"> is reused for whichever tag's
+// swatch was clicked (colorEditingId), rather than one input per tag —
+// the color lives on the tag definition, so changing it here updates it
+// everywhere the tag appears, not just in this client's chip list.
+const colorInputRef = ref<HTMLInputElement | null>(null);
+const colorEditingId = ref<number | null>(null);
+
+function openColorPicker(tag: Tag) {
+  colorEditingId.value = tag.id;
+  const input = colorInputRef.value;
+  if (!input) return;
+  input.value = tag.color;
+  input.click();
+}
+
+async function onColorPicked(event: Event) {
+  const id = colorEditingId.value;
+  if (id === null) return;
+  const color = (event.target as HTMLInputElement).value;
+  const updated = await api<Tag>(`/api/v1/tags/${id}`, {
+    method: "PATCH",
+    query: { type: props.tagType },
+    body: { color },
+  });
+  modelValue.value = modelValue.value.map((t) => (t.id === id ? updated : t));
+  suggestions.value = suggestions.value.map((t) => (t.id === id ? updated : t));
+}
 </script>
 
 <template>
@@ -97,13 +126,20 @@ async function deleteTagDefinition(tag: Tag) {
       <span
         v-for="tag in modelValue"
         :key="tag.id"
-        class="flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-[var(--color-text-muted)]"
+        class="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs"
+        :style="{ backgroundColor: tag.color, color: readableTextColor(tag.color) }"
       >
+        <button
+          type="button"
+          title="Изменить цвет тега"
+          class="size-3 shrink-0 rounded-full border border-black/10"
+          :style="{ backgroundColor: tag.color }"
+          @click="openColorPicker(tag)"
+        />
         {{ tag.name }}
-        <button type="button" class="text-gray-400 hover:text-red-600" @click="removeTag(tag.id)">
-          ×
-        </button>
+        <button type="button" class="hover:text-red-600" @click="removeTag(tag.id)">×</button>
       </span>
+      <input ref="colorInputRef" type="color" class="hidden" @input="onColorPicked" />
       <input
         v-model="inputValue"
         type="text"
@@ -124,7 +160,15 @@ async function deleteTagDefinition(tag: Tag) {
         :key="tag.id"
         class="flex items-center justify-between gap-2 hover:bg-gray-50"
       >
-        <button type="button" class="flex-1 px-3 py-2 text-left" @click="addTag(tag.name)">
+        <button
+          type="button"
+          class="flex flex-1 items-center gap-2 px-3 py-2 text-left"
+          @click="addTag(tag.name)"
+        >
+          <span
+            class="size-3 shrink-0 rounded-full border border-black/10"
+            :style="{ backgroundColor: tag.color }"
+          />
           {{ tag.name }}
         </button>
         <button

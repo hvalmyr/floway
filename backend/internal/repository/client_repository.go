@@ -66,12 +66,12 @@ func (r *ClientRepository) List(ctx context.Context) ([]model.ClientListItem, er
 		SELECT
 			`+clientColumns+`,
 			COALESCE((
-				SELECT jsonb_agg(jsonb_build_object('id', pt.id, 'name', pt.name) ORDER BY pt.name)
+				SELECT jsonb_agg(jsonb_build_object('id', pt.id, 'name', pt.name, 'color', pt.color) ORDER BY pt.name)
 				FROM client_product_tags cpt JOIN product_tags pt ON pt.id = cpt.product_tag_id
 				WHERE cpt.client_id = c.id
 			), '[]') AS product_tags,
 			COALESCE((
-				SELECT jsonb_agg(jsonb_build_object('id', ct.id, 'name', ct.name) ORDER BY ct.name)
+				SELECT jsonb_agg(jsonb_build_object('id', ct.id, 'name', ct.name, 'color', ct.color) ORDER BY ct.name)
 				FROM client_client_type_tags cctt JOIN client_type_tags ct ON ct.id = cctt.client_type_tag_id
 				WHERE cctt.client_id = c.id
 			), '[]') AS client_type_tags,

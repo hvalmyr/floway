@@ -2,6 +2,7 @@
 import { LEAD_STATUSES, LEAD_STATUS_LABELS } from "~/lib/leadStatus";
 import { contactMethodLabels, requestTypeLabels, sourceLabels } from "~/lib/leadLabels";
 import { filterLeads, formatLeadExcerpt, lastContactAt, sortLeads } from "~/lib/leadFilters";
+import { readableTextColor } from "~/lib/tagColor";
 import type {
   ContactMethod,
   LeadListItem,
@@ -526,7 +527,8 @@ async function onBulkStatusChange(status: string) {
             <span
               v-for="tag in [...lead.productTags, ...lead.clientTypeTags]"
               :key="tag.id"
-              class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-[var(--color-text-muted)]"
+              class="rounded-full px-2 py-0.5 text-xs"
+              :style="{ backgroundColor: tag.color, color: readableTextColor(tag.color) }"
             >
               {{ tag.name }}
             </span>

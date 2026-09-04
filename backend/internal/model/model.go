@@ -301,6 +301,9 @@ const (
 type Tag struct {
 	ID   int64  `db:"id" json:"id"`
 	Name string `db:"name" json:"name"`
+	// Color is a "#rrggbb" hex string — defaults to a neutral gray
+	// (migration 00035) until explicitly set via TagService.SetColor.
+	Color string `db:"color" json:"color"`
 }
 
 // ClientComment has no author field by design — single-admin system, no
