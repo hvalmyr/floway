@@ -62,3 +62,14 @@ func formatLeadText(lead model.Lead, programName string) string {
 	}
 	return b.String()
 }
+
+// leadEmailSubject names what the lead is about and who submitted it, so it
+// reads in an inbox list without opening the message — e.g. "Заявка с
+// сайта: Пробное занятие — Иван Иванов".
+func leadEmailSubject(lead model.Lead, programName string) string {
+	what := programName
+	if what == "" {
+		what = capitalizeFirst(label(lead.RequestType, leadRequestTypeLabels))
+	}
+	return fmt.Sprintf("Заявка с сайта: %s — %s", what, lead.Name)
+}

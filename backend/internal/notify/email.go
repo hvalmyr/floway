@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"mime"
 	"mime/multipart"
 	"net"
 	"net/smtp"
@@ -68,9 +69,13 @@ func (n *EmailNotifier) NotifyNewLead(ctx context.Context, lead model.Lead, prog
 		return fmt.Errorf("build lead notification email: %w", err)
 	}
 
+	// Cyrillic subjects need RFC 2047 encoding — a raw UTF-8 Subject header
+	// renders blank or garbled in clients that don't assume UTF-8 (Mail.ru
+	// webmail among them).
+	subject := mime.QEncoding.Encode("utf-8", leadEmailSubject(lead, programName))
 	msg := fmt.Sprintf(
-		"From: %s\r\nTo: %s\r\nSubject: Новая заявка с сайта Floway\r\nMIME-Version: 1.0\r\nContent-Type: multipart/alternative; boundary=%s\r\n\r\n%s",
-		n.from, n.to, writer.Boundary(), parts.String(),
+		"From: %s\r\nTo: %s\r\nSubject: %s\r\nMIME-Version: 1.0\r\nContent-Type: multipart/alternative; boundary=%s\r\n\r\n%s",
+		n.from, n.to, subject, writer.Boundary(), parts.String(),
 	)
 
 	addr := net.JoinHostPort(n.host, n.port)
