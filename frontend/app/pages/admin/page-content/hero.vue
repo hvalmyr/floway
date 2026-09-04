@@ -9,6 +9,9 @@ const { items, loading, error, savingKey, savedKey, fetchAll, save, onImageUploa
     "masterclasses_hero_title",
     "masterclasses_hero_lead",
     "masterclasses_hero_image",
+    "gift_certificate_hero_title",
+    "gift_certificate_hero_lead",
+    "gift_certificate_hero_image",
   ]);
 
 await fetchAll();
@@ -21,7 +24,8 @@ await fetchAll();
     >
     <h1 class="mt-2 text-2xl font-semibold">Hero</h1>
     <p class="mt-2 text-sm text-[var(--color-text-muted)]">
-      Заголовки и картинки в верхней части главной страницы и страницы мастер-классов.
+      Заголовки и картинки в верхней части главной страницы, страницы мастер-классов и страницы
+      подарочного мастер-класса.
     </p>
 
     <p v-if="loading" class="mt-6 text-[var(--color-text-muted)]">Загрузка…</p>
