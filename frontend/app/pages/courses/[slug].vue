@@ -27,6 +27,18 @@ function badgeItems(block: CourseBlockWithLessons) {
   return [...parts, block.lessonCount, block.timeLength, block.price].filter(Boolean);
 }
 
+// The hero photo is the one place this page is allowed to mirror the
+// homepage's collapsed single-card representation: for a `singleCard`
+// course, that homepage card was built from the course's OWN cover (see
+// syntheticBlock() in course_catalog_service.go), so the hero should show
+// that same photo rather than the first real block's — otherwise a visitor
+// lands on a different image than the one they just clicked. Every other
+// section below (info-rows, study plans) always uses the real per-block
+// breakdown regardless of singleCard.
+const heroCover = computed(() =>
+  course.value!.singleCard ? course.value!.coverImage : course.value!.blocks[0]?.blockCover,
+);
+
 // First lesson of each block open by default, same as the old per-module
 // behavior.
 const openLessonIds = ref<Record<number, Array<string | number>>>(
@@ -44,11 +56,8 @@ const openLessonIds = ref<Record<number, Array<string | number>>>(
       <template #actions>
         <UiButton variant="primary" to="#apply">Оставить заявку</UiButton>
       </template>
-      <template v-if="course.blocks[0]?.blockCover" #media>
-        <UiHeroPicture
-          :src="resolveOptimizedMediaUrl(course.blocks[0].blockCover)"
-          :alt="course.name"
-        />
+      <template v-if="heroCover" #media>
+        <UiHeroPicture :src="resolveOptimizedMediaUrl(heroCover)" :alt="course.name" />
       </template>
     </Hero>
 

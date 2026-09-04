@@ -782,10 +782,21 @@ onMounted(() => {
         window.clearTimeout(autoRotateResumeTimer);
         autoRotateResumeTimer = null;
       }
-      // Any interaction while focused pushes its idle-exit window back out.
+      // A held press (rotate/pan/dolly) is active interaction even while
+      // perfectly still — pausing the idle-exit timer for its whole
+      // duration (rather than just restarting the countdown here) means a
+      // long hold never auto-exits just because a few seconds passed. It's
+      // armed again from zero once the user actually lets go — see "end"
+      // below.
+      if (focusIdleTimer !== null) {
+        window.clearTimeout(focusIdleTimer);
+        focusIdleTimer = null;
+      }
+    });
+    controls.addEventListener("end", () => {
+      scheduleAutoRotateResume();
       if (focusActive) armFocusIdleTimer();
     });
-    controls.addEventListener("end", scheduleAutoRotateResume);
   }
   controls.update();
   window.addEventListener("pointerdown", handlePointerDown);

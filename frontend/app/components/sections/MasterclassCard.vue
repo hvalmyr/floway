@@ -4,9 +4,12 @@ import type { CourseBlockDisplayStyle, Masterclass } from "~/types/api";
 
 /**
  * Masterclass row for the /masterclasses list — one masterclass per row
- * (not a grid), image (always on the left, sm+) and copy side by side so
+ * (not a grid), image (always on the left, lg+) and copy side by side so
  * each entry reads like an editorial feature rather than a cramped card.
- * Stacks image-then-copy on mobile.
+ * Stacks image-then-copy on mobile AND tablet — the side-by-side layout
+ * only kicks in at `lg` (same breakpoint Hero.vue uses for its own
+ * media+text row), since a narrower two-column split left the image
+ * cramped down to ~38% of a tablet-width screen.
  *
  * The button's top margin is a fixed gap, not a `mt-auto`-to-the-bottom
  * trick — a masterclass with a long description/description2/endingText
@@ -14,7 +17,7 @@ import type { CourseBlockDisplayStyle, Masterclass } from "~/types/api";
  * leftover flex space for `mt-auto` to push against (the button would then
  * end up jammed right under the last paragraph with no gap at all).
  *
- * The image's `min-h-0` matters below `sm` (column layout, no explicit
+ * The image's `min-h-0` matters below `lg` (column layout, no explicit
  * shrink-0 there): flex items default to `min-height: auto`, which for a
  * cover photo taller than the `aspect-[4/5]` box lets its own intrinsic
  * ratio win over the aspect-ratio CSS and stretch the box — see the same
@@ -67,7 +70,7 @@ const colorClasses: Record<CourseBlockDisplayStyle, string> = {
 
 <template>
   <div
-    class="flex flex-col gap-32 rounded-md p-40 sm:flex-row sm:gap-48"
+    class="flex flex-col gap-32 rounded-md p-40 lg:flex-row lg:gap-48"
     :class="colorClasses[displayStyle]"
   >
     <NuxtImg
@@ -75,13 +78,13 @@ const colorClasses: Record<CourseBlockDisplayStyle, string> = {
       :src="resolveOptimizedMediaUrl(masterclass.coverImage)"
       format="webp"
       :alt="masterclass.title"
-      class="aspect-[4/5] w-full min-h-0 rounded-sm object-cover sm:w-[38%] sm:shrink-0"
-      sizes="400:100vw sm:38vw"
+      class="aspect-[4/5] w-full min-h-0 rounded-sm object-cover lg:w-[38%] lg:shrink-0"
+      sizes="400:100vw lg:38vw"
       loading="lazy"
     />
     <div
       v-else
-      class="aspect-[4/5] w-full rounded-sm border-2 border-current sm:w-[38%] sm:shrink-0"
+      class="aspect-[4/5] w-full rounded-sm border-2 border-current lg:w-[38%] lg:shrink-0"
     />
 
     <div class="flex flex-1 flex-col">
@@ -119,7 +122,7 @@ const colorClasses: Record<CourseBlockDisplayStyle, string> = {
         variant="outline"
         transparent
         to="#apply"
-        class="mt-32 w-full justify-center sm:w-auto"
+        class="mt-32 w-full justify-center lg:w-auto"
         @click="$emit('apply')"
         >Записаться</UiButton
       >

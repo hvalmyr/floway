@@ -24,7 +24,7 @@
  * same position, just a different speed from that moment on.
  */
 const REPEAT_COUNT = 8;
-const BASE_DURATION_MS = 24_000;
+const BASE_DURATION_MS = 40_000;
 const HOVER_PLAYBACK_RATE = 0.4;
 
 const { text } = await usePageContent();
