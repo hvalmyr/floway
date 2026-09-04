@@ -27,19 +27,21 @@ const socialIcons: Record<string, Component> = {
 
 // "Связь со школой": те же мессенджеры, что и в форме заявки (contactMethod),
 // плюс Telegram уже есть в "соцсети" ниже.
-const contactChannels = computed(() => [
-  {
-    label: "Telegram",
-    href: text("contact_telegram_url", contactInfo.telegramUrl),
-    icon: IconTelegram,
-  },
-  {
-    label: "Whatsapp",
-    href: text("contact_whatsapp_url", contactInfo.whatsappUrl),
-    icon: IconWhatsapp,
-  },
-  { label: "Max", href: text("contact_max_url", contactInfo.maxUrl) || undefined, icon: IconMax },
-]);
+const contactChannels = computed(() =>
+  [
+    {
+      label: "Telegram",
+      href: text("contact_telegram_url", contactInfo.telegramUrl),
+      icon: IconTelegram,
+    },
+    {
+      label: "Whatsapp",
+      href: text("contact_whatsapp_url", contactInfo.whatsappUrl),
+      icon: IconWhatsapp,
+    },
+    { label: "Max", href: text("contact_max_url", contactInfo.maxUrl), icon: IconMax },
+  ].filter((channel) => channel.href),
+);
 
 const schoolLinks = [
   { to: "/#courses", label: "Курсы" },
