@@ -256,10 +256,84 @@ export interface ApplicationPayload {
   relatedSlug?: string;
 }
 
+/** Mirrors backend/internal/model/model.go's LeadStatus — see app/lib/leadStatus.ts
+ * for the single source of truth on ordering/labels. */
+export type LeadStatus =
+  | "new"
+  | "in_progress"
+  | "waiting_client"
+  | "booked"
+  | "postponed"
+  | "closed_won"
+  | "closed_lost";
+
 export interface Lead extends ApplicationPayload {
   id: number;
-  status: "new" | "in_progress" | "closed";
+  status: LeadStatus;
   createdAt: string;
+  /** Points at the deduped Client profile this submission belongs to. */
+  clientId: number;
+  /** Set on leads auto-migrated from the old 3-value status enum, cleared
+   * the moment someone explicitly picks a status for the lead. */
+  needsStatusReview: boolean;
+}
+
+/** The deduped customer profile a Lead attaches to — see ClientRepository
+ * .FindByPhoneOrEmail on the backend for the phone/email matching rule. */
+export interface Client {
+  id: number;
+  name: string;
+  phone: string;
+  email: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Selects which of the two independent tag tables a Tag belongs to — the
+ * two are never mixed (see migration 00032 on the backend). */
+export type TagType = "product" | "client_type";
+
+export interface Tag {
+  id: number;
+  name: string;
+}
+
+/** No author field by design — single-admin system, nothing to attribute a
+ * comment to. */
+export interface ClientComment {
+  id: number;
+  clientId: number;
+  text: string;
+  createdAt: string;
+}
+
+export interface Reminder {
+  id: number;
+  clientId: number;
+  remindAt: string;
+  note: string;
+  completedAt?: string;
+  createdAt: string;
+}
+
+/** What GET /api/v1/leads returns: a Lead enriched with everything its
+ * list-page card needs in one response. */
+export interface LeadListItem extends Lead {
+  client: Client;
+  productTags: Tag[];
+  clientTypeTags: Tag[];
+  latestCommentText?: string;
+  latestCommentAt?: string;
+  nextReminderAt?: string;
+}
+
+/** What GET /api/v1/clients/{id} returns — backs the client detail page. */
+export interface ClientDetail extends Client {
+  requests: Lead[];
+  comments: ClientComment[];
+  productTags: Tag[];
+  clientTypeTags: Tag[];
+  reminders: Reminder[];
 }
 
 /** Normalized error shape used by useApi() so components never touch raw $fetch errors. */
