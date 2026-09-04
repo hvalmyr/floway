@@ -83,7 +83,10 @@ func (r *TagRepository) SetForClient(ctx context.Context, clientID int64, tagIDs
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	// No-op once Commit has already succeeded (pgx returns ErrTxClosed,
+	// which there is nothing useful to do with here) — this is purely the
+	// abandon-on-early-return safety net for the err-return paths above.
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	if _, err := tx.Exec(ctx, fmt.Sprintf(`DELETE FROM %s WHERE client_id = $1`, r.joinTable), clientID); err != nil {
 		return err
