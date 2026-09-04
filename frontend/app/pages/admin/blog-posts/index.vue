@@ -190,12 +190,7 @@ async function onBulkDelete() {
         <option value="draft">Черновик</option>
         <option value="published">Опубликовано</option>
       </select>
-      <AdminMarkdownField
-        v-model="form.content"
-        placeholder="Содержимое"
-        :rows="6"
-        class="sm:col-span-2"
-      />
+      <AdminRichTextEditor v-model="form.content" placeholder="Содержимое" class="sm:col-span-2" />
 
       <p v-if="formError" class="text-sm text-red-600 sm:col-span-2">{{ formError }}</p>
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Дизайна для статьи блога пока нет — вёрстка минимальная, на существующих
-// токенах дизайн-системы. Контент рендерится как обычный текст с
-// сохранением переносов строк (формат контента — plain text, не HTML/markdown).
+// токенах дизайн-системы. Контент — HTML, написанный через
+// AdminRichTextEditor.vue (см. RichTextContent.vue про доверие к источнику).
 const route = useRoute();
 const slug = route.params.slug as string;
 
@@ -43,9 +43,7 @@ function formatDate(dateString: string | null) {
       </p>
     </div>
 
-    <div class="max-w-[720px] whitespace-pre-wrap font-body text-body text-ink">
-      {{ post.content }}
-    </div>
+    <RichTextContent :source="post.content" class="max-w-[720px]" />
 
     <div v-if="post.tags.length" class="flex flex-wrap gap-8">
       <UiBadge v-for="tag in post.tags" :key="tag">{{ tag }}</UiBadge>
