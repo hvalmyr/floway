@@ -12,9 +12,19 @@ if (!post.value) {
   throw createError({ statusCode: 404, statusMessage: "Статья не найдена", fatal: true });
 }
 
+// resolveMediaUrl() reads useRuntimeConfig(), which needs the active Nuxt
+// app context — safe here (still inside <script setup>'s synchronous body),
+// but NOT safe called lazily from inside a useSeoMeta getter: unhead invokes
+// those later, outside that context, and useRuntimeConfig() throws
+// (NUXT_E1001) when called from there. Resolve the URL eagerly instead.
+const ogImageUrl = post.value?.coverImage ? resolveMediaUrl(post.value.coverImage) : undefined;
+
 useSeoMeta({
   title: () => `${post.value?.title} — блог Фловей`,
   description: () => post.value?.title,
+  ogTitle: () => post.value?.title,
+  ogDescription: () => post.value?.title,
+  ogImage: ogImageUrl,
 });
 
 function formatDate(dateString: string | null) {
@@ -42,6 +52,16 @@ function formatDate(dateString: string | null) {
         <span v-if="post.publishedAt">{{ formatDate(post.publishedAt) }}</span>
       </p>
     </div>
+
+    <NuxtImg
+      v-if="post.coverImage"
+      :src="resolveOptimizedMediaUrl(post.coverImage)"
+      format="webp"
+      :alt="post.title"
+      class="aspect-[16/9] w-full max-w-[720px] rounded-md object-cover"
+      sizes="400:100vw lg:720px"
+      loading="lazy"
+    />
 
     <RichTextContent :source="post.content" class="max-w-[720px]" />
 

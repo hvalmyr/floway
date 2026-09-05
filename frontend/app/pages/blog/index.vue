@@ -36,6 +36,16 @@ function formatDate(dateString: string | null) {
     <div v-else class="grid grid-cols-1 gap-24 md:grid-cols-2 lg:grid-cols-3">
       <NuxtLink v-for="post in posts" :key="post.id" :to="`/blog/${post.slug}`" class="block">
         <UiCard>
+          <template v-if="post.coverImage" #media>
+            <NuxtImg
+              :src="resolveOptimizedMediaUrl(post.coverImage)"
+              format="webp"
+              :alt="post.title"
+              class="aspect-[4/3] w-full rounded-sm object-cover"
+              sizes="400:100vw md:50vw lg:33vw"
+              loading="lazy"
+            />
+          </template>
           <template v-if="post.category" #title>{{ post.category }}</template>
           <p class="mb-8 font-display text-h4 text-ink">{{ post.title }}</p>
           <p v-if="post.publishedAt" class="text-body text-ink">
