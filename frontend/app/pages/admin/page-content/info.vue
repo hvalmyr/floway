@@ -16,6 +16,9 @@ const { items, loading, error, savingKey, savedKey, fetchAll, save, onImageUploa
     "legal_inn",
     "legal_ogrn",
     "legal_privacy_policy",
+    "legal_cookie_policy",
+    "legal_terms",
+    "legal_pd_consent",
   ]);
 
 await fetchAll();

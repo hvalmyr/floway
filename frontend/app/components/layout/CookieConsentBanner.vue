@@ -32,7 +32,11 @@ watch(status, (value) => {
       <p class="font-body text-body text-ink">
         Мы используем cookie и аналитику. Подробнее — в
         <NuxtLink to="/privacy" class="underline hover:no-underline"
-          >политике обработки данных</NuxtLink
+          >политике конфиденциальности</NuxtLink
+        >
+        и
+        <NuxtLink to="/cookie-policy" class="underline hover:no-underline"
+          >политике использования cookie</NuxtLink
         >.
       </p>
       <div class="w-full shrink-0 lg:w-auto">

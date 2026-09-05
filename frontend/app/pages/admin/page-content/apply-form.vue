@@ -20,6 +20,8 @@ const { items, loading, error, savingKey, savedKey, fetchAll, save } = useAdminP
   "apply_form_source_maps",
   "apply_form_consent_prefix",
   "apply_form_consent_link_text",
+  "apply_form_consent_middle",
+  "apply_form_consent_link2_text",
   "apply_form_consent_suffix",
   "apply_form_submit_default",
   "apply_form_submit_trial",

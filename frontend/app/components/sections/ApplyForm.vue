@@ -209,12 +209,11 @@ const onSubmit = handleSubmit(async (values) => {
           <NuxtLink to="/privacy" class="text-primary underline">{{
             text("apply_form_consent_link_text", "политикой обработки персональных данных")
           }}</NuxtLink>
-          {{
-            text(
-              "apply_form_consent_suffix",
-              "и даёте согласие на обработку указанных персональных данных.",
-            )
-          }}
+          {{ text("apply_form_consent_middle", "и") }}
+          <NuxtLink to="/pd-consent" class="text-primary underline">{{
+            text("apply_form_consent_link2_text", "даёте согласие на обработку персональных данных")
+          }}</NuxtLink
+          >{{ text("apply_form_consent_suffix", ".") }}
         </UiCheckbox>
       </div>
 

@@ -46,7 +46,15 @@ const contactChannels = computed(() =>
 const schoolLinks = [
   { to: "/#courses", label: "Курсы" },
   { to: "/masterclasses", label: "Мастерклассы" },
+  { to: "/sertifikaty", label: "Подарочные сертификаты" },
   { to: "/contacts", label: "Контакты" },
+];
+
+const documentLinks = [
+  { to: "/privacy", label: "политика конфиденциальности" },
+  { to: "/cookie-policy", label: "политика использования cookie" },
+  { to: "/terms", label: "пользовательское соглашение" },
+  { to: "/pd-consent", label: "согласие на обработку персональных данных" },
 ];
 </script>
 
@@ -113,11 +121,13 @@ const schoolLinks = [
         <div class="flex flex-col gap-16">
           <h3 class="font-display text-h4 text-white">документы</h3>
           <NuxtLink
-            to="/privacy"
+            v-for="link in documentLinks"
+            :key="link.to"
+            :to="link.to"
             class="font-body text-body text-white hover:underline"
-            :class="isActive('/privacy') ? 'underline' : ''"
+            :class="isActive(link.to) ? 'underline' : ''"
           >
-            политика конфиденциальности
+            {{ link.label }}
           </NuxtLink>
           <p class="font-body text-body text-white">
             {{ text("legal_entity_name", contactInfo.legalEntity) }}
