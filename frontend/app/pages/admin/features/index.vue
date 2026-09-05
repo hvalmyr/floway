@@ -39,6 +39,7 @@ const { items, loading, error, fetchAll, create, update, remove } =
   useAdminResource<FeatureEntity>("/api/v1/features");
 
 const editingId = ref<number | null>(null);
+const editingSortOrder = ref(0);
 const form = ref(emptyForm());
 const saving = ref(false);
 const formError = ref("");
@@ -101,6 +102,7 @@ function selectPage(pageId: FeaturePage) {
 
 function startEdit(item: FeatureEntity) {
   editingId.value = item.id;
+  editingSortOrder.value = item.sortOrder;
   form.value = { icon: item.icon, title: item.title, description: item.description };
 }
 
@@ -117,7 +119,11 @@ async function onSubmit() {
       const sortOrder = selectedGroup.value.items.value.length;
       await create({ ...form.value, page: selectedPageId.value, sortOrder });
     } else {
-      await update(editingId.value, { ...form.value, page: selectedPageId.value });
+      await update(editingId.value, {
+        ...form.value,
+        page: selectedPageId.value,
+        sortOrder: editingSortOrder.value,
+      });
     }
     cancelEdit();
   } catch {
