@@ -9,8 +9,9 @@ import (
 )
 
 var validFeaturePages = map[string]bool{
-	"home":          true,
-	"masterclasses": true,
+	"home":             true,
+	"masterclasses":    true,
+	"gift_certificate": true,
 }
 
 type FeatureRepository interface {
@@ -44,7 +45,7 @@ func (s *FeatureService) validate(item model.Feature) (model.Feature, error) {
 	item.Description = strings.TrimSpace(item.Description)
 
 	if !validFeaturePages[item.Page] {
-		return item, errors.Join(ErrValidation, errors.New("page must be one of: home, masterclasses"))
+		return item, errors.Join(ErrValidation, errors.New("page must be one of: home, masterclasses, gift_certificate"))
 	}
 	if item.Icon == "" || item.Title == "" || item.Description == "" {
 		return item, errors.Join(ErrValidation, errors.New("icon, title and description are required"))
