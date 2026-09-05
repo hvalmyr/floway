@@ -43,9 +43,18 @@ type Course struct {
 	// SingleCard collapses a multi-block course into one homepage card built
 	// from this course's own fields instead of one card per block — see
 	// syntheticBlock() in course_catalog_service.go, which this flag reuses.
-	SingleCard bool      `db:"single_card" json:"singleCard"`
-	CreatedAt  time.Time `db:"created_at" json:"createdAt"`
-	UpdatedAt  time.Time `db:"updated_at" json:"updatedAt"`
+	SingleCard bool `db:"single_card" json:"singleCard"`
+	// FAQTitle/FAQDescription are the heading and intro text shown above this
+	// course's FAQ block (CourseFAQItem below) on its course page, right
+	// after the apply form. FAQVisible toggles the whole block — title,
+	// description and items — without deleting anything, same convention as
+	// Visible above. Not to be confused with the global faq_items table
+	// (model.FAQItem) rendered once on the homepage.
+	FAQTitle       string    `db:"faq_title" json:"faqTitle"`
+	FAQDescription string    `db:"faq_description" json:"faqDescription"`
+	FAQVisible     bool      `db:"faq_visible" json:"faqVisible"`
+	CreatedAt      time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt      time.Time `db:"updated_at" json:"updatedAt"`
 }
 
 type CourseBlockDisplayStyle string
@@ -113,6 +122,23 @@ type CourseWithBlocks struct {
 	Course
 	BlockCount int                      `json:"blockCount"`
 	Blocks     []CourseBlockWithLessons `json:"blocks"`
+	// FAQItems is this course's own Q&A list (see Course.FAQVisible/FAQTitle/
+	// FAQDescription) — always populated regardless of FAQVisible, so an
+	// admin previewing a hidden block doesn't need a separate endpoint; the
+	// frontend is the one that gates rendering on FAQVisible.
+	FAQItems []CourseFAQItem `json:"faqItems"`
+}
+
+// CourseFAQItem is one Q&A pair in a single course's FAQ block — scoped by
+// CourseID, distinct from the global, homepage-only FAQItem above.
+type CourseFAQItem struct {
+	ID        int64     `db:"id" json:"id"`
+	CourseID  int64     `db:"course_id" json:"courseId"`
+	Question  string    `db:"question" json:"question"`
+	Answer    string    `db:"answer" json:"answer"`
+	SortOrder int       `db:"sort_order" json:"sortOrder"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
 }
 
 // CourseSummary is the homepage listing shape — blocks without lesson text,
@@ -452,6 +478,7 @@ type SiteContent struct {
 	Courses        []Course        `json:"courses"`
 	CourseBlocks   []CourseBlock   `json:"courseBlocks"`
 	Lessons        []Lesson        `json:"lessons"`
+	CourseFAQItems []CourseFAQItem `json:"courseFaqItems"`
 	Masterclasses  []Masterclass   `json:"masterclasses"`
 	Teachers       []Teacher       `json:"teachers"`
 	GalleryPhotos  []GalleryPhoto  `json:"galleryPhotos"`

@@ -34,17 +34,20 @@ func (h *courseHandler) routes(r chi.Router) {
 }
 
 type courseRequest struct {
-	Slug         string                        `json:"slug"`
-	Name         string                        `json:"name"`
-	Description  string                        `json:"description"`
-	CoverImage   string                        `json:"coverImage"`
-	LessonCount  string                        `json:"lessonCount"`
-	TimeLength   string                        `json:"timeLength"`
-	Price        string                        `json:"price"`
-	DisplayStyle model.CourseBlockDisplayStyle `json:"displayStyle"`
-	Visible      bool                          `json:"visible"`
-	SortOrder    int                           `json:"sortOrder"`
-	SingleCard   bool                          `json:"singleCard"`
+	Slug           string                        `json:"slug"`
+	Name           string                        `json:"name"`
+	Description    string                        `json:"description"`
+	CoverImage     string                        `json:"coverImage"`
+	LessonCount    string                        `json:"lessonCount"`
+	TimeLength     string                        `json:"timeLength"`
+	Price          string                        `json:"price"`
+	DisplayStyle   model.CourseBlockDisplayStyle `json:"displayStyle"`
+	Visible        bool                          `json:"visible"`
+	SortOrder      int                           `json:"sortOrder"`
+	SingleCard     bool                          `json:"singleCard"`
+	FAQTitle       string                        `json:"faqTitle"`
+	FAQDescription string                        `json:"faqDescription"`
+	FAQVisible     bool                          `json:"faqVisible"`
 }
 
 func (h *courseHandler) list(w http.ResponseWriter, r *http.Request) {
@@ -91,18 +94,21 @@ func (h *courseHandler) create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	item, err := h.svc.Create(r.Context(), model.Course{
-		SectionID:    sectionID,
-		Slug:         req.Slug,
-		Name:         req.Name,
-		Description:  req.Description,
-		CoverImage:   req.CoverImage,
-		LessonCount:  req.LessonCount,
-		TimeLength:   req.TimeLength,
-		Price:        req.Price,
-		DisplayStyle: req.DisplayStyle,
-		Visible:      req.Visible,
-		SortOrder:    req.SortOrder,
-		SingleCard:   req.SingleCard,
+		SectionID:      sectionID,
+		Slug:           req.Slug,
+		Name:           req.Name,
+		Description:    req.Description,
+		CoverImage:     req.CoverImage,
+		LessonCount:    req.LessonCount,
+		TimeLength:     req.TimeLength,
+		Price:          req.Price,
+		DisplayStyle:   req.DisplayStyle,
+		Visible:        req.Visible,
+		SortOrder:      req.SortOrder,
+		SingleCard:     req.SingleCard,
+		FAQTitle:       req.FAQTitle,
+		FAQDescription: req.FAQDescription,
+		FAQVisible:     req.FAQVisible,
 	})
 	if err != nil {
 		writeServiceError(w, r, err)
@@ -131,19 +137,22 @@ func (h *courseHandler) update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	item, err := h.svc.Update(r.Context(), model.Course{
-		ID:           id,
-		SectionID:    sectionID,
-		Slug:         req.Slug,
-		Name:         req.Name,
-		Description:  req.Description,
-		CoverImage:   req.CoverImage,
-		LessonCount:  req.LessonCount,
-		TimeLength:   req.TimeLength,
-		Price:        req.Price,
-		DisplayStyle: req.DisplayStyle,
-		Visible:      req.Visible,
-		SortOrder:    req.SortOrder,
-		SingleCard:   req.SingleCard,
+		ID:             id,
+		SectionID:      sectionID,
+		Slug:           req.Slug,
+		Name:           req.Name,
+		Description:    req.Description,
+		CoverImage:     req.CoverImage,
+		LessonCount:    req.LessonCount,
+		TimeLength:     req.TimeLength,
+		Price:          req.Price,
+		DisplayStyle:   req.DisplayStyle,
+		Visible:        req.Visible,
+		SortOrder:      req.SortOrder,
+		SingleCard:     req.SingleCard,
+		FAQTitle:       req.FAQTitle,
+		FAQDescription: req.FAQDescription,
+		FAQVisible:     req.FAQVisible,
 	})
 	if err != nil {
 		writeServiceError(w, r, err)

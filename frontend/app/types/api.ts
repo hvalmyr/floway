@@ -56,6 +56,24 @@ export interface Course {
   visible: boolean;
   /** Collapses a multi-block course into one homepage card (this course's own fields) instead of one card per block. */
   singleCard: boolean;
+  /** Heading shown above this course's FAQ block (CourseFAQItem below), on the course page after the apply form. */
+  faqTitle: string;
+  /** Intro text shown between the FAQ heading and its items. */
+  faqDescription: string;
+  /** Shows/hides the whole FAQ block (title, description and items) without deleting anything. */
+  faqVisible: boolean;
+}
+
+/**
+ * One Q&A pair in a single course's FAQ block — distinct from the global,
+ * homepage-only FAQItem (no course concept) fetched via getFAQItems().
+ */
+export interface CourseFAQItem {
+  id: number;
+  courseId: number;
+  question: string;
+  answer: string;
+  sortOrder: number;
 }
 
 /**
@@ -101,6 +119,8 @@ export interface CourseBlockWithLessons extends CourseBlock {
 export interface CourseWithBlocks extends Course {
   blockCount: number;
   blocks: CourseBlockWithLessons[];
+  /** Always populated regardless of faqVisible — gate rendering on that flag yourself. */
+  faqItems: CourseFAQItem[];
 }
 
 /** Homepage listing shape — blocks without lesson text. */

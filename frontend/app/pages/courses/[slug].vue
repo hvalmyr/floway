@@ -126,5 +126,15 @@ const openLessonIds = ref<Record<number, Array<string | number>>>(
         </div>
       </div>
     </section>
+
+    <section v-if="course.faqVisible && course.faqItems.length" class="py-48 sm:py-64 lg:py-80">
+      <div class="container">
+        <CourseFaq
+          :title="course.faqTitle || 'Вопросы и ответы'"
+          :description="course.faqDescription"
+          :items="course.faqItems"
+        />
+      </div>
+    </section>
   </div>
 </template>

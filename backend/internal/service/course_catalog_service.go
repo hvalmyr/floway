@@ -37,6 +37,10 @@ type LessonBatchRepository interface {
 	ListByCourseID(ctx context.Context, courseID int64) ([]model.Lesson, error)
 }
 
+type CourseFAQListRepository interface {
+	ListByCourseID(ctx context.Context, courseID int64) ([]model.CourseFAQItem, error)
+}
+
 // CourseCatalogService assembles the two public "read the whole tree in one
 // shot" responses: the homepage section listing (sections -> courses ->
 // blocks, no lesson text) and a single course page (course -> blocks ->
@@ -50,6 +54,7 @@ type CourseCatalogService struct {
 	blocks       CourseBlockListRepository
 	blocksBatch  CourseBlockBatchRepository
 	lessons      LessonBatchRepository
+	faqItems     CourseFAQListRepository
 }
 
 func NewCourseCatalogService(
@@ -59,6 +64,7 @@ func NewCourseCatalogService(
 	blocks CourseBlockListRepository,
 	blocksBatch CourseBlockBatchRepository,
 	lessons LessonBatchRepository,
+	faqItems CourseFAQListRepository,
 ) *CourseCatalogService {
 	return &CourseCatalogService{
 		sections:     sections,
@@ -67,6 +73,7 @@ func NewCourseCatalogService(
 		blocks:       blocks,
 		blocksBatch:  blocksBatch,
 		lessons:      lessons,
+		faqItems:     faqItems,
 	}
 }
 
@@ -108,6 +115,11 @@ func (s *CourseCatalogService) GetFullBySlug(ctx context.Context, slug string) (
 		return model.CourseWithBlocks{}, ErrNotFound
 	}
 
+	faqItems, err := s.faqItems.ListByCourseID(ctx, course.ID)
+	if err != nil {
+		return model.CourseWithBlocks{}, err
+	}
+
 	allBlocks, err := s.blocks.ListByCourseID(ctx, course.ID)
 	if err != nil {
 		return model.CourseWithBlocks{}, err
@@ -133,6 +145,7 @@ func (s *CourseCatalogService) GetFullBySlug(ctx context.Context, slug string) (
 			Course:     course,
 			BlockCount: 1,
 			Blocks:     []model.CourseBlockWithLessons{{CourseBlock: block, Lessons: lessons}},
+			FAQItems:   faqItems,
 		}, nil
 	}
 
@@ -168,7 +181,7 @@ func (s *CourseCatalogService) GetFullBySlug(ctx context.Context, slug string) (
 		blocksWithLessons[i] = model.CourseBlockWithLessons{CourseBlock: block, Lessons: blockLessons}
 	}
 
-	return model.CourseWithBlocks{Course: course, BlockCount: len(blocks), Blocks: blocksWithLessons}, nil
+	return model.CourseWithBlocks{Course: course, BlockCount: len(blocks), Blocks: blocksWithLessons, FAQItems: faqItems}, nil
 }
 
 // ListSections is the public homepage aggregation: every course section,

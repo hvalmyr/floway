@@ -86,6 +86,14 @@ func (f *fakeCourseBatchBySectionRepo) ListBySectionIDs(ctx context.Context, sec
 	return out, nil
 }
 
+type fakeCourseFAQListRepo struct {
+	itemsByCourseID map[int64][]model.CourseFAQItem
+}
+
+func (f *fakeCourseFAQListRepo) ListByCourseID(ctx context.Context, courseID int64) ([]model.CourseFAQItem, error) {
+	return f.itemsByCourseID[courseID], nil
+}
+
 type fakeCourseBlockBatchRepo struct {
 	calls            int
 	lastCourseIDs    []int64
@@ -116,7 +124,10 @@ func TestCourseCatalogService_GetFullBySlug_AssemblesBlocksAndLessons(t *testing
 		10: {{ID: 100, CourseBlockID: ptr64(10), Name: "Занятие 1"}},
 		11: {{ID: 110, CourseBlockID: ptr64(11), Name: "Занятие 1"}, {ID: 111, CourseBlockID: ptr64(11), Name: "Занятие 2"}},
 	}}
-	svc := service.NewCourseCatalogService(nil, courses, nil, blocks, nil, lessons)
+	faqItems := &fakeCourseFAQListRepo{itemsByCourseID: map[int64][]model.CourseFAQItem{
+		1: {{ID: 1000, CourseID: 1, Question: "Сколько длится курс?", Answer: "3 месяца"}},
+	}}
+	svc := service.NewCourseCatalogService(nil, courses, nil, blocks, nil, lessons, faqItems)
 
 	detail, err := svc.GetFullBySlug(context.Background(), "osnovy")
 
@@ -128,6 +139,8 @@ func TestCourseCatalogService_GetFullBySlug_AssemblesBlocksAndLessons(t *testing
 	require.Len(t, detail.Blocks[0].Lessons, 1)
 	assert.Equal(t, "Композиции", detail.Blocks[1].BlockName)
 	require.Len(t, detail.Blocks[1].Lessons, 2)
+	require.Len(t, detail.FAQItems, 1)
+	assert.Equal(t, "Сколько длится курс?", detail.FAQItems[0].Question)
 
 	// The whole point: one batched lesson lookup, not one per block.
 	assert.Equal(t, 1, lessons.calls)
@@ -145,7 +158,7 @@ func TestCourseCatalogService_GetFullBySlug_BlockWithNoLessonsGetsEmptySlice(t *
 		2: {{ID: 21, CourseID: 2, BlockName: "Для флористов", Visible: true}},
 	}}
 	lessons := &fakeLessonBatchRepo{lessonsByBlock: map[int64][]model.Lesson{}}
-	svc := service.NewCourseCatalogService(nil, courses, nil, blocks, nil, lessons)
+	svc := service.NewCourseCatalogService(nil, courses, nil, blocks, nil, lessons, &fakeCourseFAQListRepo{})
 
 	detail, err := svc.GetFullBySlug(context.Background(), "svadebnaya")
 
@@ -157,7 +170,7 @@ func TestCourseCatalogService_GetFullBySlug_BlockWithNoLessonsGetsEmptySlice(t *
 
 func TestCourseCatalogService_GetFullBySlug_PropagatesNotFound(t *testing.T) {
 	courses := &fakeCourseLookupRepo{courses: map[string]model.Course{}}
-	svc := service.NewCourseCatalogService(nil, courses, nil, &fakeCourseBlockListRepo{}, nil, &fakeLessonBatchRepo{})
+	svc := service.NewCourseCatalogService(nil, courses, nil, &fakeCourseBlockListRepo{}, nil, &fakeLessonBatchRepo{}, nil)
 
 	_, err := svc.GetFullBySlug(context.Background(), "does-not-exist")
 
@@ -176,7 +189,7 @@ func TestCourseCatalogService_GetFullBySlug_CourseWithNoBlocks(t *testing.T) {
 	lessons := &fakeLessonBatchRepo{lessonsByCourse: map[int64][]model.Lesson{
 		2: {{ID: 200, CourseID: ptr64(2), Name: "Занятие 1"}},
 	}}
-	svc := service.NewCourseCatalogService(nil, courses, nil, &fakeCourseBlockListRepo{}, nil, lessons)
+	svc := service.NewCourseCatalogService(nil, courses, nil, &fakeCourseBlockListRepo{}, nil, lessons, &fakeCourseFAQListRepo{})
 
 	detail, err := svc.GetFullBySlug(context.Background(), "empty")
 
@@ -198,7 +211,7 @@ func TestCourseCatalogService_GetFullBySlug_PropagatesLessonRepoError(t *testing
 	blocks := &fakeCourseBlockListRepo{blocksByCourseID: map[int64][]model.CourseBlock{
 		1: {{ID: 10, CourseID: 1}},
 	}}
-	svc := service.NewCourseCatalogService(nil, courses, nil, blocks, nil, failingLessonRepo{})
+	svc := service.NewCourseCatalogService(nil, courses, nil, blocks, nil, failingLessonRepo{}, nil)
 
 	_, err := svc.GetFullBySlug(context.Background(), "osnovy")
 
@@ -237,7 +250,7 @@ func TestCourseCatalogService_ListSections_AssemblesCoursesAndBlocks(t *testing.
 		20: {{ID: 200, CourseID: 20, Visible: true}},
 		// course 21 intentionally has no blocks yet.
 	}}
-	svc := service.NewCourseCatalogService(sections, nil, courses, nil, blocks, nil)
+	svc := service.NewCourseCatalogService(sections, nil, courses, nil, blocks, nil, nil)
 
 	result, err := svc.ListSections(context.Background())
 
@@ -281,7 +294,7 @@ func TestCourseCatalogService_ListSections_SingleCardCollapsesMultiBlockCourse(t
 			{ID: 101, CourseID: 10, BlockName: "Композиции", Visible: true},
 		},
 	}}
-	svc := service.NewCourseCatalogService(sections, nil, courses, nil, blocks, nil)
+	svc := service.NewCourseCatalogService(sections, nil, courses, nil, blocks, nil, nil)
 
 	result, err := svc.ListSections(context.Background())
 
@@ -299,7 +312,7 @@ func TestCourseCatalogService_ListSections_SingleCardCollapsesMultiBlockCourse(t
 func TestCourseCatalogService_ListSections_NoSections(t *testing.T) {
 	sections := &fakeCourseSectionListRepo{}
 	courses := &fakeCourseBatchBySectionRepo{}
-	svc := service.NewCourseCatalogService(sections, nil, courses, nil, &fakeCourseBlockBatchRepo{}, nil)
+	svc := service.NewCourseCatalogService(sections, nil, courses, nil, &fakeCourseBlockBatchRepo{}, nil, nil)
 
 	result, err := svc.ListSections(context.Background())
 
@@ -325,7 +338,7 @@ func TestCourseCatalogService_ListSections_DropsHiddenSectionCourseAndBlock(t *t
 			{ID: 101, CourseID: 10, BlockName: "Скрытый блок", Visible: false},
 		},
 	}}
-	svc := service.NewCourseCatalogService(sections, nil, courses, nil, blocks, nil)
+	svc := service.NewCourseCatalogService(sections, nil, courses, nil, blocks, nil, nil)
 
 	result, err := svc.ListSections(context.Background())
 
@@ -343,7 +356,7 @@ func TestCourseCatalogService_GetFullBySlug_HiddenCourseIsNotFound(t *testing.T)
 	courses := &fakeCourseLookupRepo{courses: map[string]model.Course{
 		"hidden": {ID: 3, Slug: "hidden", Name: "Скрытый курс", Visible: false},
 	}}
-	svc := service.NewCourseCatalogService(nil, courses, nil, &fakeCourseBlockListRepo{}, nil, &fakeLessonBatchRepo{})
+	svc := service.NewCourseCatalogService(nil, courses, nil, &fakeCourseBlockListRepo{}, nil, &fakeLessonBatchRepo{}, nil)
 
 	_, err := svc.GetFullBySlug(context.Background(), "hidden")
 
@@ -365,7 +378,7 @@ func TestCourseCatalogService_GetFullBySlug_DropsHiddenBlocks(t *testing.T) {
 		10: {{ID: 100, CourseBlockID: ptr64(10), Name: "Занятие 1"}},
 		11: {{ID: 110, CourseBlockID: ptr64(11), Name: "Занятие 1"}},
 	}}
-	svc := service.NewCourseCatalogService(nil, courses, nil, blocks, nil, lessons)
+	svc := service.NewCourseCatalogService(nil, courses, nil, blocks, nil, lessons, &fakeCourseFAQListRepo{})
 
 	detail, err := svc.GetFullBySlug(context.Background(), "osnovy")
 

@@ -24,6 +24,9 @@ interface Course {
   sortOrder: number;
   visible: boolean;
   singleCard: boolean;
+  faqTitle: string;
+  faqDescription: string;
+  faqVisible: boolean;
 }
 
 const route = useRoute();
@@ -41,6 +44,9 @@ const emptyForm = (): Omit<Course, "id" | "sectionId"> => ({
   sortOrder: 0,
   visible: true,
   singleCard: false,
+  faqTitle: "",
+  faqDescription: "",
+  faqVisible: false,
 });
 
 const { items, loading, error, fetchAll, create, update, remove } = useAdminResource<Course>(
@@ -84,6 +90,9 @@ function startEdit(course: Course) {
     sortOrder: course.sortOrder,
     visible: course.visible,
     singleCard: course.singleCard,
+    faqTitle: course.faqTitle,
+    faqDescription: course.faqDescription,
+    faqVisible: course.faqVisible,
   };
 }
 
@@ -235,6 +244,30 @@ async function onBulkDelete() {
         Одна карточка (даже если есть несколько блоков)
       </label>
 
+      <div class="sm:col-span-2">
+        <p class="text-sm font-medium">FAQ курса</p>
+        <p class="text-sm text-[var(--color-text-muted)]">
+          Показывается на странице курса после формы заявки. Сами вопросы и ответы редактируются на
+          отдельной странице (ссылка «FAQ» в списке курсов ниже).
+        </p>
+      </div>
+      <input
+        v-model="form.faqTitle"
+        type="text"
+        placeholder="Заголовок FAQ (например, «Вопросы и ответы»)"
+        class="rounded border border-gray-300 px-3 py-2 sm:col-span-2"
+      />
+      <AdminMarkdownField
+        v-model="form.faqDescription"
+        placeholder="Текст перед вопросами"
+        :rows="2"
+        class="sm:col-span-2"
+      />
+      <label class="flex items-center gap-2 text-sm">
+        <input v-model="form.faqVisible" type="checkbox" class="size-5" />
+        Показывать FAQ на странице курса
+      </label>
+
       <p v-if="formError" class="text-sm text-red-600 sm:col-span-2">{{ formError }}</p>
 
       <div class="flex gap-2 sm:col-span-2">
@@ -331,6 +364,11 @@ async function onBulkDelete() {
               :to="`/admin/courses/${course.id}/lessons`"
               class="text-[var(--color-primary)] hover:underline"
               >Занятия</NuxtLink
+            >
+            <NuxtLink
+              :to="`/admin/courses/${course.id}/faq`"
+              class="text-[var(--color-primary)] hover:underline"
+              >FAQ</NuxtLink
             >
             <button class="text-[var(--color-primary)] hover:underline" @click="startEdit(course)">
               Редактировать

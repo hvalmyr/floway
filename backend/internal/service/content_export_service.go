@@ -76,7 +76,7 @@ func (s *ContentExportService) Export(ctx context.Context) (model.SiteContent, e
 	if out.CourseSections, err = queryAll(ctx, s.db, `SELECT id, heading, description, visible, sort_order, created_at, updated_at FROM course_sections ORDER BY id`, scanCourseSection); err != nil {
 		return out, fmt.Errorf("export course sections: %w", err)
 	}
-	if out.Courses, err = queryAll(ctx, s.db, `SELECT id, section_id, slug, name, description, cover_image, lesson_count, time_length, price, display_style, visible, sort_order, created_at, updated_at FROM courses ORDER BY id`, scanCourse); err != nil {
+	if out.Courses, err = queryAll(ctx, s.db, `SELECT id, section_id, slug, name, description, cover_image, lesson_count, time_length, price, display_style, visible, sort_order, single_card, faq_title, faq_description, faq_visible, created_at, updated_at FROM courses ORDER BY id`, scanCourse); err != nil {
 		return out, fmt.Errorf("export courses: %w", err)
 	}
 	if out.CourseBlocks, err = queryAll(ctx, s.db, `SELECT id, course_id, block_name, description, block_cover, lesson_count, time_length, price, display_style, visible, sort_order, created_at, updated_at FROM course_blocks ORDER BY id`, scanCourseBlock); err != nil {
@@ -84,6 +84,9 @@ func (s *ContentExportService) Export(ctx context.Context) (model.SiteContent, e
 	}
 	if out.Lessons, err = queryAll(ctx, s.db, `SELECT id, course_block_id, course_id, name, description, sort_order, created_at, updated_at FROM lessons ORDER BY id`, scanLesson); err != nil {
 		return out, fmt.Errorf("export lessons: %w", err)
+	}
+	if out.CourseFAQItems, err = queryAll(ctx, s.db, `SELECT id, course_id, question, answer, sort_order, created_at, updated_at FROM course_faq_items ORDER BY id`, scanCourseFAQItem); err != nil {
+		return out, fmt.Errorf("export course faq items: %w", err)
 	}
 	if out.Masterclasses, err = queryAll(ctx, s.db, `SELECT `+exportMasterclassColumns+` FROM masterclasses ORDER BY id`, scanExportMasterclass); err != nil {
 		return out, fmt.Errorf("export masterclasses: %w", err)
@@ -173,9 +176,10 @@ func (s *ContentExportService) Import(ctx context.Context, data model.SiteConten
 	result := ImportResult{Mode: mode, Counts: map[string]int{}}
 
 	if mode == ImportModeReplace {
-		// course_sections cascades to courses/course_blocks/lessons
-		// (ON DELETE CASCADE, migration 00016) — deleting it alone clears the
-		// whole tree. page_content is never deleted (see importPageContent).
+		// course_sections cascades to courses/course_blocks/lessons/
+		// course_faq_items (ON DELETE CASCADE, migrations 00016 and 00039) —
+		// deleting it alone clears the whole tree. page_content is never
+		// deleted (see importPageContent).
 		for _, table := range []string{"course_sections", "masterclasses", "teachers", "gallery_photos", "blog_posts", "faq_items", "features", "about_items", "social_links"} {
 			if _, err := tx.Exec(ctx, "DELETE FROM "+table); err != nil {
 				return ImportResult{}, fmt.Errorf("clear %s: %w", table, err)
@@ -194,7 +198,7 @@ func (s *ContentExportService) Import(ctx context.Context, data model.SiteConten
 	}
 	result.Counts["courseSections"] = n
 
-	n, err = bulkWrite(ctx, tx, "courses", []string{"id", "section_id", "slug", "name", "description", "cover_image", "lesson_count", "time_length", "price", "display_style", "visible", "sort_order"}, data.Courses, courseArgs, conflictCol)
+	n, err = bulkWrite(ctx, tx, "courses", []string{"id", "section_id", "slug", "name", "description", "cover_image", "lesson_count", "time_length", "price", "display_style", "visible", "sort_order", "single_card", "faq_title", "faq_description", "faq_visible"}, data.Courses, courseArgs, conflictCol)
 	if err != nil {
 		return ImportResult{}, fmt.Errorf("import courses: %w", err)
 	}
@@ -211,6 +215,12 @@ func (s *ContentExportService) Import(ctx context.Context, data model.SiteConten
 		return ImportResult{}, fmt.Errorf("import lessons: %w", err)
 	}
 	result.Counts["lessons"] = n
+
+	n, err = bulkWrite(ctx, tx, "course_faq_items", []string{"id", "course_id", "question", "answer", "sort_order"}, data.CourseFAQItems, courseFAQItemArgs, conflictCol)
+	if err != nil {
+		return ImportResult{}, fmt.Errorf("import course faq items: %w", err)
+	}
+	result.Counts["courseFaqItems"] = n
 
 	n, err = bulkWrite(ctx, tx, "masterclasses", []string{"id", "slug", "title", "description", "description2", "ending_text", "duration", "price", "cover_image", "status"}, data.Masterclasses, masterclassArgs, conflictCol)
 	if err != nil {
@@ -263,7 +273,7 @@ func (s *ContentExportService) Import(ctx context.Context, data model.SiteConten
 	// Every id-bearing table above just got explicit ids inserted — bump each
 	// sequence past the highest one, or the next plain admin-panel Create()
 	// (which never specifies an id) will collide with an imported row.
-	for _, table := range []string{"course_sections", "courses", "course_blocks", "lessons", "masterclasses", "teachers", "gallery_photos", "blog_posts", "faq_items", "features", "about_items", "social_links"} {
+	for _, table := range []string{"course_sections", "courses", "course_blocks", "lessons", "course_faq_items", "masterclasses", "teachers", "gallery_photos", "blog_posts", "faq_items", "features", "about_items", "social_links"} {
 		if _, err := tx.Exec(ctx, `SELECT setval(pg_get_serial_sequence($1, 'id'), GREATEST((SELECT COALESCE(MAX(id), 0) FROM `+table+`), 1))`, table); err != nil {
 			return ImportResult{}, fmt.Errorf("reset %s id sequence: %w", table, err)
 		}
@@ -403,11 +413,20 @@ func courseSectionArgs(m model.CourseSection) []any {
 
 func scanCourse(row pgx.CollectableRow) (model.Course, error) {
 	var m model.Course
-	err := row.Scan(&m.ID, &m.SectionID, &m.Slug, &m.Name, &m.Description, &m.CoverImage, &m.LessonCount, &m.TimeLength, &m.Price, &m.DisplayStyle, &m.Visible, &m.SortOrder, &m.CreatedAt, &m.UpdatedAt)
+	err := row.Scan(&m.ID, &m.SectionID, &m.Slug, &m.Name, &m.Description, &m.CoverImage, &m.LessonCount, &m.TimeLength, &m.Price, &m.DisplayStyle, &m.Visible, &m.SortOrder, &m.SingleCard, &m.FAQTitle, &m.FAQDescription, &m.FAQVisible, &m.CreatedAt, &m.UpdatedAt)
 	return m, err
 }
 func courseArgs(m model.Course) []any {
-	return []any{m.ID, m.SectionID, m.Slug, m.Name, m.Description, m.CoverImage, m.LessonCount, m.TimeLength, m.Price, m.DisplayStyle, m.Visible, m.SortOrder}
+	return []any{m.ID, m.SectionID, m.Slug, m.Name, m.Description, m.CoverImage, m.LessonCount, m.TimeLength, m.Price, m.DisplayStyle, m.Visible, m.SortOrder, m.SingleCard, m.FAQTitle, m.FAQDescription, m.FAQVisible}
+}
+
+func scanCourseFAQItem(row pgx.CollectableRow) (model.CourseFAQItem, error) {
+	var m model.CourseFAQItem
+	err := row.Scan(&m.ID, &m.CourseID, &m.Question, &m.Answer, &m.SortOrder, &m.CreatedAt, &m.UpdatedAt)
+	return m, err
+}
+func courseFAQItemArgs(m model.CourseFAQItem) []any {
+	return []any{m.ID, m.CourseID, m.Question, m.Answer, m.SortOrder}
 }
 
 func scanCourseBlock(row pgx.CollectableRow) (model.CourseBlock, error) {
