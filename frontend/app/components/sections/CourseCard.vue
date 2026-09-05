@@ -8,21 +8,22 @@ import type { CourseBlockDisplayStyle } from "~/types/api";
  * per visible block (the caller, index.vue's `sectionCards()`, produces one
  * card per block; a course with a single block, real or synthetic, just
  * means one call). Order: title (the course's name — same across every
- * card of a multi-block course), then up to 3 stacked caption lines
- * (blockLabel/lessonCount/timeLength, each own line, shown only when set),
- * then the block's cover, then the CTA.
+ * card of a multi-block course), then an optional description, then up to
+ * 3 stacked caption lines (blockLabel/lessonCount/timeLength, each own
+ * line, shown only when set), then the block's cover, then the CTA.
  *
  * `displayStyle` is the admin-chosen background/text color pair (one of the
  * design system's 4 standard colors combined into a readable pair) — picked
  * per block, not cycled automatically. The card hugs its own content (no
- * fixed min-height); `mt-auto` sits on the cover image (not the button) so
- * the image+CTA pair lands flush with the bottom edge as a unit regardless
- * of how many caption lines precede it — otherwise cards with a different
- * caption-line count in the same row would show the photo at different
- * heights even with the button itself still pinned to the bottom. Cards in
- * the same row end up equal height because the parent's `flex flex-wrap`
- * stretches them by default; this component just no longer forces a height
- * of its own on top of that.
+ * fixed min-height); `mt-auto` sits on the caption block (blockLabel /
+ * lessonCount / timeLength), not the cover image or button, so that caption
+ * always lands directly above the image, flush with the bottom edge as a
+ * unit with the image+CTA — regardless of how many lines the title (or an
+ * optional description) takes above it. That's what keeps the "x занятий *
+ * x часов" line at the same row across cards in a shelf even when titles
+ * wrap differently. Cards in the same row end up equal height because the
+ * parent's `flex flex-wrap` stretches them by default; this component just
+ * no longer forces a height of its own on top of that.
  * The CTA's `transparent` outline pulls its text/border from `currentColor`
  * (see UiButton.vue), so it automatically matches whichever of the 4
  * `colorClasses` below is active instead of needing a color per style here.
@@ -81,7 +82,11 @@ const colorClasses = displayStyleColorClasses;
   >
     <template #title>{{ name }}</template>
 
-    <div v-if="blockLabel || lessonCount || timeLength" class="mb-16 flex flex-col gap-4">
+    <p v-if="description" class="mb-24 whitespace-pre-line font-body text-body">
+      {{ description }}
+    </p>
+
+    <div v-if="blockLabel || lessonCount || timeLength" class="mt-auto mb-16 flex flex-col gap-4">
       <p v-if="blockLabel" class="font-body text-body">{{ blockLabel }}</p>
       <p
         v-if="lessonCount || timeLength"
@@ -96,11 +101,15 @@ const colorClasses = displayStyleColorClasses;
         <span v-if="timeLength">{{ timeLength }}</span>
       </p>
     </div>
-    <p v-if="description" class="mb-24 whitespace-pre-line font-body text-body">
-      {{ description }}
-    </p>
 
-    <component :is="NuxtLink" :to="to" class="mt-auto mb-24 block aspect-square w-full min-h-0">
+    <component
+      :is="NuxtLink"
+      :to="to"
+      :class="[
+        'mb-24 block aspect-square w-full min-h-0',
+        !(blockLabel || lessonCount || timeLength) && 'mt-auto',
+      ]"
+    >
       <NuxtImg
         v-if="coverImage"
         :src="resolveOptimizedMediaUrl(coverImage)"
