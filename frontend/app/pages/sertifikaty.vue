@@ -70,7 +70,7 @@ const advantages = computed(
         <div class="mx-auto max-w-[720px]">
           <ApplyForm
             context="masterclass"
-            title="Оставить заявку на подарочный мастер-класс"
+            title="Оставить заявку на подарочный сертификат"
             lead="Свяжемся с вами, поможем выбрать мастер-класс и оформим сертификат."
           />
         </div>
