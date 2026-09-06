@@ -37,13 +37,11 @@ function formatDate(dateString: string | null) {
       <NuxtLink v-for="post in posts" :key="post.id" :to="`/blog/${post.slug}`" class="block">
         <UiCard>
           <template v-if="post.coverImage" #media>
-            <NuxtImg
+            <UiContentImage
               :src="resolveOptimizedMediaUrl(post.coverImage)"
-              format="webp"
               :alt="post.title"
               class="aspect-[4/3] w-full rounded-sm object-cover"
               sizes="400:100vw md:50vw lg:33vw"
-              loading="lazy"
             />
           </template>
           <template v-if="post.category" #title>{{ post.category }}</template>

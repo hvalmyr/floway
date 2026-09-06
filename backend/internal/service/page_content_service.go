@@ -3,10 +3,24 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strconv"
 	"strings"
 
 	"floway-backend/internal/model"
 )
+
+// numericPageContentBounds lists the page_content keys stored as type
+// 'number' along with their valid range — enforced here rather than via a
+// generic type-driven validator, since these three photo-compression knobs
+// are the only numeric keys that exist so far (see migration 00041).
+// Garbage values (0, negative, >100) would otherwise reach IPX unfiltered
+// and break every image on the site, not just fail to save.
+var numericPageContentBounds = map[string][2]int{
+	"image_quality_desktop": {1, 100},
+	"image_quality_mobile":  {1, 100},
+	"image_quality_avif":    {1, 100},
+}
 
 type PageContentRepository interface {
 	List(ctx context.Context) ([]model.PageContent, error)
@@ -40,6 +54,16 @@ func (s *PageContentService) Update(ctx context.Context, key, value string) (mod
 	key = strings.TrimSpace(key)
 	if key == "" {
 		return model.PageContent{}, errors.Join(ErrValidation, errors.New("key is required"))
+	}
+
+	if bounds, ok := numericPageContentBounds[key]; ok {
+		n, err := strconv.Atoi(strings.TrimSpace(value))
+		if err != nil || n < bounds[0] || n > bounds[1] {
+			return model.PageContent{}, errors.Join(
+				ErrValidation,
+				fmt.Errorf("%s must be an integer between %d and %d", key, bounds[0], bounds[1]),
+			)
+		}
 	}
 
 	item, previousValue, err := s.repo.Update(ctx, key, value)

@@ -20,8 +20,9 @@ type fakePageContentRepository struct {
 func newFakePageContentRepository() *fakePageContentRepository {
 	return &fakePageContentRepository{
 		items: map[string]model.PageContent{
-			"home_hero_title": {Key: "home_hero_title", Label: "Заголовок", Value: "Старое значение"},
-			"home_hero_image": {Key: "home_hero_image", Label: "Фото", Type: "image", Value: "/uploads/old-key.png"},
+			"home_hero_title":       {Key: "home_hero_title", Label: "Заголовок", Value: "Старое значение"},
+			"home_hero_image":       {Key: "home_hero_image", Label: "Фото", Type: "image", Value: "/uploads/old-key.png"},
+			"image_quality_desktop": {Key: "image_quality_desktop", Label: "Качество: десктоп", Type: "number", Value: "80"},
 		},
 	}
 }
@@ -71,7 +72,7 @@ func TestPageContentService_List(t *testing.T) {
 	items, err := svc.List(context.Background())
 
 	require.NoError(t, err)
-	assert.Len(t, items, 2)
+	assert.Len(t, items, 3)
 }
 
 func TestPageContentService_Update(t *testing.T) {
@@ -100,6 +101,48 @@ func TestPageContentService_Update(t *testing.T) {
 		svc := service.NewPageContentService(repo, &fakeImageStorage{})
 
 		_, err := svc.Update(context.Background(), "   ", "value")
+
+		require.Error(t, err)
+		assert.ErrorIs(t, err, service.ErrValidation)
+	})
+}
+
+func TestPageContentService_Update_NumericBounds(t *testing.T) {
+	t.Run("accepts a value within range", func(t *testing.T) {
+		repo := newFakePageContentRepository()
+		svc := service.NewPageContentService(repo, &fakeImageStorage{})
+
+		item, err := svc.Update(context.Background(), "image_quality_desktop", "65")
+
+		require.NoError(t, err)
+		assert.Equal(t, "65", item.Value)
+	})
+
+	t.Run("rejects a value above 100", func(t *testing.T) {
+		repo := newFakePageContentRepository()
+		svc := service.NewPageContentService(repo, &fakeImageStorage{})
+
+		_, err := svc.Update(context.Background(), "image_quality_desktop", "101")
+
+		require.Error(t, err)
+		assert.ErrorIs(t, err, service.ErrValidation)
+	})
+
+	t.Run("rejects zero and negative values", func(t *testing.T) {
+		repo := newFakePageContentRepository()
+		svc := service.NewPageContentService(repo, &fakeImageStorage{})
+
+		_, err := svc.Update(context.Background(), "image_quality_desktop", "0")
+
+		require.Error(t, err)
+		assert.ErrorIs(t, err, service.ErrValidation)
+	})
+
+	t.Run("rejects a non-numeric value", func(t *testing.T) {
+		repo := newFakePageContentRepository()
+		svc := service.NewPageContentService(repo, &fakeImageStorage{})
+
+		_, err := svc.Update(context.Background(), "image_quality_desktop", "high")
 
 		require.Error(t, err)
 		assert.ErrorIs(t, err, service.ErrValidation)

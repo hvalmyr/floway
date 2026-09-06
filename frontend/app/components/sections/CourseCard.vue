@@ -110,14 +110,12 @@ const colorClasses = displayStyleColorClasses;
         !(blockLabel || lessonCount || timeLength) && 'mt-auto',
       ]"
     >
-      <NuxtImg
+      <UiContentImage
         v-if="coverImage"
         :src="resolveOptimizedMediaUrl(coverImage)"
-        format="webp"
         :alt="name"
         class="size-full rounded-sm object-cover"
         sizes="400:100vw sm:50vw lg:400px"
-        loading="lazy"
       />
       <div v-else class="size-full rounded-sm border-2 border-current" />
     </component>

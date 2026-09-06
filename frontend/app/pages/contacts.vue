@@ -3,7 +3,7 @@ import type { Component } from "vue";
 import IconInstagram from "~/components/ui/IconInstagram.vue";
 import IconTelegram from "~/components/ui/IconTelegram.vue";
 import IconVk from "~/components/ui/IconVk.vue";
-import { contactInfo, socialLinks } from "~/constants/contact-info";
+import { contactInfo } from "~/constants/contact-info";
 
 useSeoMeta({
   title: "Контакты — Фловей",
@@ -11,6 +11,7 @@ useSeoMeta({
 });
 
 const { text } = await usePageContent();
+const { socialLinks } = await useSocialLinks();
 
 const socialIcons: Record<string, Component> = {
   Telegram: IconTelegram,

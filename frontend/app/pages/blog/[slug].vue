@@ -53,14 +53,12 @@ function formatDate(dateString: string | null) {
       </p>
     </div>
 
-    <NuxtImg
+    <UiContentImage
       v-if="post.coverImage"
       :src="resolveOptimizedMediaUrl(post.coverImage)"
-      format="webp"
       :alt="post.title"
       class="aspect-[16/9] w-full max-w-[720px] rounded-md object-cover"
       sizes="400:100vw lg:720px"
-      loading="lazy"
     />
 
     <RichTextContent :source="post.content" class="max-w-[720px]" />

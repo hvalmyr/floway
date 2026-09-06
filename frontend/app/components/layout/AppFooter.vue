@@ -5,9 +5,10 @@ import IconMax from "~/components/ui/IconMax.vue";
 import IconTelegram from "~/components/ui/IconTelegram.vue";
 import IconVk from "~/components/ui/IconVk.vue";
 import IconWhatsapp from "~/components/ui/IconWhatsapp.vue";
-import { contactInfo, socialLinks } from "~/constants/contact-info";
+import { contactInfo } from "~/constants/contact-info";
 
 const { text } = await usePageContent();
+const { socialLinks } = await useSocialLinks();
 const route = useRoute();
 const year = new Date().getFullYear();
 

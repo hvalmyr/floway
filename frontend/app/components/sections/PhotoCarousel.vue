@@ -340,38 +340,81 @@ const { activate: activateTrap, deactivate: deactivateTrap } = useFocusTrap(ligh
 // flash in out of order. Neighbors are warmed into the browser cache as
 // soon as a photo is shown, so by the time someone actually clicks
 // next/prev again the image is very likely already local.
+//
+// The "fit to screen" view (lightboxSrc) is a viewport-sized, IPX-optimized
+// rendition — the box only ever displays it at up to 90vh, so downloading
+// the full (upload-capped-at-2000px) original for it was pure waste, most
+// painfully on mobile. `lightboxZoomUrl` holds the real, uncapped original
+// for the separate zoomed-in view (see `zoomed` below) — swapped in only
+// once the viewer explicitly asks to see full resolution, not fetched
+// up front as part of the default view.
 const lightboxSrc = ref("");
+const lightboxZoomUrl = ref("");
 const lightboxLoading = ref(false);
 let loadToken = 0;
 
+const imageOptimizer = useImage();
+const quality = useImageQuality();
+
 function preload(url: string) {
-  const img = new Image();
-  img.src = url;
+  const image = new Image();
+  image.src = url;
+}
+
+// Sized to the box's own cap (90vh tall, 94vw wide — see the lightbox
+// template below) rather than the full viewport, and re-evaluated per photo
+// since the viewport can change (rotation, resize) between opens. Quality
+// picks mobile vs desktop off the same breakpoint the rest of the site's
+// responsive images use.
+function fitLightboxUrl(photo: GalleryPhoto): string {
+  // Only ever called from click handlers (open/next/prev), never during
+  // SSR — safe to read window/screen directly.
+  const isMobile = window.matchMedia("(max-width: 767px)").matches;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const viewportPx = Math.max(window.innerWidth, window.innerHeight);
+  const width = Math.min(Math.round(viewportPx * dpr), 2000);
+  return imageOptimizer.getImage(resolveOptimizedMediaUrl(photo.image), {
+    modifiers: {
+      width,
+      format: "webp",
+      quality: isMobile ? quality.value.mobile : quality.value.desktop,
+    },
+  }).url;
 }
 
 function loadLightboxPhoto(i: number) {
-  const url = resolveMediaUrl(props.photos[i]!.image);
+  const photo = props.photos[i]!;
+  const url = fitLightboxUrl(photo);
+  const zoomUrl = resolveMediaUrl(photo.image);
+  lightboxZoomUrl.value = zoomUrl;
   const token = ++loadToken;
   lightboxLoading.value = true;
-  const img = new Image();
-  img.onload = img.onerror = () => {
+  const image = new Image();
+  image.onload = image.onerror = () => {
     if (token !== loadToken) return;
-    if (img.complete && img.naturalWidth > 0) lightboxSrc.value = url;
+    if (image.complete && image.naturalWidth > 0) lightboxSrc.value = url;
     lightboxLoading.value = false;
+    // Warmed in the background, not awaited — by the time someone actually
+    // clicks to zoom in, it's very likely already cached.
+    preload(zoomUrl);
   };
-  img.src = url;
+  image.src = url;
 
   if (props.photos.length > 1) {
-    preload(resolveMediaUrl(props.photos[(i + 1) % props.photos.length]!.image));
-    preload(
-      resolveMediaUrl(props.photos[(i - 1 + props.photos.length) % props.photos.length]!.image),
-    );
+    preload(fitLightboxUrl(props.photos[(i + 1) % props.photos.length]!));
+    preload(fitLightboxUrl(props.photos[(i - 1 + props.photos.length) % props.photos.length]!));
   }
 }
 
 // Toggled by clicking the lightbox photo itself — see the template. Reset
 // on close/navigate so every photo opens at "fit to screen" first.
 const zoomed = ref(false);
+// What the lightbox <img> actually points at: the optimized fit-to-screen
+// rendition normally, the real original once zoomed in (see loadLightboxPhoto
+// for why the original isn't the default).
+const lightboxDisplaySrc = computed(() =>
+  zoomed.value && lightboxZoomUrl.value ? lightboxZoomUrl.value : lightboxSrc.value,
+);
 
 function openLightbox(photoIndex: number) {
   if (didDrag) {
@@ -385,6 +428,7 @@ function openLightbox(photoIndex: number) {
 function closeLightbox() {
   lightboxIndex.value = null;
   lightboxSrc.value = "";
+  lightboxZoomUrl.value = "";
   zoomed.value = false;
   resume();
 }
@@ -505,14 +549,12 @@ onUnmounted(() => {
           :aria-label="`Открыть фото ${(i % photos.length) + 1} из ${photos.length} на весь экран`"
           @click="openLightbox(i % photos.length)"
         >
-          <NuxtImg
+          <UiContentImage
             :src="thumbUrl(photo)"
-            format="webp"
             :sizes="`${THUMBNAIL_WIDTH}px`"
             alt=""
             draggable="false"
             class="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
-            loading="lazy"
           />
         </button>
       </div>
@@ -614,13 +656,15 @@ onUnmounted(() => {
           spinner below anchors straight to the dialog instead, which is
           already `position: fixed`.
 
-          Not zoomed: centered, capped to fit the screen (90vh tall). Click
-          toggles `zoomed`, which drops the cap so the image renders at its
-          real (upload-capped-at-2000px) resolution — on most screens
-          that's bigger than the viewport, so the wrapper switches from
-          centering to `overflow-auto` and lets the browser's native
-          scrollbars pan around it, same as zooming into any oversized
-          image.
+          Not zoomed: centered, capped to fit the screen (90vh tall), backed
+          by `lightboxSrc` — a viewport-sized, IPX-optimized rendition (see
+          `fitLightboxUrl`), not the original. Click toggles `zoomed`, which
+          both drops the cap and swaps the `src` (via `lightboxDisplaySrc`)
+          to `lightboxZoomUrl`, the real (upload-capped-at-2000px)
+          original — on most screens that's bigger than the viewport, so
+          the wrapper switches from centering to `overflow-auto` and lets
+          the browser's native scrollbars pan around it, same as zooming
+          into any oversized image.
         -->
         <div
           class="max-h-[94vh] max-w-[94vw]"
@@ -628,7 +672,7 @@ onUnmounted(() => {
         >
           <img
             v-if="lightboxSrc"
-            :src="lightboxSrc"
+            :src="lightboxDisplaySrc"
             alt=""
             class="rounded-lg transition-opacity duration-150"
             :class="[

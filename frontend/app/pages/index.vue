@@ -224,14 +224,12 @@ function capitalizeName(name: string): string {
           собственному соотношению сторон загруженного фото (если оно не
           9:16) перебить aspect-ratio и растянуть блок; см. коммит с
           разбором в CourseCard.vue. -->
-          <NuxtImg
+          <UiContentImage
             v-if="text('home_trial_image')"
             :src="resolveOptimizedMediaUrl(text('home_trial_image'))"
-            format="webp"
             alt=""
             class="order-1 mx-auto aspect-[9/16] max-h-[80vh] max-w-full min-h-0 rounded-lg object-cover md:sticky md:top-96 md:order-2"
             sizes="400:100vw md:50vw"
-            loading="lazy"
           />
           <div
             v-else
@@ -250,14 +248,12 @@ function capitalizeName(name: string): string {
             :key="teacher.id"
             class="flex w-full flex-col items-center gap-16 md:w-[calc((100%-48px)/3)]"
           >
-            <NuxtImg
+            <UiContentImage
               v-if="teacher.photo"
               :src="resolveOptimizedMediaUrl(teacher.photo)"
-              format="webp"
               :alt="teacher.name"
               class="aspect-square w-full min-h-0 rounded-lg object-cover"
               sizes="400:100vw md:33vw"
-              loading="lazy"
             />
             <div
               v-else

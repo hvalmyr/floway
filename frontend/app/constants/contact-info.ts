@@ -35,8 +35,9 @@ export interface SocialLink {
   disclaimer?: string;
 }
 
-// TODO: уточнить реальные ссылки на соцсети у заказчика (в макете иконки
-// Telegram/VK/Instagram-подобная показаны без подписанных URL).
+// Fallback for useSocialLinks() when /api/v1/social-links is empty or
+// unreachable — the real, admin-editable list lives in the social_links
+// table (see /admin/social-links).
 export const socialLinks: SocialLink[] = [
   { label: "Telegram", href: contactInfo.telegramUrl },
   { label: "VK", href: "https://vk.com/floway" },

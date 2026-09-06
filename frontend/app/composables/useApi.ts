@@ -17,6 +17,7 @@ import type {
   Masterclass,
   PageContent,
   PageFaq,
+  SocialLink,
   Teacher,
 } from "~/types/api";
 
@@ -189,6 +190,19 @@ export function useApi() {
   }
 
   /**
+   * GET /api/v1/social-links — public, no auth (social_link_handler.go's
+   * list route has no admin middleware, same as features/about-items).
+   * Already sorted by sortOrder on the backend.
+   */
+  async function getSocialLinks(): Promise<SocialLink[]> {
+    try {
+      return await client<SocialLink[]>("/api/v1/social-links");
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
    * GET /api/v1/blog-posts?status=published — draft posts are never
    * returned (see blog_post_handler.go). No mocks fallback: there's no
    * design brief for the blog yet, so this always hits the real backend.
@@ -230,6 +244,7 @@ export function useApi() {
     getAboutItems,
     getIcons,
     getPageContent,
+    getSocialLinks,
     getBlogPosts,
     getBlogPost,
     submitApplication,

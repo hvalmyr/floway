@@ -184,7 +184,7 @@ export interface Masterclass {
  * usePageContent(). `value` may contain markdown; render it with
  * <MarkdownContent> where the surrounding markup allows block content.
  */
-export type PageContentType = "text" | "image" | "icon";
+export type PageContentType = "text" | "image" | "icon" | "number";
 
 export interface PageContent {
   key: string;
@@ -228,6 +228,16 @@ export interface AboutItem {
   id: number;
   badge: string;
   description: string;
+  sortOrder: number;
+}
+
+/** Shape returned by the public GET /api/v1/social-links (list, no auth, pre-sorted by sortOrder). */
+export interface SocialLink {
+  id: number;
+  label: string;
+  href: string;
+  /** Legally required disclaimer text for some platforms in Russia (e.g. Meta-owned apps) — empty when none applies. */
+  disclaimer: string;
   sortOrder: number;
 }
 

@@ -5,7 +5,7 @@ interface PageContentItem {
   key: string;
   label: string;
   value: string;
-  type: "text" | "image" | "icon";
+  type: "text" | "image" | "icon" | "number";
   updatedAt: string;
 }
 
@@ -56,6 +56,14 @@ function onIconSelected(item: PageContentItem, value: string) {
   item.value = value;
   save(item);
 }
+
+// Not v-model: Vue's v-model auto-casts <input type="number"> to a JS
+// number even without the .number modifier, but item.value (and the PUT
+// body) must stay a string — the backend's Update takes a plain string and
+// 400s on a JSON number.
+function onNumberInput(item: PageContentItem, event: Event) {
+  item.value = (event.target as HTMLInputElement).value;
+}
 </script>
 
 <template>
@@ -88,6 +96,16 @@ function onIconSelected(item: PageContentItem, value: string) {
           v-else-if="item.type === 'icon'"
           :model-value="item.value"
           @update:model-value="(value) => onIconSelected(item, value)"
+        />
+        <input
+          v-else-if="item.type === 'number'"
+          :id="`field-${item.key}`"
+          :value="item.value"
+          type="number"
+          min="1"
+          max="100"
+          class="w-24 rounded border border-gray-300 px-2 py-1 text-sm"
+          @input="onNumberInput(item, $event)"
         />
         <AdminMarkdownField v-else :id="`field-${item.key}`" v-model="item.value" :rows="3" />
         <div class="mt-2 flex items-center gap-3">
