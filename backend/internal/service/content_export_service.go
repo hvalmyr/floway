@@ -88,6 +88,12 @@ func (s *ContentExportService) Export(ctx context.Context) (model.SiteContent, e
 	if out.CourseFAQItems, err = queryAll(ctx, s.db, `SELECT id, course_id, question, answer, sort_order, created_at, updated_at FROM course_faq_items ORDER BY id`, scanCourseFAQItem); err != nil {
 		return out, fmt.Errorf("export course faq items: %w", err)
 	}
+	if out.PageFAQSettings, err = queryAll(ctx, s.db, `SELECT page, title, description, visible, updated_at FROM page_faq_settings ORDER BY page`, scanPageFAQSettings); err != nil {
+		return out, fmt.Errorf("export page faq settings: %w", err)
+	}
+	if out.PageFAQItems, err = queryAll(ctx, s.db, `SELECT id, page, question, answer, sort_order, created_at, updated_at FROM page_faq_items ORDER BY id`, scanPageFAQItem); err != nil {
+		return out, fmt.Errorf("export page faq items: %w", err)
+	}
 	if out.Masterclasses, err = queryAll(ctx, s.db, `SELECT `+exportMasterclassColumns+` FROM masterclasses ORDER BY id`, scanExportMasterclass); err != nil {
 		return out, fmt.Errorf("export masterclasses: %w", err)
 	}
@@ -178,9 +184,11 @@ func (s *ContentExportService) Import(ctx context.Context, data model.SiteConten
 	if mode == ImportModeReplace {
 		// course_sections cascades to courses/course_blocks/lessons/
 		// course_faq_items (ON DELETE CASCADE, migrations 00016 and 00039) —
-		// deleting it alone clears the whole tree. page_content is never
-		// deleted (see importPageContent).
-		for _, table := range []string{"course_sections", "masterclasses", "teachers", "gallery_photos", "blog_posts", "faq_items", "features", "about_items", "social_links"} {
+		// deleting it alone clears the whole tree. page_content and
+		// page_faq_settings are never deleted (see importPageContent and
+		// importPageFAQSettings) — page_faq_items needs its own explicit
+		// clear since its parent row survives.
+		for _, table := range []string{"course_sections", "masterclasses", "teachers", "gallery_photos", "blog_posts", "faq_items", "features", "about_items", "social_links", "page_faq_items"} {
 			if _, err := tx.Exec(ctx, "DELETE FROM "+table); err != nil {
 				return ImportResult{}, fmt.Errorf("clear %s: %w", table, err)
 			}
@@ -221,6 +229,12 @@ func (s *ContentExportService) Import(ctx context.Context, data model.SiteConten
 		return ImportResult{}, fmt.Errorf("import course faq items: %w", err)
 	}
 	result.Counts["courseFaqItems"] = n
+
+	n, err = bulkWrite(ctx, tx, "page_faq_items", []string{"id", "page", "question", "answer", "sort_order"}, data.PageFAQItems, pageFAQItemArgs, conflictCol)
+	if err != nil {
+		return ImportResult{}, fmt.Errorf("import page faq items: %w", err)
+	}
+	result.Counts["pageFaqItems"] = n
 
 	n, err = bulkWrite(ctx, tx, "masterclasses", []string{"id", "slug", "title", "description", "description2", "ending_text", "duration", "price", "cover_image", "status"}, data.Masterclasses, masterclassArgs, conflictCol)
 	if err != nil {
@@ -273,7 +287,7 @@ func (s *ContentExportService) Import(ctx context.Context, data model.SiteConten
 	// Every id-bearing table above just got explicit ids inserted — bump each
 	// sequence past the highest one, or the next plain admin-panel Create()
 	// (which never specifies an id) will collide with an imported row.
-	for _, table := range []string{"course_sections", "courses", "course_blocks", "lessons", "course_faq_items", "masterclasses", "teachers", "gallery_photos", "blog_posts", "faq_items", "features", "about_items", "social_links"} {
+	for _, table := range []string{"course_sections", "courses", "course_blocks", "lessons", "course_faq_items", "page_faq_items", "masterclasses", "teachers", "gallery_photos", "blog_posts", "faq_items", "features", "about_items", "social_links"} {
 		if _, err := tx.Exec(ctx, `SELECT setval(pg_get_serial_sequence($1, 'id'), GREATEST((SELECT COALESCE(MAX(id), 0) FROM `+table+`), 1))`, table); err != nil {
 			return ImportResult{}, fmt.Errorf("reset %s id sequence: %w", table, err)
 		}
@@ -285,6 +299,12 @@ func (s *ContentExportService) Import(ctx context.Context, data model.SiteConten
 	}
 	result.Counts["pageContent"] = updated
 	result.PageContentSkipped = skipped
+
+	updated, err = importPageFAQSettings(ctx, tx, data.PageFAQSettings)
+	if err != nil {
+		return ImportResult{}, fmt.Errorf("import page faq settings: %w", err)
+	}
+	result.Counts["pageFaqSettings"] = updated
 
 	if err := tx.Commit(ctx); err != nil {
 		return ImportResult{}, err
@@ -334,6 +354,30 @@ func importPageContent(ctx context.Context, tx pgx.Tx, items []model.PageContent
 		updated++
 	}
 	return updated, skipped, nil
+}
+
+// importPageFAQSettings mirrors importPageContent's reasoning: every valid
+// page's settings row is seeded by migration 00040, never created or
+// deleted through the API — only its title/description/visible are ever
+// updated. Unlike importPageContent, a page not present on this server is
+// a genuine error (there are only ever the two known pages, no legitimate
+// version-skew case where a whole page is missing) rather than a skip.
+func importPageFAQSettings(ctx context.Context, tx pgx.Tx, items []model.PageFAQSettings) (int, error) {
+	updated := 0
+	for _, item := range items {
+		tag, err := tx.Exec(ctx, `
+			UPDATE page_faq_settings SET title = $1, description = $2, visible = $3, updated_at = now()
+			WHERE page = $4
+		`, item.Title, item.Description, item.Visible, item.Page)
+		if err != nil {
+			return 0, err
+		}
+		if tag.RowsAffected() == 0 {
+			return 0, fmt.Errorf("page faq settings: unknown page %q", item.Page)
+		}
+		updated++
+	}
+	return updated, nil
 }
 
 // --- generic read/write helpers ------------------------------------------
@@ -535,4 +579,19 @@ func scanPageContent(row pgx.CollectableRow) (model.PageContent, error) {
 	var m model.PageContent
 	err := row.Scan(&m.Key, &m.Label, &m.Value, &m.Type, &m.UpdatedAt)
 	return m, err
+}
+
+func scanPageFAQSettings(row pgx.CollectableRow) (model.PageFAQSettings, error) {
+	var m model.PageFAQSettings
+	err := row.Scan(&m.Page, &m.Title, &m.Description, &m.Visible, &m.UpdatedAt)
+	return m, err
+}
+
+func scanPageFAQItem(row pgx.CollectableRow) (model.PageFAQItem, error) {
+	var m model.PageFAQItem
+	err := row.Scan(&m.ID, &m.Page, &m.Question, &m.Answer, &m.SortOrder, &m.CreatedAt, &m.UpdatedAt)
+	return m, err
+}
+func pageFAQItemArgs(m model.PageFAQItem) []any {
+	return []any{m.ID, m.Page, m.Question, m.Answer, m.SortOrder}
 }

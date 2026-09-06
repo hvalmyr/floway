@@ -129,7 +129,7 @@ const openLessonIds = ref<Record<number, Array<string | number>>>(
 
     <section v-if="course.faqVisible && course.faqItems.length" class="py-48 sm:py-64 lg:py-80">
       <div class="container">
-        <CourseFaq
+        <FaqSection
           :title="course.faqTitle || 'Вопросы и ответы'"
           :description="course.faqDescription"
           :items="course.faqItems"

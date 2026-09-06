@@ -76,6 +76,27 @@ export interface CourseFAQItem {
   sortOrder: number;
 }
 
+/** Pages with their own FAQ block, managed under Редактирование → Компоненты → FAQ. */
+export type FaqPage = "masterclasses" | "gift_certificate";
+
+/** One Q&A pair in a page-scoped FAQ block — the non-course counterpart of CourseFAQItem. */
+export interface PageFaqItem {
+  id: number;
+  page: FaqPage;
+  question: string;
+  answer: string;
+  sortOrder: number;
+}
+
+/** Shape returned by the public GET /api/v1/page-faq/{page}. */
+export interface PageFaq {
+  page: FaqPage;
+  title: string;
+  description: string;
+  visible: boolean;
+  items: PageFaqItem[];
+}
+
 /**
  * A course's blocks carry their own lesson list directly (via
  * CourseBlockWithLessons below) — there's no separate "curriculum" level.

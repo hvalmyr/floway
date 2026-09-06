@@ -141,6 +141,41 @@ type CourseFAQItem struct {
 	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
 }
 
+// PageFAQSettings is the title/description/visible flag for a FAQ block on a
+// fixed, non-course page (masterclasses, gift certificate) — same fields as
+// Course.FAQTitle/FAQDescription/FAQVisible, but keyed by a page identifier
+// instead of a course id since these pages aren't rows in a table. Seeded by
+// migration 00040, one row per valid page — never created/deleted through
+// the API, only updated.
+type PageFAQSettings struct {
+	Page        string    `db:"page" json:"page"`
+	Title       string    `db:"title" json:"title"`
+	Description string    `db:"description" json:"description"`
+	Visible     bool      `db:"visible" json:"visible"`
+	UpdatedAt   time.Time `db:"updated_at" json:"updatedAt"`
+}
+
+// PageFAQItem is one Q&A pair in a page-scoped FAQ block — the
+// non-course-scoped counterpart of CourseFAQItem above.
+type PageFAQItem struct {
+	ID        int64     `db:"id" json:"id"`
+	Page      string    `db:"page" json:"page"`
+	Question  string    `db:"question" json:"question"`
+	Answer    string    `db:"answer" json:"answer"`
+	SortOrder int       `db:"sort_order" json:"sortOrder"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
+}
+
+// PageFAQ is the public GET /api/v1/page-faq/{page} shape — settings and
+// items in one response, always populated regardless of Visible; the
+// frontend gates rendering on that flag itself (mirrors
+// CourseWithBlocks.FAQItems).
+type PageFAQ struct {
+	PageFAQSettings
+	Items []PageFAQItem `json:"items"`
+}
+
 // CourseSummary is the homepage listing shape — blocks without lesson text,
 // since the homepage only needs each course's first block's cover/lessonCount/
 // timeLength (and blockName when there's more than one block).
@@ -472,23 +507,25 @@ type ExportFile struct {
 // Used by ContentExportService for backup/restore and for moving content
 // between environments.
 type SiteContent struct {
-	Version        int             `json:"version"`
-	ExportedAt     time.Time       `json:"exportedAt"`
-	CourseSections []CourseSection `json:"courseSections"`
-	Courses        []Course        `json:"courses"`
-	CourseBlocks   []CourseBlock   `json:"courseBlocks"`
-	Lessons        []Lesson        `json:"lessons"`
-	CourseFAQItems []CourseFAQItem `json:"courseFaqItems"`
-	Masterclasses  []Masterclass   `json:"masterclasses"`
-	Teachers       []Teacher       `json:"teachers"`
-	GalleryPhotos  []GalleryPhoto  `json:"galleryPhotos"`
-	BlogPosts      []BlogPost      `json:"blogPosts"`
-	FAQItems       []FAQItem       `json:"faqItems"`
-	Features       []Feature       `json:"features"`
-	AboutItems     []AboutItem     `json:"aboutItems"`
-	SocialLinks    []SocialLink    `json:"socialLinks"`
-	PageContent    []PageContent   `json:"pageContent"`
-	Files          []ExportFile    `json:"files"`
+	Version         int               `json:"version"`
+	ExportedAt      time.Time         `json:"exportedAt"`
+	CourseSections  []CourseSection   `json:"courseSections"`
+	Courses         []Course          `json:"courses"`
+	CourseBlocks    []CourseBlock     `json:"courseBlocks"`
+	Lessons         []Lesson          `json:"lessons"`
+	CourseFAQItems  []CourseFAQItem   `json:"courseFaqItems"`
+	PageFAQSettings []PageFAQSettings `json:"pageFaqSettings"`
+	PageFAQItems    []PageFAQItem     `json:"pageFaqItems"`
+	Masterclasses   []Masterclass     `json:"masterclasses"`
+	Teachers        []Teacher         `json:"teachers"`
+	GalleryPhotos   []GalleryPhoto    `json:"galleryPhotos"`
+	BlogPosts       []BlogPost        `json:"blogPosts"`
+	FAQItems        []FAQItem         `json:"faqItems"`
+	Features        []Feature         `json:"features"`
+	AboutItems      []AboutItem       `json:"aboutItems"`
+	SocialLinks     []SocialLink      `json:"socialLinks"`
+	PageContent     []PageContent     `json:"pageContent"`
+	Files           []ExportFile      `json:"files"`
 }
 
 type AdminUser struct {

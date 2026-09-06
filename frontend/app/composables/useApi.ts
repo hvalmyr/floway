@@ -8,6 +8,7 @@ import type {
   CourseSectionWithCourses,
   CourseWithBlocks,
   FAQItem,
+  FaqPage,
   Feature,
   FeaturePage,
   GalleryPhoto,
@@ -15,6 +16,7 @@ import type {
   Lead,
   Masterclass,
   PageContent,
+  PageFaq,
   Teacher,
 } from "~/types/api";
 
@@ -146,6 +148,21 @@ export function useApi() {
   }
 
   /**
+   * GET /api/v1/page-faq/{page} — public, no auth. Title/description/
+   * visible plus the Q&A items for a page-scoped FAQ block (masterclasses,
+   * gift certificate) — see page_faq_handler.go. Distinct from getFAQItems()
+   * (the flat, unscoped homepage FAQ) and from CourseWithBlocks.faqItems
+   * (embedded in getCourse() instead of its own endpoint).
+   */
+  async function getPageFaq(page: FaqPage): Promise<PageFaq | null> {
+    try {
+      return await client<PageFaq>(`/api/v1/page-faq/${page}`);
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
    * GET /api/v1/about-items — public, no auth. Badge+description cards for
    * the homepage "О школе" section. Already sorted by sortOrder.
    */
@@ -209,6 +226,7 @@ export function useApi() {
     getGalleryPhotos,
     getFAQItems,
     getFeatures,
+    getPageFaq,
     getAboutItems,
     getIcons,
     getPageContent,

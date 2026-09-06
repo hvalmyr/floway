@@ -12,6 +12,10 @@ const { data: featuresData } = await useAsyncData("gift-certificate-features", (
   api.getFeatures("gift_certificate"),
 );
 
+const { data: faq } = await useAsyncData("gift-certificate-faq", () =>
+  api.getPageFaq("gift_certificate"),
+);
+
 const advantages = computed(
   () =>
     featuresData.value
@@ -74,6 +78,16 @@ const advantages = computed(
             lead="Свяжемся с вами, поможем выбрать мастер-класс и оформим сертификат."
           />
         </div>
+      </div>
+    </section>
+
+    <section v-if="faq?.visible && faq.items.length" class="py-48 sm:py-64 lg:py-80">
+      <div class="container">
+        <FaqSection
+          :title="faq.title || 'Вопросы и ответы'"
+          :description="faq.description"
+          :items="faq.items"
+        />
       </div>
     </section>
   </div>

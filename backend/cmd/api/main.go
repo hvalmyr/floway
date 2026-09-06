@@ -68,6 +68,7 @@ func run(logger *slog.Logger) error {
 	courseBlockRepo := repository.NewCourseBlockRepository(pool)
 	lessonRepo := repository.NewLessonRepository(pool)
 	courseFAQRepo := repository.NewCourseFAQRepository(pool)
+	pageFAQRepo := repository.NewPageFAQRepository(pool)
 	masterclassRepo := repository.NewMasterclassRepository(pool)
 	leadRepo := repository.NewLeadRepository(pool)
 	clientRepo := repository.NewClientRepository(pool)
@@ -101,6 +102,7 @@ func run(logger *slog.Logger) error {
 		CourseBlock:   service.NewCourseBlockService(courseBlockRepo),
 		Lesson:        service.NewLessonService(lessonRepo),
 		CourseFAQ:     service.NewCourseFAQService(courseFAQRepo),
+		PageFAQ:       service.NewPageFAQService(pageFAQRepo),
 		CourseCatalog: service.NewCourseCatalogService(courseSectionRepo, courseRepo, courseRepo, courseBlockRepo, courseBlockRepo, lessonRepo, courseFAQRepo),
 		Lead:          service.NewLeadService(leadRepo, clientRepo, leadNotifier, courseRepo, masterclassRepo),
 		Client: service.NewClientService(

@@ -17,6 +17,10 @@ const { data: featuresData } = await useAsyncData("masterclasses-features", () =
   api.getFeatures("masterclasses"),
 );
 
+const { data: faq } = await useAsyncData("masterclasses-faq", () =>
+  api.getPageFaq("masterclasses"),
+);
+
 // Set by whichever MasterclassCard's "Записаться" was clicked last — there's
 // one shared ApplyForm below the whole list (not one per card), so this is
 // the only way the lead ends up tagged with which masterclass it was about.
@@ -92,6 +96,16 @@ const features = computed(
             title="Оставить заявку на мастер-класс"
           />
         </div>
+      </div>
+    </section>
+
+    <section v-if="faq?.visible && faq.items.length" class="py-48 sm:py-64 lg:py-80">
+      <div class="container">
+        <FaqSection
+          :title="faq.title || 'Вопросы и ответы'"
+          :description="faq.description"
+          :items="faq.items"
+        />
       </div>
     </section>
   </div>
