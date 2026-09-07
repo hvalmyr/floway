@@ -18,6 +18,18 @@
  * off so e.g. `object-cover` from a caller's `class` actually sizes the
  * photo instead of doing nothing on a <picture> element.
  *
+ * <picture> itself is forced to `display: contents` — every call site's
+ * `class` was written for a bare <img>/<NuxtImg> that WAS the direct flex
+ * or grid item (e.g. MasterclassCard's `lg:w-[38%] lg:shrink-0`, or
+ * index.vue's `order-1`/`md:sticky`). Without `contents`, <picture> is the
+ * actual flex/grid item instead — sized by its own default flex-basis,
+ * `w-[38%]`/`shrink-0`/`order`/`sticky` land on the *inner* <img> instead,
+ * where a flex/grid/sticky property has no parent to act against, and the
+ * photo renders shrunk and out of place (confirmed live: MasterclassCard's
+ * image sat at 38% of the wrong box instead of its intended column).
+ * `contents` removes <picture>'s own box entirely, so <img> becomes the
+ * real flex/grid item — exactly the pre-<picture> layout behavior.
+ *
  * @example
  * <UiContentImage
  *   :src="resolveOptimizedMediaUrl(coverImage)"
@@ -61,7 +73,7 @@ const webpDesktop = computed(() =>
 </script>
 
 <template>
-  <picture>
+  <picture class="contents">
     <source type="image/avif" :srcset="avif.srcset" :sizes="avif.sizes" />
     <source
       :media="MOBILE_MEDIA"

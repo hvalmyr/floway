@@ -69,17 +69,17 @@ const AUTOPLAY_MS = 4000;
 // Below this, a press-and-release (mouse or touch) counts as a tap/click
 // rather than a drag — see openLightbox's `didDrag` check.
 const DRAG_CLICK_THRESHOLD_PX = 6;
-// Cards in the row are tall (up to 66vh, see the slide's height classes
-// below) but narrow (aspect-[3/4]) — no reason to make the browser pull
-// down the same multi-hundred-KB full-size file (the one the lightbox/
-// zoom need) when a lighter rendition looks identical at card size. Fed
-// to NuxtImg's `sizes` (not `width`) — `width` alone makes it emit a bare
-// 1x/2x density srcset with no `sizes` attribute, so the browser picks by
-// screen DPR alone with no idea the image only renders this small; a
-// real `sizes` value lets it size correctly against the DPR it actually
-// has (confirmed live: bare `width` was shipping 1800px files to a ~300px
-// slide on a real mobile audit).
-const THUMBNAIL_WIDTH = 400;
+// Cards are pinned to `h-[40vh]` (see the slide's class below) with an
+// `aspect-[3/4]` box, so their rendered WIDTH tracks viewport HEIGHT, not
+// width: 40vh tall × 3/4 = 30vh wide, at every breakpoint (no responsive
+// variants on this class). `sizes` accepts any CSS length, including `vh`,
+// so this describes the real box exactly instead of a fixed guess — a
+// fixed px value (e.g. "400px") is only right at whatever viewport height
+// happens to make 30vh equal 400px, and was overshooting badly at other
+// heights (confirmed live via Lighthouse: a 247×329 card was pulling an
+// 800×1067 file, ~90% wasted bytes, because "400px" doesn't know the box
+// only spans 30% of viewport height here).
+const THUMBNAIL_SIZES = "30vh";
 // Matches the track's `duration-500` class, plus a small buffer so the
 // snap-back never fires before the (possibly reduced-motion-skipped) CSS
 // transition has actually finished.
@@ -551,7 +551,7 @@ onUnmounted(() => {
         >
           <UiContentImage
             :src="thumbUrl(photo)"
-            :sizes="`${THUMBNAIL_WIDTH}px`"
+            :sizes="THUMBNAIL_SIZES"
             alt=""
             draggable="false"
             class="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
