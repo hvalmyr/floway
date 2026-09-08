@@ -71,15 +71,19 @@ const AUTOPLAY_MS = 4000;
 const DRAG_CLICK_THRESHOLD_PX = 6;
 // Cards are pinned to `h-[40vh]` (see the slide's class below) with an
 // `aspect-[3/4]` box, so their rendered WIDTH tracks viewport HEIGHT, not
-// width: 40vh tall × 3/4 = 30vh wide, at every breakpoint (no responsive
-// variants on this class). `sizes` accepts any CSS length, including `vh`,
-// so this describes the real box exactly instead of a fixed guess — a
-// fixed px value (e.g. "400px") is only right at whatever viewport height
-// happens to make 30vh equal 400px, and was overshooting badly at other
-// heights (confirmed live via Lighthouse: a 247×329 card was pulling an
-// 800×1067 file, ~90% wasted bytes, because "400px" doesn't know the box
-// only spans 30% of viewport height here).
-const THUMBNAIL_SIZES = "30vh";
+// width — a flat "400px" was only right at whatever viewport height
+// happens to make the box 400px wide, and overshot badly everywhere else
+// (confirmed live via Lighthouse: a 247×329 card was pulling an 800×1067
+// file, ~90% wasted bytes). `vh` would describe it exactly, but @nuxt/
+// image's `sizes` DSL (getSizesVariant in its runtime) only recognizes
+// values ending in "vw" or "px" — anything else makes it return an EMPTY
+// srcset/sizes for that entry, i.e. no `src` at all (confirmed live: a
+// `sizes="30vh"` here made every carousel thumbnail fail to load, not just
+// render at the wrong size). So instead of describing the box in CSS units,
+// `thumbSizesPx` below measures its actual rendered width directly off the
+// DOM (same measurement `measureStep` already takes for `stepPx`) and feeds
+// that back in as a plain "<n>px" — exact, and a unit @nuxt/image accepts.
+const thumbSizesPx = ref(300);
 // Matches the track's `duration-500` class, plus a small buffer so the
 // snap-back never fires before the (possibly reduced-motion-skipped) CSS
 // transition has actually finished.
@@ -137,7 +141,9 @@ function measureStep() {
   const first = track?.children[0] as HTMLElement | undefined;
   if (!track || !first) return;
   const gap = parseFloat(getComputedStyle(track).columnGap || "0");
-  stepPx.value = first.getBoundingClientRect().width + gap;
+  const firstWidth = first.getBoundingClientRect().width;
+  stepPx.value = firstWidth + gap;
+  if (firstWidth > 0) thumbSizesPx.value = Math.round(firstWidth);
 }
 
 function next() {
@@ -551,7 +557,7 @@ onUnmounted(() => {
         >
           <UiContentImage
             :src="thumbUrl(photo)"
-            :sizes="THUMBNAIL_SIZES"
+            :sizes="`${thumbSizesPx}px`"
             alt=""
             draggable="false"
             class="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
