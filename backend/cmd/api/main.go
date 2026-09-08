@@ -15,6 +15,7 @@ import (
 	"floway-backend/internal/auth"
 	"floway-backend/internal/config"
 	"floway-backend/internal/httpserver"
+	"floway-backend/internal/model"
 	"floway-backend/internal/notify"
 	"floway-backend/internal/repository"
 	"floway-backend/internal/service"
@@ -74,13 +75,33 @@ func run(logger *slog.Logger) error {
 	clientRepo := repository.NewClientRepository(pool)
 	productTagRepo := repository.NewProductTagRepository(pool)
 	clientTypeTagRepo := repository.NewClientTypeTagRepository(pool)
+	notificationEmailRepo := repository.NewNotificationEmailRepository(pool)
+
+	// One-time seed for existing deployments: NOTIFY_EMAIL_TO used to be the
+	// only way to configure a recipient. If the admin-editable list (see
+	// NotificationEmailService) is still empty, carry that address over so
+	// notifications don't silently stop; once seeded, the DB list is the
+	// source of truth and this env var is otherwise unused.
+	if cfg.NotifyEmailTo != "" {
+		existing, err := notificationEmailRepo.List(ctx)
+		if err != nil {
+			return fmt.Errorf("list notification emails: %w", err)
+		}
+		if len(existing) == 0 {
+			if _, err := notificationEmailRepo.Create(ctx, model.NotificationEmail{Email: cfg.NotifyEmailTo}); err != nil {
+				return fmt.Errorf("seed notification email: %w", err)
+			}
+		}
+	}
 
 	// Both channels are optional and independent — SMTP_*/TELEGRAM_* are
 	// deliberately absent from config.Load()'s required checks, so an
 	// unconfigured channel is silently skipped rather than failing startup.
+	// The email channel's actual recipients live in notification_emails
+	// (admin-editable) and are read fresh on every send, not fixed here.
 	var leadNotifyChannels []notify.Channel
-	if cfg.SMTPHost != "" && cfg.NotifyEmailTo != "" {
-		leadNotifyChannels = append(leadNotifyChannels, notify.NewEmailNotifier(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPFrom, cfg.NotifyEmailTo, cfg.FrontendOrigin+"/admin/leads", cfg.SMTPUser, cfg.SMTPPassword))
+	if cfg.SMTPHost != "" {
+		leadNotifyChannels = append(leadNotifyChannels, notify.NewEmailNotifier(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPFrom, cfg.FrontendOrigin+"/admin/leads", cfg.SMTPUser, cfg.SMTPPassword, notificationEmailRepo))
 	}
 	if cfg.TelegramBotToken != "" && cfg.TelegramChatID != "" {
 		leadNotifyChannels = append(leadNotifyChannels, notify.NewTelegramNotifier(cfg.TelegramBotToken, cfg.TelegramChatID))
@@ -113,15 +134,17 @@ func run(logger *slog.Logger) error {
 			repository.NewClientCommentRepository(pool),
 			repository.NewReminderRepository(pool),
 		),
-		Tag:           service.NewTagService(productTagRepo, clientTypeTagRepo),
-		AdminUser:     service.NewAdminUserService(repository.NewAdminUserRepository(pool)),
-		PageContent:   service.NewPageContentService(repository.NewPageContentRepository(pool), garageClient),
-		Feature:       service.NewFeatureService(repository.NewFeatureRepository(pool)),
-		AboutItem:     service.NewAboutItemService(repository.NewAboutItemRepository(pool)),
-		SocialLink:    service.NewSocialLinkService(repository.NewSocialLinkRepository(pool)),
-		GalleryPhoto:  service.NewGalleryPhotoService(repository.NewGalleryPhotoRepository(pool)),
-		Icon:          service.NewIconService(repository.NewIconRepository(pool)),
-		ContentExport: service.NewContentExportService(pool, garageClient),
+		Tag:                          service.NewTagService(productTagRepo, clientTypeTagRepo),
+		AdminUser:                    service.NewAdminUserService(repository.NewAdminUserRepository(pool)),
+		PageContent:                  service.NewPageContentService(repository.NewPageContentRepository(pool), garageClient),
+		Feature:                      service.NewFeatureService(repository.NewFeatureRepository(pool)),
+		AboutItem:                    service.NewAboutItemService(repository.NewAboutItemRepository(pool)),
+		SocialLink:                   service.NewSocialLinkService(repository.NewSocialLinkRepository(pool)),
+		GalleryPhoto:                 service.NewGalleryPhotoService(repository.NewGalleryPhotoRepository(pool)),
+		GiftCertificateCarouselPhoto: service.NewGiftCertificateCarouselPhotoService(repository.NewGiftCertificateCarouselPhotoRepository(pool)),
+		NotificationEmail:            service.NewNotificationEmailService(notificationEmailRepo),
+		Icon:                         service.NewIconService(repository.NewIconRepository(pool)),
+		ContentExport:                service.NewContentExportService(pool, garageClient),
 
 		Storage: garageClient,
 		DB:      pool,

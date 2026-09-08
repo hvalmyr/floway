@@ -16,6 +16,13 @@ const { data: faq } = await useAsyncData("gift-certificate-faq", () =>
   api.getPageFaq("gift_certificate"),
 );
 
+const { data: carouselPhotosData } = await useAsyncData("gift-certificate-carousel-photos", () =>
+  api.getGiftCertificateCarouselPhotos(),
+);
+const carouselPhotos = computed(
+  () => carouselPhotosData.value?.slice().sort((a, b) => a.sortOrder - b.sortOrder) ?? [],
+);
+
 const advantages = computed(
   () =>
     featuresData.value
@@ -51,6 +58,12 @@ const advantages = computed(
       </template>
     </Hero>
 
+    <section v-if="carouselPhotos.length" class="py-48 sm:py-64 lg:py-80">
+      <div class="container">
+        <PhotoCarousel :photos="carouselPhotos" />
+      </div>
+    </section>
+
     <section class="bg-surface/55 py-48 backdrop-blur backdrop-saturate-150 sm:py-64 lg:py-80">
       <div class="container flex flex-col gap-48">
         <SectionHeading color="primary" on-glass>
@@ -74,8 +87,12 @@ const advantages = computed(
         <div class="mx-auto max-w-[720px]">
           <ApplyForm
             context="masterclass"
-            title="Оставить заявку на подарочный сертификат"
-            lead="Свяжемся с вами, поможем выбрать мастер-класс и оформим сертификат."
+            :title="
+              text('gift_certificate_apply_form_title', 'Оставить заявку на подарочный сертификат')
+            "
+            :lead="
+              text('gift_certificate_apply_form_lead', 'Свяжемся с вами и оформим сертификат.')
+            "
           />
         </div>
       </div>

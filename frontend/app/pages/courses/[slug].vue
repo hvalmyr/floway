@@ -5,6 +5,7 @@ const route = useRoute();
 const slug = route.params.slug as string;
 
 const api = useApi();
+const { text } = await usePageContent();
 const { data: course } = await useAsyncData(`course-${slug}`, () => api.getCourse(slug));
 
 if (!course.value) {
@@ -121,7 +122,8 @@ const openLessonIds = ref<Record<number, Array<string | number>>>(
             context="course"
             :related-id="course.id"
             :related-slug="course.slug"
-            title="Записаться на курс"
+            :title="text('course_apply_form_title', 'Записаться на курс')"
+            :lead="text('course_apply_form_lead', '')"
           />
         </div>
       </div>

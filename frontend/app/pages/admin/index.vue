@@ -21,6 +21,8 @@ const editingGroups: EditingGroup[] = [
       { to: "/admin/features", label: "Преимущества" },
       { to: "/admin/page-content/hero", label: "Hero-блок" },
       { to: "/admin/gallery-photos", label: "Фотогалерея" },
+      { to: "/admin/gift-certificate-photos", label: "Карусель (сертификаты)" },
+      { to: "/admin/page-content/apply-form-titles", label: "Заголовки формы заявки" },
       { to: "/admin/icons", label: "Библиотека иконок" },
     ],
   },
@@ -39,6 +41,7 @@ const editingGroups: EditingGroup[] = [
     links: [
       { to: "/admin/page-content/info", label: "Контакты и реквизиты" },
       { to: "/admin/social-links", label: "Соцсети" },
+      { to: "/admin/notification-emails", label: "Email для уведомлений о заявках" },
       { to: "/admin/page-content", label: "Все тексты сайта (полный список)" },
       { to: "/admin/content-export", label: "Экспорт / импорт" },
     ],

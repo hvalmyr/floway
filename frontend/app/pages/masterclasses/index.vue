@@ -93,7 +93,8 @@ const features = computed(
           <ApplyForm
             context="masterclass"
             :related-slug="selectedSlug"
-            title="Оставить заявку на мастер-класс"
+            :title="text('masterclasses_apply_form_title', 'Оставить заявку на мастер-класс')"
+            :lead="text('masterclasses_apply_form_lead', '')"
           />
         </div>
       </div>

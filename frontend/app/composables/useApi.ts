@@ -12,6 +12,7 @@ import type {
   Feature,
   FeaturePage,
   GalleryPhoto,
+  GiftCertificateCarouselPhoto,
   Icon,
   Lead,
   Masterclass,
@@ -104,6 +105,21 @@ export function useApi() {
   async function getGalleryPhotos(): Promise<GalleryPhoto[]> {
     try {
       return await client<GalleryPhoto[]>("/api/v1/gallery-photos");
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/gift-certificate-carousel-photos — public, no auth. Slides
+   * for the carousel right after the hero on the gift-certificates page,
+   * pre-sorted by sortOrder.
+   */
+  async function getGiftCertificateCarouselPhotos(): Promise<GiftCertificateCarouselPhoto[]> {
+    try {
+      return await client<GiftCertificateCarouselPhoto[]>(
+        "/api/v1/gift-certificate-carousel-photos",
+      );
     } catch (err) {
       throw toApiError(err);
     }
@@ -238,6 +254,7 @@ export function useApi() {
     getMasterClasses,
     getTeachers,
     getGalleryPhotos,
+    getGiftCertificateCarouselPhotos,
     getFAQItems,
     getFeatures,
     getPageFaq,

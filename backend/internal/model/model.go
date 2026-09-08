@@ -239,6 +239,24 @@ type GalleryPhoto struct {
 	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
 }
 
+// GiftCertificateCarouselPhoto is one slide of the gift-certificates page's
+// photo carousel, shown right after the hero block.
+type GiftCertificateCarouselPhoto struct {
+	ID        int64     `db:"id" json:"id"`
+	Image     string    `db:"image" json:"image"`
+	SortOrder int       `db:"sort_order" json:"sortOrder"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
+}
+
+// NotificationEmail is one recipient address for new-lead email
+// notifications (see internal/notify.EmailNotifier).
+type NotificationEmail struct {
+	ID        int64     `db:"id" json:"id"`
+	Email     string    `db:"email" json:"email"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt"`
+}
+
 type BlogPostStatus string
 
 const (

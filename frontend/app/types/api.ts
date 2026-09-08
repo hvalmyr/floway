@@ -269,6 +269,18 @@ export interface GalleryPhoto {
   sortOrder: number;
 }
 
+/**
+ * One slide of the gift-certificates page's photo carousel, shown right
+ * after the hero block. Shape returned by the public
+ * GET /api/v1/gift-certificate-carousel-photos (list, no auth, pre-sorted by
+ * sortOrder).
+ */
+export interface GiftCertificateCarouselPhoto {
+  id: number;
+  image: string;
+  sortOrder: number;
+}
+
 export type BlogPostStatus = "draft" | "published";
 
 /**

@@ -46,28 +46,30 @@ func newBodySizeLimiter(max int64) func(http.Handler) http.Handler {
 }
 
 type Services struct {
-	FAQ           *service.FAQService
-	Teacher       *service.TeacherService
-	BlogPost      *service.BlogPostService
-	Masterclass   *service.MasterclassService
-	CourseSection *service.CourseSectionService
-	Course        *service.CourseService
-	CourseBlock   *service.CourseBlockService
-	Lesson        *service.LessonService
-	CourseFAQ     *service.CourseFAQService
-	PageFAQ       *service.PageFAQService
-	CourseCatalog *service.CourseCatalogService
-	Lead          *service.LeadService
-	Client        *service.ClientService
-	Tag           *service.TagService
-	AdminUser     *service.AdminUserService
-	PageContent   *service.PageContentService
-	Feature       *service.FeatureService
-	AboutItem     *service.AboutItemService
-	SocialLink    *service.SocialLinkService
-	GalleryPhoto  *service.GalleryPhotoService
-	Icon          *service.IconService
-	ContentExport *service.ContentExportService
+	FAQ                          *service.FAQService
+	Teacher                      *service.TeacherService
+	BlogPost                     *service.BlogPostService
+	Masterclass                  *service.MasterclassService
+	CourseSection                *service.CourseSectionService
+	Course                       *service.CourseService
+	CourseBlock                  *service.CourseBlockService
+	Lesson                       *service.LessonService
+	CourseFAQ                    *service.CourseFAQService
+	PageFAQ                      *service.PageFAQService
+	CourseCatalog                *service.CourseCatalogService
+	Lead                         *service.LeadService
+	Client                       *service.ClientService
+	Tag                          *service.TagService
+	AdminUser                    *service.AdminUserService
+	PageContent                  *service.PageContentService
+	Feature                      *service.FeatureService
+	AboutItem                    *service.AboutItemService
+	SocialLink                   *service.SocialLinkService
+	GalleryPhoto                 *service.GalleryPhotoService
+	GiftCertificateCarouselPhoto *service.GiftCertificateCarouselPhotoService
+	NotificationEmail            *service.NotificationEmailService
+	Icon                         *service.IconService
+	ContentExport                *service.ContentExportService
 
 	Storage *storage.Client
 	// DB is used only by /readyz. Reaching into the pool directly here (not
@@ -166,6 +168,8 @@ func NewRouter(services Services) http.Handler {
 			r.Route("/course-blocks/{blockId}/lessons", newLessonHandler(services.Lesson, admin).routes)
 			r.Route("/page-faq/{page}", newPageFAQHandler(services.PageFAQ, admin).routes)
 			r.Route("/gallery-photos", newGalleryPhotoHandler(services.GalleryPhoto, admin).routes)
+			r.Route("/gift-certificate-carousel-photos", newGiftCertificateCarouselPhotoHandler(services.GiftCertificateCarouselPhoto, admin).routes)
+			r.Route("/notification-emails", newNotificationEmailHandler(services.NotificationEmail, admin).routes)
 			r.Route("/leads", newLeadHandler(services.Lead, admin, leadLimiter).routes)
 			r.Route("/clients", newClientHandler(services.Client, admin).routes)
 			r.Route("/tags", newTagHandler(services.Tag, admin).routes)
