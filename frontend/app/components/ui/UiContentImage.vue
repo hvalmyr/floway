@@ -13,22 +13,34 @@
  * quality number is about codec artifacts, not viewport size, and it
  * already needs a much lower value than webp for an equivalent look.
  *
- * `class` and any other passthrough attrs (draggable, event handlers, …)
- * land on the rendered <img>, not the wrapping <picture> — inheritAttrs is
- * off so e.g. `object-cover` from a caller's `class` actually sizes the
- * photo instead of doing nothing on a <picture> element.
- *
- * <picture> itself is forced to `display: contents` — every call site's
- * `class` was written for a bare <img>/<NuxtImg> that WAS the direct flex
- * or grid item (e.g. MasterclassCard's `lg:w-[38%] lg:shrink-0`, or
- * index.vue's `order-1`/`md:sticky`). Without `contents`, <picture> is the
- * actual flex/grid item instead — sized by its own default flex-basis,
- * `w-[38%]`/`shrink-0`/`order`/`sticky` land on the *inner* <img> instead,
- * where a flex/grid/sticky property has no parent to act against, and the
- * photo renders shrunk and out of place (confirmed live: MasterclassCard's
- * image sat at 38% of the wrong box instead of its intended column).
- * `contents` removes <picture>'s own box entirely, so <img> becomes the
- * real flex/grid item — exactly the pre-<picture> layout behavior.
+ * Every call site's `class` was written for a bare <img>/<NuxtImg> that WAS
+ * the direct flex or grid item (e.g. MasterclassCard's `lg:w-[38%]
+ * lg:shrink-0`, index.vue's `order-1`/`md:sticky`/`aspect-[9/16]`) — so the
+ * *whole* class, including layout properties that only mean something on
+ * the actual flex/grid item, goes on <picture> (inheritAttrs off, bound
+ * explicitly below) rather than <img>. Two things this is NOT done, each
+ * broken for a different real reason (both confirmed live on index.vue's
+ * trial photo, a sticky/ordered grid item):
+ *  - `<picture class="contents">` (to make <img> the item instead) reads
+ *    right for flexbox, but CSS Grid can straight up fail to place a grid
+ *    item behind a `display: contents` ancestor — the photo collapsed to a
+ *    0×0 box positioned below the entire grid, not just in the wrong spot.
+ *  - Putting the *same* class on <img> too (so it also gets object-cover
+ *    etc.) reads right, but <img>'s own `aspect-[9/16]` + `max-h-[80vh]`
+ *    then has to resolve against a parent (<picture>) whose width in turn
+ *    depends on that same img — real browsers resolve that circular replaced-
+ *    element sizing to 0×0 rather than the intended box.
+ * <picture>'s box is already exactly right once it alone carries the full
+ * class (confirmed: 100% of caller intent — order, sticky, aspect-ratio,
+ * max-height — applies correctly to a plain block box with no img inside
+ * competing for the same computation). <img> only needs to fill that
+ * already-correctly-sized box, no aspect-ratio math of its own: `size-full
+ * object-cover`, plus non-`class` attrs (draggable, event handlers) via
+ * `restAttrs` so e.g. the carousel's `draggable="false"` still suppresses
+ * the native drag ghost on the actual <img>. `overflow-hidden` is forced
+ * onto <picture> alongside the caller's class so a caller's `rounded-*`
+ * still visually clips the (now full-bleed) <img> the way it clipped a
+ * bare <img> directly before this component existed.
  *
  * @example
  * <UiContentImage
@@ -52,6 +64,15 @@ const DESKTOP_MEDIA = "(min-width: 768px)";
 const img = useImage();
 const quality = useImageQuality();
 
+// $attrs.class goes on <picture> only (see the doc comment above) — the
+// rest (draggable, event handlers, ...) still belongs on the actual <img>
+// too, so it's forwarded there separately with `class` stripped out.
+const attrs = useAttrs();
+const restAttrs = computed(() => {
+  const { class: _callerClass, ...rest } = attrs;
+  return rest;
+});
+
 const avif = computed(() =>
   img.getSizes(props.src, {
     sizes: props.sizes,
@@ -73,7 +94,7 @@ const webpDesktop = computed(() =>
 </script>
 
 <template>
-  <picture class="contents">
+  <picture v-bind="$attrs" class="overflow-hidden">
     <source type="image/avif" :srcset="avif.srcset" :sizes="avif.sizes" />
     <source
       :media="MOBILE_MEDIA"
@@ -88,7 +109,8 @@ const webpDesktop = computed(() =>
       :sizes="webpDesktop.sizes"
     />
     <img
-      v-bind="$attrs"
+      v-bind="restAttrs"
+      class="block size-full object-cover"
       :src="webpDesktop.src"
       :srcset="webpDesktop.srcset"
       :sizes="webpDesktop.sizes"
