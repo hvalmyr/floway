@@ -84,6 +84,20 @@ export default defineNuxtConfig({
         changeOrigin: true,
       },
     },
+    // Without an explicit mount, useStorage("cache:ipx-manual") (see
+    // ipx-cache.ts) falls back to unstorage's default in-memory driver —
+    // fine for dev, but in prod it means the manually-cached IPX output
+    // (avoiding the ~4s-per-image avif re-encode, see that file's own
+    // comment) lives only in the container's RAM: wiped on every restart,
+    // not just deploys, and growing unbounded for as long as the process
+    // stays up. Pinning it to the filesystem instead makes it survive
+    // restarts as long as ./.data/cache is mounted as a persistent volume
+    // (see docker-compose.prod.yml) — relative path so it resolves under
+    // whatever the process's cwd is in each environment (frontend/ in dev,
+    // /app in the Docker image, per its WORKDIR).
+    storage: {
+      cache: { driver: "fs", base: "./.data/cache" },
+    },
   },
 
   image: {

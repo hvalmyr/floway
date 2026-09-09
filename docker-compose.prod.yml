@@ -85,6 +85,12 @@ services:
   frontend:
     image: ${FRONTEND_IMAGE}:${IMAGE_TAG:-latest}
     restart: unless-stopped
+    volumes:
+      # Persists the manual IPX cache (see ipx-cache.ts / nuxt.config.ts
+      # nitro.storage.cache) across restarts and deploys — without this the
+      # ~4s-per-image avif re-encode cost comes back for every unique image
+      # variant after every release.
+      - frontend_ipx_cache:/app/.data/cache
     environment:
       NUXT_PUBLIC_API_BASE: https://${FLOWAY_DOMAIN}
       # SSR внутри контейнера должно идти на backend по docker-сети напрямую,
@@ -147,3 +153,4 @@ volumes:
   garage_data:
   caddy_data:
   caddy_config:
+  frontend_ipx_cache:

@@ -77,6 +77,11 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    volumes:
+      # Persists the manual IPX cache (see ipx-cache.ts / nuxt.config.ts
+      # nitro.storage.cache) across container restarts — same reasoning as
+      # docker-compose.prod.yml.
+      - frontend_ipx_cache:/app/.data/cache
     environment:
       NUXT_PUBLIC_API_BASE: http://localhost:${HTTP_PORT:-8080}
       # SSR внутри контейнера должно идти на backend по docker-сети, не по
@@ -118,3 +123,4 @@ volumes:
   postgres_data:
   garage_meta:
   garage_data:
+  frontend_ipx_cache:

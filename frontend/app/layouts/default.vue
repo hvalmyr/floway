@@ -27,11 +27,20 @@ const showBackground = ref(false);
 // non-lazy `<img>`) has finished. `isLoading` defaults to true both during
 // SSR and on the client's first render, so there's no hydration mismatch or
 // flash of unhidden content before onMounted runs.
+//
+// Capped at LOADING_TIMEOUT_MS: `load` only fires once every requested
+// resource finishes, so one slow image, a flaky network, or a hung
+// third-party request would otherwise leave visitors staring at the
+// spinner indefinitely instead of a page that's mostly ready.
+const LOADING_TIMEOUT_MS = 3000;
 const isLoading = ref(true);
 
 onMounted(() => {
   document.documentElement.classList.add("overflow-hidden");
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
   const finishLoading = () => {
+    clearTimeout(timeoutId);
+    window.removeEventListener("load", finishLoading);
     document.documentElement.classList.remove("overflow-hidden");
     showBackground.value = true;
     isLoading.value = false;
@@ -41,6 +50,7 @@ onMounted(() => {
     return;
   }
   window.addEventListener("load", finishLoading);
+  timeoutId = setTimeout(finishLoading, LOADING_TIMEOUT_MS);
 });
 </script>
 
