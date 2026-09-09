@@ -83,6 +83,12 @@ const DRAG_CLICK_THRESHOLD_PX = 6;
 // `thumbSizesPx` below measures its actual rendered width directly off the
 // DOM (same measurement `measureStep` already takes for `stepPx`) and feeds
 // that back in as a plain "<n>px" — exact, and a unit @nuxt/image accepts.
+// The raw measurement is rounded up to a fixed bucket via
+// bucketPhotoCarouselWidth (see photoCarouselSizes.ts) rather than used as
+// the exact pixel value — otherwise every visitor's slightly different
+// viewport height requests its own distinct IPX-cached width, so the IPX
+// result cache (server/middleware/ipx-cache.ts) almost never gets reused
+// across visitors.
 const thumbSizesPx = ref(300);
 // Matches the track's `duration-500` class, plus a small buffer so the
 // snap-back never fires before the (possibly reduced-motion-skipped) CSS
@@ -143,7 +149,7 @@ function measureStep() {
   const gap = parseFloat(getComputedStyle(track).columnGap || "0");
   const firstWidth = first.getBoundingClientRect().width;
   stepPx.value = firstWidth + gap;
-  if (firstWidth > 0) thumbSizesPx.value = Math.round(firstWidth);
+  if (firstWidth > 0) thumbSizesPx.value = bucketPhotoCarouselWidth(firstWidth);
 }
 
 function next() {

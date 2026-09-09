@@ -18,6 +18,7 @@ const props = withDefaults(
 const emit = defineEmits<{ "update:modelValue": [value: string] }>();
 
 const { upload, uploading, error } = useAdminUpload();
+const { warm } = useImageCacheWarmup();
 const fileInput = ref<HTMLInputElement | null>(null);
 
 const previewSrc = computed(() => (props.modelValue ? resolveMediaUrl(props.modelValue) : null));
@@ -35,6 +36,11 @@ async function onFileChange(event: Event) {
   try {
     const url = await upload(file);
     emit("update:modelValue", url);
+    // Fire-and-forget: pre-populates the IPX result cache for this image
+    // so the first real visitor doesn't pay the re-encode — see
+    // useImageCacheWarmup's doc comment. Never blocks the upload UX or
+    // surfaces its own errors.
+    warm(resolveOptimizedMediaUrl(url));
   } catch {
     // error already captured in useAdminUpload's error ref
   }
