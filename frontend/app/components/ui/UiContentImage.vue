@@ -1,10 +1,12 @@
 <script setup lang="ts">
 /**
- * Lazy-loaded content photo (course/masterclass/blog covers, gallery
- * thumbnails, teacher photos) — same idea as UiHeroPicture but for
- * below-the-fold images: not eager, no fetchpriority, and split only by
- * webp/avif (no jpeg fallback layer, matching what every one of these call
- * sites already shipped before this component existed).
+ * Content photo (course/masterclass/blog covers, gallery thumbnails,
+ * teacher photos) — same idea as UiHeroPicture but for below-the-fold
+ * images: no fetchpriority, and split only by webp/avif (no jpeg fallback
+ * layer, matching what every one of these call sites already shipped
+ * before this component existed). Loads eagerly (no `loading="lazy"`) —
+ * requested explicitly, against the lazy-loading best practice for
+ * offscreen images.
  *
  * Quality comes from useImageQuality() (admin-editable, see
  * /admin/page-content) instead of being hardcoded per call site. webp gets
@@ -115,7 +117,6 @@ const webpDesktop = computed(() =>
       :srcset="webpDesktop.srcset"
       :sizes="webpDesktop.sizes"
       :alt="alt"
-      loading="lazy"
     />
   </picture>
 </template>

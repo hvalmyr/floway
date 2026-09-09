@@ -91,7 +91,6 @@ const metroStations = computed(() =>
     <iframe
       :src="text('contact_map_iframe_url', '')"
       title="Карта проезда до школы «Фловей»"
-      loading="lazy"
       width="100%"
       height="607"
       frameborder="0"
