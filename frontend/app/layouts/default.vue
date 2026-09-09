@@ -20,19 +20,33 @@ import { onMounted, ref } from "vue";
 // never even competes with the images we now know were the real cost
 // (~4s per avif encode server-side — see ipx-cache.ts).
 const showBackground = ref(false);
+
+// Loading screen hides the page (and blocks scroll) until the same `load`
+// event above fires, so visitors never see hero/course-card images pop in
+// piecemeal — `load` already means everything requested up front (every
+// non-lazy `<img>`) has finished. `isLoading` defaults to true both during
+// SSR and on the client's first render, so there's no hydration mismatch or
+// flash of unhidden content before onMounted runs.
+const isLoading = ref(true);
+
 onMounted(() => {
-  if (document.readyState === "complete") {
+  document.documentElement.classList.add("overflow-hidden");
+  const finishLoading = () => {
+    document.documentElement.classList.remove("overflow-hidden");
     showBackground.value = true;
+    isLoading.value = false;
+  };
+  if (document.readyState === "complete") {
+    finishLoading();
     return;
   }
-  window.addEventListener("load", () => {
-    showBackground.value = true;
-  });
+  window.addEventListener("load", finishLoading);
 });
 </script>
 
 <template>
   <div class="flex min-h-screen flex-col">
+    <AppLoadingScreen :loading="isLoading" />
     <LazyAmbientTreeBackground v-if="showBackground" />
     <AppHeader />
     <main class="flex-1">
