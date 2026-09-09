@@ -19,38 +19,65 @@ import { onMounted, ref } from "vue";
 // longer fights a still-expensive task; gating on `load` also means this
 // never even competes with the images we now know were the real cost
 // (~4s per avif encode server-side — see ipx-cache.ts).
+//
+// showBackground used to share isLoading's own (much shorter)
+// LOADING_TIMEOUT_MS fallback, on the theory that `load` firing late meant
+// a hung request. In practice, a real PageSpeed mobile audit (Slow 4G +
+// CPU throttling) showed `load` legitimately taking 10s+ — meaning that
+// shared fallback fired first on every slow connection, starting the 3D
+// scene's (still nontrivial, WebGL-heavy) first mount right in the middle
+// of the page's real critical-path work instead of only as a rare safety
+// net. BACKGROUND_TIMEOUT_MS below is its own, much longer fallback, kept
+// separate from the loading screen's so a slow `load` no longer drags the
+// background in early.
 const showBackground = ref(false);
+const BACKGROUND_TIMEOUT_MS = 10_000;
 
-// Loading screen hides the page (and blocks scroll) until the same `load`
-// event above fires, so visitors never see hero/course-card images pop in
-// piecemeal — `load` already means everything requested up front (every
-// non-lazy `<img>`) has finished. `isLoading` defaults to true both during
-// SSR and on the client's first render, so there's no hydration mismatch or
-// flash of unhidden content before onMounted runs.
+// Loading screen hides the page (and blocks scroll) until `load` fires (or
+// LOADING_TIMEOUT_MS elapses), so visitors never see hero/course-card
+// images pop in piecemeal — `load` already means everything requested up
+// front (every non-lazy `<img>`) has finished. `isLoading` defaults to true
+// both during SSR and on the client's first render, so there's no
+// hydration mismatch or flash of unhidden content before onMounted runs.
 //
 // Capped at LOADING_TIMEOUT_MS: `load` only fires once every requested
 // resource finishes, so one slow image, a flaky network, or a hung
 // third-party request would otherwise leave visitors staring at the
-// spinner indefinitely instead of a page that's mostly ready.
+// spinner indefinitely instead of a page that's mostly ready. This is a
+// real UX blocker (scroll is locked) that showBackground's own timeout
+// doesn't share — the 3D background is invisible-until-shown and blocks
+// nothing, so it has no equivalent reason to cut `load` short.
 const LOADING_TIMEOUT_MS = 3000;
 const isLoading = ref(true);
 
 onMounted(() => {
   document.documentElement.classList.add("overflow-hidden");
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
-  const finishLoading = () => {
-    clearTimeout(timeoutId);
-    window.removeEventListener("load", finishLoading);
+  let loadingTimeoutId: ReturnType<typeof setTimeout> | undefined;
+  let backgroundTimeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  const revealPage = () => {
+    clearTimeout(loadingTimeoutId);
     document.documentElement.classList.remove("overflow-hidden");
-    showBackground.value = true;
     isLoading.value = false;
   };
+  const startBackground = () => {
+    clearTimeout(backgroundTimeoutId);
+    showBackground.value = true;
+  };
+  const onLoad = () => {
+    window.removeEventListener("load", onLoad);
+    revealPage();
+    startBackground();
+  };
+
   if (document.readyState === "complete") {
-    finishLoading();
+    revealPage();
+    startBackground();
     return;
   }
-  window.addEventListener("load", finishLoading);
-  timeoutId = setTimeout(finishLoading, LOADING_TIMEOUT_MS);
+  window.addEventListener("load", onLoad);
+  loadingTimeoutId = setTimeout(revealPage, LOADING_TIMEOUT_MS);
+  backgroundTimeoutId = setTimeout(startBackground, BACKGROUND_TIMEOUT_MS);
 });
 </script>
 

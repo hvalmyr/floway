@@ -35,6 +35,15 @@ export default defineNuxtConfig({
   // Админка — чистый client-side рендер, ей SSR не нужен.
   routeRules: {
     "/admin/**": { ssr: false },
+    // Self-hosted fonts and sounds under public/ have no content hash in
+    // their filename (unlike _nuxt/** build assets), so Nitro doesn't cache
+    // them long by default — a real PageSpeed audit flagged ~417 KiB of
+    // repeat-visit re-downloads because of this. They're static brand
+    // assets that essentially never change; if one ever needs to, rename
+    // the file (matching fonts.css/the sound's src) rather than relying on
+    // this cache expiring.
+    "/fonts/**": { headers: { "cache-control": "public, max-age=31536000, immutable" } },
+    "/sounds/**": { headers: { "cache-control": "public, max-age=31536000, immutable" } },
   },
 
   runtimeConfig: {
