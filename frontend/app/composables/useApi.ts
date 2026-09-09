@@ -34,6 +34,14 @@ function toApiError(err: unknown): ApiError {
   return { message: "Не удалось выполнить запрос к серверу" };
 }
 
+// Server-only cross-request cache for getPageContent() — see its doc
+// comment below for why. Module scope (not inside useApi()) so it survives
+// across the many useApi() calls made per request and across requests
+// within the same long-lived Nitro process.
+let pageContentCache: { data: PageContent[]; expiresAt: number } | null = null;
+let pageContentInFlight: Promise<PageContent[]> | null = null;
+const PAGE_CONTENT_CACHE_MS = 30_000;
+
 /**
  * Single access point for public-facing (non-admin) API calls. Wraps
  * useApiClient() with named methods and normalized errors, so components
@@ -142,10 +150,43 @@ export function useApi() {
    * GET /api/v1/page-content — public, no auth. Generic freeform site copy
    * (Hero text, legal pages, etc.) — see usePageContent() for the
    * key-lookup helper components actually use.
+   *
+   * Also awaited by plugins/image-quality.ts as an async plugin, which Nuxt
+   * blocks SSR rendering on for *every* page — so on the server this result
+   * is cached for a few seconds across requests/visitors (module-scope, one
+   * Nitro process serves many requests) instead of round-tripping to the Go
+   * backend on every single page load. A real PageSpeed audit traced a good
+   * chunk of TTFB/FCP to exactly this being an uncached blocking fetch.
+   * Admin edits (useAdminPageContent.ts) go straight to the backend and
+   * don't invalidate this, so a save can take up to PAGE_CONTENT_CACHE_MS to
+   * show on the public site — same "eventual, not instant" trade-off already
+   * made for IPX output in server/middleware/ipx-cache.ts. Client-side calls
+   * aren't cached: a single browser session doesn't repeat this often enough
+   * to matter, and caching would risk one browser tab seeing another tab's
+   * admin edits stick around.
    */
   async function getPageContent(): Promise<PageContent[]> {
+    if (!import.meta.server) {
+      try {
+        return await client<PageContent[]>("/api/v1/page-content");
+      } catch (err) {
+        throw toApiError(err);
+      }
+    }
+    const now = Date.now();
+    if (pageContentCache && pageContentCache.expiresAt > now) return pageContentCache.data;
+    if (!pageContentInFlight) {
+      pageContentInFlight = client<PageContent[]>("/api/v1/page-content")
+        .then((data) => {
+          pageContentCache = { data, expiresAt: Date.now() + PAGE_CONTENT_CACHE_MS };
+          return data;
+        })
+        .finally(() => {
+          pageContentInFlight = null;
+        });
+    }
     try {
-      return await client<PageContent[]>("/api/v1/page-content");
+      return await pageContentInFlight;
     } catch (err) {
       throw toApiError(err);
     }
