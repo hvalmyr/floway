@@ -33,15 +33,17 @@ import { onMounted, ref } from "vue";
 const showBackground = ref(false);
 const BACKGROUND_TIMEOUT_MS = 10_000;
 
-// Pages that wrap their content in the full-page white glass card
-// (UiGlassPage.vue — blog, legal documents, the thank-you page) get a
-// closer, larger view of the ambient branch instead of the normal
+// Text-heavy pages (blog, legal documents, the thank-you page, contacts)
+// get a closer, larger view of the ambient branch instead of the normal
 // small-in-the-distance framing — see AmbientTreeBackground's `closeup`
-// prop. Persists across client-side navigation without remounting the 3D
-// scene (it's a layout-level singleton, outside <slot/>), so this just
+// prop. No longer literally "every page using UiGlassPage.vue" now that
+// contacts is in this list too (it uses its own per-section glass panels,
+// not that component) — the name tracks the visual treatment, not the
+// component. Persists across client-side navigation without remounting the
+// 3D scene (it's a layout-level singleton, outside <slot/>), so this just
 // needs to stay reactive to the current route.
 const route = useRoute();
-const GLASS_PAGE_PREFIXES = [
+const CLOSEUP_TREE_PREFIXES = [
   "/blog",
   "/privacy",
   "/terms",
@@ -49,9 +51,10 @@ const GLASS_PAGE_PREFIXES = [
   "/pd-consent",
   "/legal-info",
   "/thank-you",
+  "/contacts",
 ];
-const isGlassPage = computed(() =>
-  GLASS_PAGE_PREFIXES.some(
+const isCloseupPage = computed(() =>
+  CLOSEUP_TREE_PREFIXES.some(
     (prefix) => route.path === prefix || route.path.startsWith(`${prefix}/`),
   ),
 );
@@ -107,7 +110,7 @@ onMounted(() => {
 <template>
   <div class="flex min-h-screen flex-col">
     <AppLoadingScreen :loading="isLoading" />
-    <LazyAmbientTreeBackground v-if="showBackground" :closeup="isGlassPage" />
+    <LazyAmbientTreeBackground v-if="showBackground" :closeup="isCloseupPage" />
     <AppHeader />
     <main class="flex-1">
       <slot />

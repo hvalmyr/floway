@@ -22,6 +22,7 @@ const schoolLinks = [
   { to: "/#courses", label: "Курсы" },
   { to: "/masterclasses", label: "Мастерклассы" },
   { to: "/sertifikaty", label: "Подарочные сертификаты" },
+  { to: "/blog", label: "Блог" },
   { to: "/contacts", label: "Контакты" },
 ];
 

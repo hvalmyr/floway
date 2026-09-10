@@ -8,9 +8,14 @@ import { ArrowLeft } from "lucide-vue-next";
 // <section>, NOT inside UiGlassPage — nesting it in that card's own
 // container+padding made the cover photo render noticeably smaller than
 // every other hero photo on the site (same lg:w-1/2 share of a narrower
-// box). The running text below is its own UiGlassPage instead, since a
-// reading surface benefits article text in a way it doesn't a hero photo.
-// The content column there is centered visually (an mx-auto max-w wrapper)
+// box). Blog is a "closeup" route (see layouts/default.vue), so the ambient
+// tree renders bigger/nearer right behind this text — illegible on mobile
+// without its own glass backing, hence the rounded-pill panel around just
+// the text column (same radius token as UiButton's default pill shape; the
+// photo column stays plain, at full size, with no glass of its own). The
+// running text below is its own UiGlassPage instead, since a reading
+// surface benefits article text in a way it doesn't a hero photo. The
+// content column there is centered visually (an mx-auto max-w wrapper)
 // while its text itself stays left-aligned. Контент — HTML, написанный через
 // AdminRichTextEditor.vue (см. RichTextContent.vue про доверие к источнику).
 const route = useRoute();
@@ -52,7 +57,9 @@ function formatDate(dateString: string | null) {
   <div v-if="post">
     <section class="py-48 sm:py-64 lg:py-80">
       <div class="container flex flex-col gap-32 lg:flex-row lg:items-stretch lg:gap-64">
-        <div class="order-2 flex flex-col items-start gap-24 lg:order-1 lg:w-1/2">
+        <div
+          class="order-2 flex flex-col items-start gap-24 rounded-pill bg-white/55 p-32 backdrop-blur backdrop-saturate-150 sm:p-40 lg:order-1 lg:w-1/2 lg:p-48"
+        >
           <div class="flex flex-col gap-8">
             <p v-if="post.category" class="font-body text-h4 font-medium text-primary">
               {{ post.category }}

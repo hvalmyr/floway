@@ -72,12 +72,17 @@ const FOCUS_IDLE_MS = 3000;
 let focusActive = false;
 let focusIdleTimer: number | null = null;
 
-// Once the user has manually zoomed/orbited at least once, the ambient
-// closeup/normal-distance lerp (see the render loop below) stops running
-// forever — otherwise the instant they leave focus, `!focusActive` goes
+// Once the user has manually zoomed/orbited, the ambient closeup/normal-
+// distance lerp (see the render loop below) stops running for THIS page
+// category — otherwise the instant they leave focus, `!focusActive` goes
 // true again and the very next frame starts dollying their chosen distance
 // back toward the page's fixed default, undoing the zoom they just did.
-let hasEverFocused = false;
+// Keyed off `props.closeup` rather than a one-time flag: navigating from a
+// closeup page to a normal one (or back) is a deliberate reframe that
+// should still play out even after the user has focused, so the lock only
+// covers the closeup/normal category it was set under — crossing into the
+// other category clears it and lets the lerp run once more.
+let lockedForCloseup: boolean | null = null;
 
 // Against the actual mesh, a sparse asymmetric branch (thin twigs, small
 // flowers) has a tiny real hit area relative to how big it reads visually —
@@ -144,7 +149,7 @@ function unlockFocusInteraction() {
 function enterFocus() {
   if (focusActive) return;
   focusActive = true;
-  hasEverFocused = true;
+  lockedForCloseup = props.closeup ?? false;
   if (controls) controls.autoRotate = false;
   if (autoRotateResumeTimer !== null) {
     window.clearTimeout(autoRotateResumeTimer);
@@ -886,9 +891,10 @@ onMounted(() => {
   // Close-up mode dollies the ambient (unfocused) camera in to a fraction
   // of its normal distance — a smooth lerp toward the target each frame
   // rather than a jump cut, since route changes toggle `closeup` without
-  // remounting this component. Skipped once the user has ever manually
-  // focused (hasEverFocused): their own chosen distance always wins from
-  // then on, not just while actively focused — see hasEverFocused's comment.
+  // remounting this component. Skipped once the user has manually focused
+  // while on the current closeup/normal category (lockedForCloseup matches
+  // props.closeup): their own chosen distance wins for that category, not
+  // just while actively focused — see lockedForCloseup's comment.
   const CLOSEUP_DISTANCE_SCALE = 0.4;
   const cameraOffset = new THREE.Vector3();
 
@@ -896,13 +902,15 @@ onMounted(() => {
     if (disposed) return;
     frameId = requestAnimationFrame(loop);
     if (document.hidden || !controls || !renderer || !scene || !camera) return;
-    if (!focusActive && !hasEverFocused) {
+    if (!focusActive && lockedForCloseup !== (props.closeup ?? false)) {
       const targetDist = dist * (props.closeup ? CLOSEUP_DISTANCE_SCALE : 1);
       cameraOffset.copy(camera.position).sub(controls.target);
       const currentDist = cameraOffset.length();
       if (currentDist > 0.0001 && Math.abs(currentDist - targetDist) > 0.001) {
         const nextDist = THREE.MathUtils.lerp(currentDist, targetDist, 0.04);
         camera.position.copy(controls.target).addScaledVector(cameraOffset.normalize(), nextDist);
+      } else {
+        lockedForCloseup = props.closeup ?? false;
       }
     }
     controls.update();
