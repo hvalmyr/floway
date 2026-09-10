@@ -59,6 +59,7 @@ type thankYouPageSettingsRequest struct {
 	Title           string `json:"title"`
 	Subtitle        string `json:"subtitle"`
 	Description     string `json:"description"`
+	HeroImage       string `json:"heroImage"`
 	ShowMessengers  bool   `json:"showMessengers"`
 	ShowSocialLinks bool   `json:"showSocialLinks"`
 	ShowBlogLink    bool   `json:"showBlogLink"`
@@ -85,6 +86,7 @@ func (h *thankYouPageHandler) updateSettings(w http.ResponseWriter, r *http.Requ
 		Title:           req.Title,
 		Subtitle:        req.Subtitle,
 		Description:     req.Description,
+		HeroImage:       req.HeroImage,
 		ShowMessengers:  req.ShowMessengers,
 		ShowSocialLinks: req.ShowSocialLinks,
 		ShowBlogLink:    req.ShowBlogLink,

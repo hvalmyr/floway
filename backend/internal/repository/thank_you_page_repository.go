@@ -20,11 +20,11 @@ func NewThankYouPageRepository(db *pgxpool.Pool) *ThankYouPageRepository {
 	return &ThankYouPageRepository{db: db}
 }
 
-const thankYouPageColumns = "variant, title, subtitle, description, show_messengers, show_social_links, show_blog_link, blog_link_text, blog_link_url, show_carousel, show_faq, show_community, community_text, community_url, updated_at"
+const thankYouPageColumns = "variant, title, subtitle, description, hero_image, show_messengers, show_social_links, show_blog_link, blog_link_text, blog_link_url, show_carousel, show_faq, show_community, community_text, community_url, updated_at"
 
 func scanThankYouPage(row pgx.Row) (model.ThankYouPage, error) {
 	var item model.ThankYouPage
-	err := row.Scan(&item.Variant, &item.Title, &item.Subtitle, &item.Description, &item.ShowMessengers, &item.ShowSocialLinks, &item.ShowBlogLink, &item.BlogLinkText, &item.BlogLinkURL, &item.ShowCarousel, &item.ShowFAQ, &item.ShowCommunity, &item.CommunityText, &item.CommunityURL, &item.UpdatedAt)
+	err := row.Scan(&item.Variant, &item.Title, &item.Subtitle, &item.Description, &item.HeroImage, &item.ShowMessengers, &item.ShowSocialLinks, &item.ShowBlogLink, &item.BlogLinkText, &item.BlogLinkURL, &item.ShowCarousel, &item.ShowFAQ, &item.ShowCommunity, &item.CommunityText, &item.CommunityURL, &item.UpdatedAt)
 	return item, err
 }
 
@@ -41,12 +41,12 @@ func (r *ThankYouPageRepository) GetSettings(ctx context.Context, variant string
 func (r *ThankYouPageRepository) UpdateSettings(ctx context.Context, item model.ThankYouPage) (model.ThankYouPage, error) {
 	row := r.db.QueryRow(ctx, `
 		UPDATE thank_you_pages
-		SET title = $1, subtitle = $2, description = $3, show_messengers = $4, show_social_links = $5,
-		    show_blog_link = $6, blog_link_text = $7, blog_link_url = $8, show_carousel = $9,
-		    show_faq = $10, show_community = $11, community_text = $12, community_url = $13, updated_at = now()
-		WHERE variant = $14
+		SET title = $1, subtitle = $2, description = $3, hero_image = $4, show_messengers = $5, show_social_links = $6,
+		    show_blog_link = $7, blog_link_text = $8, blog_link_url = $9, show_carousel = $10,
+		    show_faq = $11, show_community = $12, community_text = $13, community_url = $14, updated_at = now()
+		WHERE variant = $15
 		RETURNING `+thankYouPageColumns,
-		item.Title, item.Subtitle, item.Description, item.ShowMessengers, item.ShowSocialLinks,
+		item.Title, item.Subtitle, item.Description, item.HeroImage, item.ShowMessengers, item.ShowSocialLinks,
 		item.ShowBlogLink, item.BlogLinkText, item.BlogLinkURL, item.ShowCarousel,
 		item.ShowFAQ, item.ShowCommunity, item.CommunityText, item.CommunityURL, item.Variant,
 	)

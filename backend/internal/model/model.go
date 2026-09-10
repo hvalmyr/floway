@@ -187,10 +187,14 @@ type PageFAQ struct {
 // only toggle whether that shared, already-editable content appears on this
 // particular variant.
 type ThankYouPage struct {
-	Variant         string    `db:"variant" json:"variant"`
-	Title           string    `db:"title" json:"title"`
-	Subtitle        string    `db:"subtitle" json:"subtitle"`
-	Description     string    `db:"description" json:"description"`
+	Variant     string `db:"variant" json:"variant"`
+	Title       string `db:"title" json:"title"`
+	Subtitle    string `db:"subtitle" json:"subtitle"`
+	Description string `db:"description" json:"description"`
+	// HeroImage is the square photo shown alongside title/description in the
+	// page's Hero.vue-style block (see pages/thank-you/[variant].vue) —
+	// optional, falls back to UiMediaPlaceholder when empty.
+	HeroImage       string    `db:"hero_image" json:"heroImage"`
 	ShowMessengers  bool      `db:"show_messengers" json:"showMessengers"`
 	ShowSocialLinks bool      `db:"show_social_links" json:"showSocialLinks"`
 	ShowBlogLink    bool      `db:"show_blog_link" json:"showBlogLink"`
@@ -333,17 +337,22 @@ type BlogPost struct {
 	// SEO title and a good on-page heading often read differently. Both
 	// fall back to Title/blank when empty (see the frontend's blog detail
 	// page), so they're optional rather than required on the model/DB side.
-	MetaTitle       string         `db:"meta_title" json:"metaTitle"`
-	MetaDescription string         `db:"meta_description" json:"metaDescription"`
-	CoverImage      string         `db:"cover_image" json:"coverImage"`
-	Category        string         `db:"category" json:"category"`
-	Tags            []string       `db:"tags" json:"tags"`
-	Author          string         `db:"author" json:"author"`
-	PublishedAt     *time.Time     `db:"published_at" json:"publishedAt,omitempty"`
-	Content         string         `db:"content" json:"content"`
-	Status          BlogPostStatus `db:"status" json:"status"`
-	CreatedAt       time.Time      `db:"created_at" json:"createdAt"`
-	UpdatedAt       time.Time      `db:"updated_at" json:"updatedAt"`
+	MetaTitle       string `db:"meta_title" json:"metaTitle"`
+	MetaDescription string `db:"meta_description" json:"metaDescription"`
+	CoverImage      string `db:"cover_image" json:"coverImage"`
+	// DisplayStyle is the same 4-value background/text color pair as
+	// Course/CourseBlock.DisplayStyle (see CourseBlockDisplayStyle) — reused
+	// here rather than a separate blog-only palette, applied to each card on
+	// the /blog listing.
+	DisplayStyle CourseBlockDisplayStyle `db:"display_style" json:"displayStyle"`
+	Category     string                  `db:"category" json:"category"`
+	Tags         []string                `db:"tags" json:"tags"`
+	Author       string                  `db:"author" json:"author"`
+	PublishedAt  *time.Time              `db:"published_at" json:"publishedAt,omitempty"`
+	Content      string                  `db:"content" json:"content"`
+	Status       BlogPostStatus          `db:"status" json:"status"`
+	CreatedAt    time.Time               `db:"created_at" json:"createdAt"`
+	UpdatedAt    time.Time               `db:"updated_at" json:"updatedAt"`
 }
 
 type ContactMethod string

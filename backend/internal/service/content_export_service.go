@@ -263,7 +263,7 @@ func (s *ContentExportService) Import(ctx context.Context, data model.SiteConten
 	}
 	result.Counts["galleryPhotos"] = n
 
-	n, err = bulkWrite(ctx, tx, "blog_posts", []string{"id", "slug", "title", "cover_image", "category", "tags", "author", "published_at", "content", "status"}, data.BlogPosts, blogPostArgs, conflictCol)
+	n, err = bulkWrite(ctx, tx, "blog_posts", []string{"id", "slug", "title", "meta_title", "meta_description", "cover_image", "display_style", "category", "tags", "author", "published_at", "content", "status"}, data.BlogPosts, blogPostArgs, conflictCol)
 	if err != nil {
 		return ImportResult{}, fmt.Errorf("import blog posts: %w", err)
 	}
@@ -417,11 +417,11 @@ func importThankYouPages(ctx context.Context, tx pgx.Tx, items []model.ThankYouP
 	for _, item := range items {
 		tag, err := tx.Exec(ctx, `
 			UPDATE thank_you_pages
-			SET title = $1, subtitle = $2, description = $3, show_messengers = $4, show_social_links = $5,
-			    show_blog_link = $6, blog_link_text = $7, blog_link_url = $8, show_carousel = $9,
-			    show_faq = $10, show_community = $11, community_text = $12, community_url = $13, updated_at = now()
-			WHERE variant = $14
-		`, item.Title, item.Subtitle, item.Description, item.ShowMessengers, item.ShowSocialLinks,
+			SET title = $1, subtitle = $2, description = $3, hero_image = $4, show_messengers = $5, show_social_links = $6,
+			    show_blog_link = $7, blog_link_text = $8, blog_link_url = $9, show_carousel = $10,
+			    show_faq = $11, show_community = $12, community_text = $13, community_url = $14, updated_at = now()
+			WHERE variant = $15
+		`, item.Title, item.Subtitle, item.Description, item.HeroImage, item.ShowMessengers, item.ShowSocialLinks,
 			item.ShowBlogLink, item.BlogLinkText, item.BlogLinkURL, item.ShowCarousel,
 			item.ShowFAQ, item.ShowCommunity, item.CommunityText, item.CommunityURL, item.Variant)
 		if err != nil {
@@ -582,16 +582,16 @@ func galleryPhotoArgs(m model.GalleryPhoto) []any {
 // exportBlogPostColumns/scanExportBlogPost duplicate
 // repository.blogPostColumns/scanBlogPost (unexported there) — see comment
 // on exportMasterclassColumns above.
-const exportBlogPostColumns = "id, slug, title, cover_image, category, tags, author, published_at, content, status, created_at, updated_at"
+const exportBlogPostColumns = "id, slug, title, meta_title, meta_description, cover_image, display_style, category, tags, author, published_at, content, status, created_at, updated_at"
 
 func scanExportBlogPost(row pgx.CollectableRow) (model.BlogPost, error) {
 	var m model.BlogPost
-	err := row.Scan(&m.ID, &m.Slug, &m.Title, &m.CoverImage, &m.Category, &m.Tags, &m.Author, &m.PublishedAt, &m.Content, &m.Status, &m.CreatedAt, &m.UpdatedAt)
+	err := row.Scan(&m.ID, &m.Slug, &m.Title, &m.MetaTitle, &m.MetaDescription, &m.CoverImage, &m.DisplayStyle, &m.Category, &m.Tags, &m.Author, &m.PublishedAt, &m.Content, &m.Status, &m.CreatedAt, &m.UpdatedAt)
 	return m, err
 }
 
 func blogPostArgs(m model.BlogPost) []any {
-	return []any{m.ID, m.Slug, m.Title, m.CoverImage, m.Category, m.Tags, m.Author, m.PublishedAt, m.Content, m.Status}
+	return []any{m.ID, m.Slug, m.Title, m.MetaTitle, m.MetaDescription, m.CoverImage, m.DisplayStyle, m.Category, m.Tags, m.Author, m.PublishedAt, m.Content, m.Status}
 }
 
 func scanFAQItem(row pgx.CollectableRow) (model.FAQItem, error) {
@@ -654,11 +654,11 @@ func pageFAQItemArgs(m model.PageFAQItem) []any {
 // thankYouPageColumns/scanThankYouPage duplicate
 // repository.thankYouPageColumns/scanThankYouPage (unexported there) — see
 // comment on exportMasterclassColumns above.
-const thankYouPageColumns = "variant, title, subtitle, description, show_messengers, show_social_links, show_blog_link, blog_link_text, blog_link_url, show_carousel, show_faq, show_community, community_text, community_url, updated_at"
+const thankYouPageColumns = "variant, title, subtitle, description, hero_image, show_messengers, show_social_links, show_blog_link, blog_link_text, blog_link_url, show_carousel, show_faq, show_community, community_text, community_url, updated_at"
 
 func scanThankYouPage(row pgx.CollectableRow) (model.ThankYouPage, error) {
 	var m model.ThankYouPage
-	err := row.Scan(&m.Variant, &m.Title, &m.Subtitle, &m.Description, &m.ShowMessengers, &m.ShowSocialLinks, &m.ShowBlogLink, &m.BlogLinkText, &m.BlogLinkURL, &m.ShowCarousel, &m.ShowFAQ, &m.ShowCommunity, &m.CommunityText, &m.CommunityURL, &m.UpdatedAt)
+	err := row.Scan(&m.Variant, &m.Title, &m.Subtitle, &m.Description, &m.HeroImage, &m.ShowMessengers, &m.ShowSocialLinks, &m.ShowBlogLink, &m.BlogLinkText, &m.BlogLinkURL, &m.ShowCarousel, &m.ShowFAQ, &m.ShowCommunity, &m.CommunityText, &m.CommunityURL, &m.UpdatedAt)
 	return m, err
 }
 

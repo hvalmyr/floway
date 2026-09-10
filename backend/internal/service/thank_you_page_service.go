@@ -74,6 +74,7 @@ func (s *ThankYouPageService) UpdateSettings(ctx context.Context, item model.Tha
 	item.Title = strings.TrimSpace(item.Title)
 	item.Subtitle = strings.TrimSpace(item.Subtitle)
 	item.Description = strings.TrimSpace(item.Description)
+	item.HeroImage = strings.TrimSpace(item.HeroImage)
 	item.BlogLinkText = strings.TrimSpace(item.BlogLinkText)
 	item.BlogLinkURL = strings.TrimSpace(item.BlogLinkURL)
 	item.CommunityText = strings.TrimSpace(item.CommunityText)

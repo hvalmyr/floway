@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { displayStyleColorClasses } from "~/constants/display-style-colors";
+
 // Дизайна для блога пока нет (нет в макете) — вёрстка минимальная, на
 // существующих токенах/компонентах дизайн-системы. Стилизацию поправит
 // дизайнер отдельно, когда дойдёт очередь; данные уже реальные из БД.
@@ -36,20 +38,20 @@ function formatDate(dateString: string | null) {
 
       <div v-else class="grid grid-cols-1 gap-24 md:grid-cols-2 lg:grid-cols-3">
         <NuxtLink v-for="post in posts" :key="post.id" :to="`/blog/${post.slug}`" class="block">
-          <UiCard>
+          <UiCard variant="custom" :class="displayStyleColorClasses[post.displayStyle]">
             <template v-if="post.coverImage" #media>
               <UiContentImage
                 :src="resolveOptimizedMediaUrl(post.coverImage)"
                 :alt="post.title"
-                class="aspect-[4/3] w-full rounded-sm object-cover"
+                class="aspect-square w-full rounded-sm object-cover"
                 sizes="400:100vw md:50vw lg:33vw"
               />
             </template>
             <template v-if="post.category" #title
-              ><span class="font-body">{{ post.category }}</span></template
+              ><span class="font-body text-body">{{ post.category }}</span></template
             >
-            <p class="mb-8 font-display text-h4 text-ink">{{ post.title }}</p>
-            <p v-if="post.publishedAt" class="text-body text-ink">
+            <p class="mb-8 font-display text-h4">{{ post.title }}</p>
+            <p v-if="post.publishedAt" class="text-body">
               {{ formatDate(post.publishedAt) }}
             </p>
           </UiCard>

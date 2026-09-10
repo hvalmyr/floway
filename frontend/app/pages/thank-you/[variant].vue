@@ -41,18 +41,51 @@ const faqItems = computed(
 
 <template>
   <UiGlassPage v-if="page">
-    <div class="flex flex-col gap-48">
-      <div class="mx-auto flex max-w-[720px] flex-col items-center gap-24 text-center">
-        <h1 class="font-display text-h1 text-ink">{{ page.title }}</h1>
-        <p v-if="page.subtitle" class="font-display text-h2 text-primary">
-          {{ page.subtitle }}
-        </p>
-        <MarkdownContent
-          v-if="page.description"
-          :source="page.description"
-          class="w-full whitespace-pre-line font-body text-body text-ink"
-        />
+    <div class="flex flex-col gap-24 lg:gap-64">
+      <!-- Hero block matches the site's shared Hero.vue layout (title/
+      description/CTAs left, 1:1 photo right, media-first on mobile) —
+      reimplemented here rather than reusing that component since it's a
+      standalone <section> with its own container/py padding meant to sit
+      directly on the page background, while this page's content lives
+      inside UiGlassPage's own container+padding (same reasoning as
+      pages/blog/[slug].vue's hero). -->
+      <div class="flex flex-col gap-24 lg:flex-row lg:items-stretch lg:gap-64">
+        <div class="order-2 flex flex-col items-start gap-24 lg:order-1 lg:w-1/2">
+          <h1 class="font-display text-h1 text-ink">{{ page.title }}</h1>
+          <MarkdownContent
+            v-if="page.description"
+            :source="page.description"
+            class="w-full whitespace-pre-line font-body text-body text-ink"
+          />
+          <div class="mt-auto flex w-full flex-col gap-16">
+            <UiButton
+              v-if="page.showBlogLink && page.blogLinkUrl"
+              variant="outline"
+              :to="page.blogLinkUrl"
+            >
+              {{ page.blogLinkText || "Читать блог" }}
+            </UiButton>
+            <UiButton variant="primary" to="/">Вернуться на главную</UiButton>
+          </div>
+        </div>
+        <div class="order-1 lg:order-2 lg:w-1/2">
+          <UiContentImage
+            v-if="page.heroImage"
+            :src="resolveOptimizedMediaUrl(page.heroImage)"
+            :alt="page.title"
+            class="aspect-square w-full rounded-lg object-cover"
+            sizes="400:100vw lg:480px"
+          />
+          <UiMediaPlaceholder v-else aspect="1/1" />
+        </div>
+      </div>
 
+      <!-- Subtitle is its own section, right after the hero. -->
+      <p v-if="page.subtitle" class="text-center font-display text-h2 text-primary">
+        {{ page.subtitle }}
+      </p>
+
+      <div class="mx-auto flex w-full max-w-[720px] flex-col items-center gap-24 text-center">
         <div
           v-if="page.showMessengers && contactChannels.length"
           class="flex flex-col items-center gap-12"
@@ -93,23 +126,13 @@ const faqItems = computed(
           </div>
         </div>
 
-        <div class="mt-8 flex w-full flex-col items-center gap-16 sm:flex-row sm:justify-center">
-          <UiButton
-            v-if="page.showBlogLink && page.blogLinkUrl"
-            variant="outline"
-            :to="page.blogLinkUrl"
-          >
-            {{ page.blogLinkText || "Читать блог" }}
-          </UiButton>
-          <UiButton
-            v-if="page.showCommunity && page.communityUrl"
-            variant="outline"
-            :to="page.communityUrl"
-          >
-            {{ page.communityText || "Присоединиться к сообществу" }}
-          </UiButton>
-          <UiButton variant="primary" to="/">Вернуться на главную</UiButton>
-        </div>
+        <UiButton
+          v-if="page.showCommunity && page.communityUrl"
+          variant="outline"
+          :to="page.communityUrl"
+        >
+          {{ page.communityText || "Присоединиться к сообществу" }}
+        </UiButton>
       </div>
 
       <PhotoCarousel v-if="page.showCarousel && carouselPhotos.length" :photos="carouselPhotos" />

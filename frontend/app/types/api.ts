@@ -294,6 +294,9 @@ export interface BlogPost {
   metaTitle: string;
   metaDescription: string;
   coverImage: string;
+  /** Same 4-value background/text color pair as CourseBlockDisplayStyle,
+   * reused for the card on /blog instead of a separate blog-only palette. */
+  displayStyle: CourseBlockDisplayStyle;
   category: string;
   tags: string[];
   author: string;
@@ -341,6 +344,9 @@ export interface ThankYouPage {
   title: string;
   subtitle: string;
   description: string;
+  /** Square photo for the page's hero block (title/description/CTAs left,
+   * 1:1 photo right) — falls back to a placeholder box when empty. */
+  heroImage: string;
   showMessengers: boolean;
   showSocialLinks: boolean;
   showBlogLink: boolean;

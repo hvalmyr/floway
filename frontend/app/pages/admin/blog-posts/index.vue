@@ -1,6 +1,15 @@
 <script setup lang="ts">
 definePageMeta({ layout: "admin", middleware: "admin-auth" });
 
+type DisplayStyle = "blue-beige" | "brown-beige" | "beige-blue" | "beige-brown";
+
+const displayStyleLabels: Record<DisplayStyle, string> = {
+  "blue-beige": "Голубой фон, бежевый текст",
+  "brown-beige": "Коричневый фон, бежевый текст",
+  "beige-blue": "Бежевый фон, голубой текст",
+  "beige-brown": "Бежевый фон, коричневый текст",
+};
+
 interface BlogPost {
   id: number;
   slug: string;
@@ -8,6 +17,7 @@ interface BlogPost {
   metaTitle: string;
   metaDescription: string;
   coverImage: string;
+  displayStyle: DisplayStyle;
   category: string;
   tags: string[];
   author: string;
@@ -22,6 +32,7 @@ const emptyForm = () => ({
   metaTitle: "",
   metaDescription: "",
   coverImage: "",
+  displayStyle: "blue-beige" as DisplayStyle,
   category: "",
   tags: [] as string[],
   author: "",
@@ -60,6 +71,7 @@ function startEdit(post: BlogPost) {
     metaTitle: post.metaTitle,
     metaDescription: post.metaDescription,
     coverImage: post.coverImage,
+    displayStyle: post.displayStyle,
     category: post.category,
     tags: [...post.tags],
     author: post.author,
@@ -85,6 +97,7 @@ async function onSubmit() {
       metaTitle: form.value.metaTitle,
       metaDescription: form.value.metaDescription,
       coverImage: form.value.coverImage,
+      displayStyle: form.value.displayStyle,
       category: form.value.category,
       tags: form.value.tags,
       author: form.value.author,
@@ -119,6 +132,7 @@ async function onDuplicate(post: BlogPost) {
     metaTitle: post.metaTitle,
     metaDescription: post.metaDescription,
     coverImage: post.coverImage,
+    displayStyle: post.displayStyle,
     category: post.category,
     tags: post.tags,
     author: post.author,
@@ -201,6 +215,11 @@ async function onBulkDelete() {
         class="rounded border border-gray-300 px-3 py-2"
       />
       <AdminImageUpload v-model="form.coverImage" label="Обложка" />
+      <select v-model="form.displayStyle" class="rounded border border-gray-300 px-3 py-2">
+        <option v-for="(label, value) in displayStyleLabels" :key="value" :value="value">
+          {{ label }}
+        </option>
+      </select>
 
       <div class="flex flex-col gap-1 sm:col-span-2">
         <input

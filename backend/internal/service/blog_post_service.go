@@ -54,6 +54,12 @@ func (s *BlogPostService) validate(item *model.BlogPost) error {
 	if !validBlogPostStatuses[item.Status] {
 		return errors.Join(ErrValidation, errors.New("invalid status"))
 	}
+	// Matches the column's own DB default (migration 00048) — an omitted
+	// displayStyle would otherwise hit blog_posts_display_style_check as an
+	// empty string instead of falling back like a fresh row would.
+	if item.DisplayStyle == "" {
+		item.DisplayStyle = model.DisplayStyleBlueBeige
+	}
 	// tags is NOT NULL DEFAULT '{}' in the DB, but a nil Go slice (an omitted
 	// or explicit-null "tags" in the request JSON) is sent as SQL NULL, not
 	// as "use the column default" — violates the constraint. Normalize here.

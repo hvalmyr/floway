@@ -43,6 +43,7 @@ type blogPostRequest struct {
 	MetaTitle       string     `json:"metaTitle"`
 	MetaDescription string     `json:"metaDescription"`
 	CoverImage      string     `json:"coverImage"`
+	DisplayStyle    string     `json:"displayStyle"`
 	Category        string     `json:"category"`
 	Tags            []string   `json:"tags"`
 	Author          string     `json:"author"`
@@ -92,6 +93,7 @@ func (h *blogPostHandler) toModel(req blogPostRequest) model.BlogPost {
 		MetaTitle:       req.MetaTitle,
 		MetaDescription: req.MetaDescription,
 		CoverImage:      req.CoverImage,
+		DisplayStyle:    model.CourseBlockDisplayStyle(req.DisplayStyle),
 		Category:        req.Category,
 		Tags:            req.Tags,
 		Author:          req.Author,

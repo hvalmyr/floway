@@ -26,6 +26,15 @@ import {
 // a button, a form field (see isFunctionalElement, used in
 // handlePointerDown/handleTouchStart) — or a few seconds of no interaction.
 
+// `closeup` — pages that wrap their content in the full-page white glass
+// card (UiGlassPage.vue: blog, legal documents, the thank-you page) get a
+// bigger, nearer ambient view of the branch instead of the normal
+// small-in-the-distance framing (see the loop's distance lerp below,
+// keyed off this prop each frame). This component is a layout-level
+// singleton that outlives client-side route changes, so the prop simply
+// needs to stay reactive rather than driving anything at mount time only.
+const props = defineProps<{ closeup?: boolean }>();
+
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const flashRef = ref<HTMLDivElement | null>(null);
 
@@ -866,10 +875,27 @@ onMounted(() => {
   const RENDER_INTERVAL_MS = 1000 / 30;
   let lastRenderTime = 0;
 
+  // Close-up mode dollies the ambient (unfocused) camera in to a fraction
+  // of its normal distance — a smooth lerp toward the target each frame
+  // rather than a jump cut, since route changes toggle `closeup` without
+  // remounting this component. Skipped entirely while the user has
+  // manually zoomed in (focusActive): their own interaction always wins.
+  const CLOSEUP_DISTANCE_SCALE = 0.4;
+  const cameraOffset = new THREE.Vector3();
+
   const loop = (now: number) => {
     if (disposed) return;
     frameId = requestAnimationFrame(loop);
     if (document.hidden || !controls || !renderer || !scene || !camera) return;
+    if (!focusActive) {
+      const targetDist = dist * (props.closeup ? CLOSEUP_DISTANCE_SCALE : 1);
+      cameraOffset.copy(camera.position).sub(controls.target);
+      const currentDist = cameraOffset.length();
+      if (currentDist > 0.0001 && Math.abs(currentDist - targetDist) > 0.001) {
+        const nextDist = THREE.MathUtils.lerp(currentDist, targetDist, 0.04);
+        camera.position.copy(controls.target).addScaledVector(cameraOffset.normalize(), nextDist);
+      }
+    }
     controls.update();
     if (now - lastRenderTime < RENDER_INTERVAL_MS) return;
     lastRenderTime = now;

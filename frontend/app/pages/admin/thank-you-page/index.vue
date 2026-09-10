@@ -60,6 +60,7 @@ async function saveSettings() {
         title: settings.value.title,
         subtitle: settings.value.subtitle,
         description: settings.value.description,
+        heroImage: settings.value.heroImage,
         showMessengers: settings.value.showMessengers,
         showSocialLinks: settings.value.showSocialLinks,
         showBlogLink: settings.value.showBlogLink,
@@ -216,6 +217,7 @@ async function removeFaqItem(id: number) {
           class="rounded border border-gray-300 px-3 py-2"
         />
         <AdminMarkdownField v-model="settings.description" placeholder="Описание" :rows="4" />
+        <AdminImageUpload v-model="settings.heroImage" label="Квадратное фото (Hero)" />
 
         <hr class="my-2 border-gray-200" />
 
