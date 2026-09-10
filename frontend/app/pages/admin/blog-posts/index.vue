@@ -5,6 +5,8 @@ interface BlogPost {
   id: number;
   slug: string;
   title: string;
+  metaTitle: string;
+  metaDescription: string;
   coverImage: string;
   category: string;
   tags: string[];
@@ -17,9 +19,11 @@ interface BlogPost {
 const emptyForm = () => ({
   slug: "",
   title: "",
+  metaTitle: "",
+  metaDescription: "",
   coverImage: "",
   category: "",
-  tagsInput: "",
+  tags: [] as string[],
   author: "",
   publishedAtInput: "",
   content: "",
@@ -53,9 +57,11 @@ function startEdit(post: BlogPost) {
   form.value = {
     slug: post.slug,
     title: post.title,
+    metaTitle: post.metaTitle,
+    metaDescription: post.metaDescription,
     coverImage: post.coverImage,
     category: post.category,
-    tagsInput: post.tags.join(", "),
+    tags: [...post.tags],
     author: post.author,
     publishedAtInput: post.publishedAt ?? "",
     content: post.content,
@@ -76,12 +82,11 @@ async function onSubmit() {
     const payload = {
       slug: form.value.slug,
       title: form.value.title,
+      metaTitle: form.value.metaTitle,
+      metaDescription: form.value.metaDescription,
       coverImage: form.value.coverImage,
       category: form.value.category,
-      tags: form.value.tagsInput
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter((tag) => tag.length > 0),
+      tags: form.value.tags,
       author: form.value.author,
       publishedAt:
         form.value.publishedAtInput.trim() === "" ? null : form.value.publishedAtInput.trim(),
@@ -111,6 +116,8 @@ async function onDuplicate(post: BlogPost) {
   await create({
     slug: `${post.slug}-copy-${Date.now()}`,
     title: `${post.title} (копия)`,
+    metaTitle: post.metaTitle,
+    metaDescription: post.metaDescription,
     coverImage: post.coverImage,
     category: post.category,
     tags: post.tags,
@@ -119,6 +126,32 @@ async function onDuplicate(post: BlogPost) {
     content: post.content,
     status: "draft",
   });
+}
+
+// Suggestions for the category/tag inputs below — drawn from posts already
+// in the list rather than a separate backend endpoint, since blog
+// category/tags are free-text columns (not the client Tag table's
+// product/client-type system), so there's nothing structured to query yet.
+const categorySuggestions = computed(() =>
+  [...new Set(items.value.map((p) => p.category).filter((c) => c.length > 0))].sort(),
+);
+const tagSuggestions = computed(() => [...new Set(items.value.flatMap((p) => p.tags))].sort());
+
+const tagInput = ref("");
+function addTagFromInput() {
+  const trimmed = tagInput.value.trim();
+  tagInput.value = "";
+  if (!trimmed) return;
+  if (form.value.tags.some((t) => t.toLowerCase() === trimmed.toLowerCase())) return;
+  form.value.tags.push(trimmed);
+}
+function removeTag(tag: string) {
+  form.value.tags = form.value.tags.filter((t) => t !== tag);
+}
+function onTagInputKeydown(event: KeyboardEvent) {
+  if (event.key !== "Enter" && event.key !== ",") return;
+  event.preventDefault();
+  addTagFromInput();
 }
 
 const searchQuery = ref("");
@@ -168,18 +201,71 @@ async function onBulkDelete() {
         class="rounded border border-gray-300 px-3 py-2"
       />
       <AdminImageUpload v-model="form.coverImage" label="Обложка" />
-      <input
-        v-model="form.category"
-        type="text"
-        placeholder="Категория"
-        class="rounded border border-gray-300 px-3 py-2"
-      />
-      <input
-        v-model="form.tagsInput"
-        type="text"
-        placeholder="Теги через запятую, например: цветы, новости"
-        class="rounded border border-gray-300 px-3 py-2 sm:col-span-2"
-      />
+
+      <div class="flex flex-col gap-1 sm:col-span-2">
+        <input
+          v-model="form.metaTitle"
+          type="text"
+          placeholder="Meta title (заголовок в поиске и вкладке браузера)"
+          maxlength="60"
+          class="rounded border border-gray-300 px-3 py-2"
+        />
+        <p class="text-right text-xs text-[var(--color-text-muted)]">
+          {{ form.metaTitle.length }}/60 символов
+          <span v-if="form.metaTitle.length === 0">— иначе используется заголовок статьи</span>
+        </p>
+      </div>
+      <div class="flex flex-col gap-1 sm:col-span-2">
+        <textarea
+          v-model="form.metaDescription"
+          placeholder="Meta description (описание в выдаче поисковика)"
+          maxlength="160"
+          rows="2"
+          class="rounded border border-gray-300 px-3 py-2"
+        />
+        <p class="text-right text-xs text-[var(--color-text-muted)]">
+          {{ form.metaDescription.length }}/160 символов
+        </p>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <input
+          v-model="form.category"
+          type="text"
+          list="blog-category-suggestions"
+          placeholder="Категория"
+          class="rounded border border-gray-300 px-3 py-2"
+        />
+        <datalist id="blog-category-suggestions">
+          <option v-for="c in categorySuggestions" :key="c" :value="c" />
+        </datalist>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <div class="flex flex-wrap items-center gap-2 rounded border border-gray-300 p-2">
+          <span
+            v-for="tag in form.tags"
+            :key="tag"
+            class="flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs"
+          >
+            {{ tag }}
+            <button type="button" class="hover:text-red-600" @click="removeTag(tag)">×</button>
+          </span>
+          <input
+            v-model="tagInput"
+            type="text"
+            list="blog-tag-suggestions"
+            placeholder="Добавить тег…"
+            class="min-w-32 flex-1 border-none p-1 text-sm outline-none"
+            @keydown="onTagInputKeydown"
+            @blur="addTagFromInput"
+          />
+        </div>
+        <datalist id="blog-tag-suggestions">
+          <option v-for="t in tagSuggestions" :key="t" :value="t" />
+        </datalist>
+      </div>
+
       <input
         v-model="form.publishedAtInput"
         type="text"

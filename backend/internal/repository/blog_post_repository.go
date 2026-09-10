@@ -22,11 +22,11 @@ func NewBlogPostRepository(db *pgxpool.Pool) *BlogPostRepository {
 // every column, and a column added to one but not updated in the other used
 // to be a real risk with no test to catch a scan-order drift (architecture
 // review finding #12).
-const blogPostColumns = "id, slug, title, cover_image, category, tags, author, published_at, content, status, created_at, updated_at"
+const blogPostColumns = "id, slug, title, meta_title, meta_description, cover_image, category, tags, author, published_at, content, status, created_at, updated_at"
 
 func scanBlogPost(row pgx.Row) (model.BlogPost, error) {
 	var item model.BlogPost
-	err := row.Scan(&item.ID, &item.Slug, &item.Title, &item.CoverImage, &item.Category, &item.Tags, &item.Author, &item.PublishedAt, &item.Content, &item.Status, &item.CreatedAt, &item.UpdatedAt)
+	err := row.Scan(&item.ID, &item.Slug, &item.Title, &item.MetaTitle, &item.MetaDescription, &item.CoverImage, &item.Category, &item.Tags, &item.Author, &item.PublishedAt, &item.Content, &item.Status, &item.CreatedAt, &item.UpdatedAt)
 	return item, err
 }
 
@@ -87,10 +87,10 @@ func (r *BlogPostRepository) FindPublishedBySlug(ctx context.Context, slug strin
 
 func (r *BlogPostRepository) Create(ctx context.Context, item model.BlogPost) (model.BlogPost, error) {
 	err := r.db.QueryRow(ctx, `
-		INSERT INTO blog_posts (slug, title, cover_image, category, tags, author, published_at, content, status)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO blog_posts (slug, title, meta_title, meta_description, cover_image, category, tags, author, published_at, content, status)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		RETURNING id, created_at, updated_at
-	`, item.Slug, item.Title, item.CoverImage, item.Category, item.Tags, item.Author, item.PublishedAt, item.Content, item.Status).
+	`, item.Slug, item.Title, item.MetaTitle, item.MetaDescription, item.CoverImage, item.Category, item.Tags, item.Author, item.PublishedAt, item.Content, item.Status).
 		Scan(&item.ID, &item.CreatedAt, &item.UpdatedAt)
 	return item, err
 }
@@ -98,11 +98,11 @@ func (r *BlogPostRepository) Create(ctx context.Context, item model.BlogPost) (m
 func (r *BlogPostRepository) Update(ctx context.Context, item model.BlogPost) (model.BlogPost, error) {
 	err := r.db.QueryRow(ctx, `
 		UPDATE blog_posts
-		SET slug = $1, title = $2, cover_image = $3, category = $4, tags = $5,
-		    author = $6, published_at = $7, content = $8, status = $9, updated_at = now()
-		WHERE id = $10
+		SET slug = $1, title = $2, meta_title = $3, meta_description = $4, cover_image = $5, category = $6, tags = $7,
+		    author = $8, published_at = $9, content = $10, status = $11, updated_at = now()
+		WHERE id = $12
 		RETURNING updated_at
-	`, item.Slug, item.Title, item.CoverImage, item.Category, item.Tags, item.Author, item.PublishedAt, item.Content, item.Status, item.ID).
+	`, item.Slug, item.Title, item.MetaTitle, item.MetaDescription, item.CoverImage, item.Category, item.Tags, item.Author, item.PublishedAt, item.Content, item.Status, item.ID).
 		Scan(&item.UpdatedAt)
 	return item, translateNotFound(err)
 }

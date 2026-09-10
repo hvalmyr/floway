@@ -176,6 +176,66 @@ type PageFAQ struct {
 	Items []PageFAQItem `json:"items"`
 }
 
+// ThankYouPage is the editable content shown after a lead form submission
+// (ApplyForm.vue), one row per LeadRequestType variant (course, masterclass,
+// trial_lesson — see ThankYouPageVariants). Seeded by migration 00047, one
+// row per valid variant — never created/deleted through the API, only
+// updated (same convention as PageFAQSettings). The messenger icons and
+// social-network links shown alongside this content are NOT stored here —
+// they're the site's existing global contact channels (page_content
+// contact_*_url keys) and social_links table; ShowMessengers/ShowSocialLinks
+// only toggle whether that shared, already-editable content appears on this
+// particular variant.
+type ThankYouPage struct {
+	Variant         string    `db:"variant" json:"variant"`
+	Title           string    `db:"title" json:"title"`
+	Subtitle        string    `db:"subtitle" json:"subtitle"`
+	Description     string    `db:"description" json:"description"`
+	ShowMessengers  bool      `db:"show_messengers" json:"showMessengers"`
+	ShowSocialLinks bool      `db:"show_social_links" json:"showSocialLinks"`
+	ShowBlogLink    bool      `db:"show_blog_link" json:"showBlogLink"`
+	BlogLinkText    string    `db:"blog_link_text" json:"blogLinkText"`
+	BlogLinkURL     string    `db:"blog_link_url" json:"blogLinkUrl"`
+	ShowCarousel    bool      `db:"show_carousel" json:"showCarousel"`
+	ShowFAQ         bool      `db:"show_faq" json:"showFaq"`
+	ShowCommunity   bool      `db:"show_community" json:"showCommunity"`
+	CommunityText   string    `db:"community_text" json:"communityText"`
+	CommunityURL    string    `db:"community_url" json:"communityUrl"`
+	UpdatedAt       time.Time `db:"updated_at" json:"updatedAt"`
+}
+
+// ThankYouPagePhoto is one slide of a thank-you page variant's optional
+// photo carousel (social proof — student work, studio photos).
+type ThankYouPagePhoto struct {
+	ID        int64     `db:"id" json:"id"`
+	Variant   string    `db:"variant" json:"variant"`
+	Image     string    `db:"image" json:"image"`
+	SortOrder int       `db:"sort_order" json:"sortOrder"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
+}
+
+// ThankYouPageFAQItem is one Q&A pair in a thank-you page variant's optional
+// mini-FAQ block.
+type ThankYouPageFAQItem struct {
+	ID        int64     `db:"id" json:"id"`
+	Variant   string    `db:"variant" json:"variant"`
+	Question  string    `db:"question" json:"question"`
+	Answer    string    `db:"answer" json:"answer"`
+	SortOrder int       `db:"sort_order" json:"sortOrder"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
+}
+
+// ThankYouPageFull is the public GET /api/v1/thank-you-pages/{variant}
+// shape — settings, photos and FAQ items in one response, mirroring
+// PageFAQ's settings+items combination above.
+type ThankYouPageFull struct {
+	ThankYouPage
+	Photos   []ThankYouPagePhoto   `json:"photos"`
+	FAQItems []ThankYouPageFAQItem `json:"faqItems"`
+}
+
 // CourseSummary is the homepage listing shape — blocks without lesson text,
 // since the homepage only needs each course's first block's cover/lessonCount/
 // timeLength (and blockName when there's more than one block).
@@ -265,18 +325,25 @@ const (
 )
 
 type BlogPost struct {
-	ID          int64          `db:"id" json:"id"`
-	Slug        string         `db:"slug" json:"slug"`
-	Title       string         `db:"title" json:"title"`
-	CoverImage  string         `db:"cover_image" json:"coverImage"`
-	Category    string         `db:"category" json:"category"`
-	Tags        []string       `db:"tags" json:"tags"`
-	Author      string         `db:"author" json:"author"`
-	PublishedAt *time.Time     `db:"published_at" json:"publishedAt,omitempty"`
-	Content     string         `db:"content" json:"content"`
-	Status      BlogPostStatus `db:"status" json:"status"`
-	CreatedAt   time.Time      `db:"created_at" json:"createdAt"`
-	UpdatedAt   time.Time      `db:"updated_at" json:"updatedAt"`
+	ID    int64  `db:"id" json:"id"`
+	Slug  string `db:"slug" json:"slug"`
+	Title string `db:"title" json:"title"`
+	// MetaTitle/MetaDescription are the <title>/meta-description shown in
+	// search results — distinct from Title (the on-page H1), since a good
+	// SEO title and a good on-page heading often read differently. Both
+	// fall back to Title/blank when empty (see the frontend's blog detail
+	// page), so they're optional rather than required on the model/DB side.
+	MetaTitle       string         `db:"meta_title" json:"metaTitle"`
+	MetaDescription string         `db:"meta_description" json:"metaDescription"`
+	CoverImage      string         `db:"cover_image" json:"coverImage"`
+	Category        string         `db:"category" json:"category"`
+	Tags            []string       `db:"tags" json:"tags"`
+	Author          string         `db:"author" json:"author"`
+	PublishedAt     *time.Time     `db:"published_at" json:"publishedAt,omitempty"`
+	Content         string         `db:"content" json:"content"`
+	Status          BlogPostStatus `db:"status" json:"status"`
+	CreatedAt       time.Time      `db:"created_at" json:"createdAt"`
+	UpdatedAt       time.Time      `db:"updated_at" json:"updatedAt"`
 }
 
 type ContactMethod string
@@ -525,25 +592,28 @@ type ExportFile struct {
 // Used by ContentExportService for backup/restore and for moving content
 // between environments.
 type SiteContent struct {
-	Version         int               `json:"version"`
-	ExportedAt      time.Time         `json:"exportedAt"`
-	CourseSections  []CourseSection   `json:"courseSections"`
-	Courses         []Course          `json:"courses"`
-	CourseBlocks    []CourseBlock     `json:"courseBlocks"`
-	Lessons         []Lesson          `json:"lessons"`
-	CourseFAQItems  []CourseFAQItem   `json:"courseFaqItems"`
-	PageFAQSettings []PageFAQSettings `json:"pageFaqSettings"`
-	PageFAQItems    []PageFAQItem     `json:"pageFaqItems"`
-	Masterclasses   []Masterclass     `json:"masterclasses"`
-	Teachers        []Teacher         `json:"teachers"`
-	GalleryPhotos   []GalleryPhoto    `json:"galleryPhotos"`
-	BlogPosts       []BlogPost        `json:"blogPosts"`
-	FAQItems        []FAQItem         `json:"faqItems"`
-	Features        []Feature         `json:"features"`
-	AboutItems      []AboutItem       `json:"aboutItems"`
-	SocialLinks     []SocialLink      `json:"socialLinks"`
-	PageContent     []PageContent     `json:"pageContent"`
-	Files           []ExportFile      `json:"files"`
+	Version              int                   `json:"version"`
+	ExportedAt           time.Time             `json:"exportedAt"`
+	CourseSections       []CourseSection       `json:"courseSections"`
+	Courses              []Course              `json:"courses"`
+	CourseBlocks         []CourseBlock         `json:"courseBlocks"`
+	Lessons              []Lesson              `json:"lessons"`
+	CourseFAQItems       []CourseFAQItem       `json:"courseFaqItems"`
+	PageFAQSettings      []PageFAQSettings     `json:"pageFaqSettings"`
+	PageFAQItems         []PageFAQItem         `json:"pageFaqItems"`
+	Masterclasses        []Masterclass         `json:"masterclasses"`
+	Teachers             []Teacher             `json:"teachers"`
+	GalleryPhotos        []GalleryPhoto        `json:"galleryPhotos"`
+	BlogPosts            []BlogPost            `json:"blogPosts"`
+	FAQItems             []FAQItem             `json:"faqItems"`
+	Features             []Feature             `json:"features"`
+	AboutItems           []AboutItem           `json:"aboutItems"`
+	SocialLinks          []SocialLink          `json:"socialLinks"`
+	PageContent          []PageContent         `json:"pageContent"`
+	ThankYouPages        []ThankYouPage        `json:"thankYouPages"`
+	ThankYouPagePhotos   []ThankYouPagePhoto   `json:"thankYouPagePhotos"`
+	ThankYouPageFAQItems []ThankYouPageFAQItem `json:"thankYouPageFaqItems"`
+	Files                []ExportFile          `json:"files"`
 }
 
 type AdminUser struct {

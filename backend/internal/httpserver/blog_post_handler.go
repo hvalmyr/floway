@@ -38,15 +38,17 @@ func (h *blogPostHandler) routes(r chi.Router) {
 }
 
 type blogPostRequest struct {
-	Slug        string     `json:"slug"`
-	Title       string     `json:"title"`
-	CoverImage  string     `json:"coverImage"`
-	Category    string     `json:"category"`
-	Tags        []string   `json:"tags"`
-	Author      string     `json:"author"`
-	PublishedAt *time.Time `json:"publishedAt,omitempty"`
-	Content     string     `json:"content"`
-	Status      string     `json:"status"`
+	Slug            string     `json:"slug"`
+	Title           string     `json:"title"`
+	MetaTitle       string     `json:"metaTitle"`
+	MetaDescription string     `json:"metaDescription"`
+	CoverImage      string     `json:"coverImage"`
+	Category        string     `json:"category"`
+	Tags            []string   `json:"tags"`
+	Author          string     `json:"author"`
+	PublishedAt     *time.Time `json:"publishedAt,omitempty"`
+	Content         string     `json:"content"`
+	Status          string     `json:"status"`
 }
 
 // list is a public route (no requireAdminMiddleware — the admin panel's own
@@ -85,15 +87,17 @@ func (h *blogPostHandler) getPublishedBySlug(w http.ResponseWriter, r *http.Requ
 
 func (h *blogPostHandler) toModel(req blogPostRequest) model.BlogPost {
 	return model.BlogPost{
-		Slug:        req.Slug,
-		Title:       req.Title,
-		CoverImage:  req.CoverImage,
-		Category:    req.Category,
-		Tags:        req.Tags,
-		Author:      req.Author,
-		PublishedAt: req.PublishedAt,
-		Content:     req.Content,
-		Status:      model.BlogPostStatus(req.Status),
+		Slug:            req.Slug,
+		Title:           req.Title,
+		MetaTitle:       req.MetaTitle,
+		MetaDescription: req.MetaDescription,
+		CoverImage:      req.CoverImage,
+		Category:        req.Category,
+		Tags:            req.Tags,
+		Author:          req.Author,
+		PublishedAt:     req.PublishedAt,
+		Content:         req.Content,
+		Status:          model.BlogPostStatus(req.Status),
 	}
 }
 

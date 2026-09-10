@@ -291,6 +291,8 @@ export interface BlogPost {
   id: number;
   slug: string;
   title: string;
+  metaTitle: string;
+  metaDescription: string;
   coverImage: string;
   category: string;
   tags: string[];

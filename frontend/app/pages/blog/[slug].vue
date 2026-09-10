@@ -20,10 +20,10 @@ if (!post.value) {
 const ogImageUrl = post.value?.coverImage ? resolveMediaUrl(post.value.coverImage) : undefined;
 
 useSeoMeta({
-  title: () => `${post.value?.title} — блог Фловей`,
-  description: () => post.value?.title,
-  ogTitle: () => post.value?.title,
-  ogDescription: () => post.value?.title,
+  title: () => `${post.value?.metaTitle || post.value?.title} — блог Фловей`,
+  description: () => post.value?.metaDescription || post.value?.title,
+  ogTitle: () => post.value?.metaTitle || post.value?.title,
+  ogDescription: () => post.value?.metaDescription || post.value?.title,
   ogImage: ogImageUrl,
 });
 

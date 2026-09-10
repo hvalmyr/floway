@@ -7,6 +7,7 @@ import {
   Link as LinkIcon,
   Quote,
 } from "lucide-vue-next";
+import { onClickOutside } from "@vueuse/core";
 import { onMounted, ref } from "vue";
 import { normalizeLinkUrl, sanitizeRichTextHtml } from "~/lib/richTextSanitize";
 
@@ -110,22 +111,84 @@ function onQuote() {
   emitCurrentContent();
 }
 
-function onLink() {
-  const input = window.prompt("Ссылка (URL):");
-  if (!input) return;
-  const url = normalizeLinkUrl(input);
+// Link tool: a small popover instead of a bare prompt(), so an admin can
+// either type any URL or pick another blog post from a live-filtered list
+// (inserted as a site-relative "/blog/{slug}" href) instead of having to
+// know/copy that post's URL by hand. The selection at the moment the tool
+// opens is saved and restored on confirm, since by then focus has moved
+// into the popover's own input and window.getSelection() would otherwise
+// see nothing inside the editor.
+const linkPickerRef = ref<HTMLElement | null>(null);
+const linkPickerOpen = ref(false);
+const linkUrlInput = ref("");
+const linkPosts = ref<{ slug: string; title: string }[]>([]);
+const linkPostsLoading = ref(false);
+let linkPostsLoaded = false;
+let savedRange: Range | null = null;
+
+// Same text box drives both the URL to insert and the post search — typing
+// a real URL just happens to match nothing in the list below, which is
+// harmless (list stays empty, nothing to click).
+const filteredLinkPosts = computed(() => {
+  const query = linkUrlInput.value.trim().toLowerCase();
+  if (!query) return linkPosts.value;
+  return linkPosts.value.filter((post) => post.title.toLowerCase().includes(query));
+});
+
+async function ensureLinkPostsLoaded() {
+  if (linkPostsLoaded) return;
+  linkPostsLoading.value = true;
+  try {
+    const posts = await useApi().getBlogPosts();
+    linkPosts.value = posts.map((post) => ({ slug: post.slug, title: post.title }));
+    linkPostsLoaded = true;
+  } catch {
+    linkPosts.value = [];
+  } finally {
+    linkPostsLoading.value = false;
+  }
+}
+
+function openLinkPicker() {
+  const selection = window.getSelection();
+  savedRange =
+    selection && selection.rangeCount > 0 && editorRef.value?.contains(selection.anchorNode)
+      ? selection.getRangeAt(0).cloneRange()
+      : null;
+  linkUrlInput.value = "";
+  linkPickerOpen.value = true;
+  ensureLinkPostsLoaded();
+}
+
+function closeLinkPicker() {
+  linkPickerOpen.value = false;
+}
+
+onClickOutside(linkPickerRef, closeLinkPicker);
+
+function pickLinkPost(post: { slug: string; title: string }) {
+  linkUrlInput.value = `/blog/${post.slug}`;
+}
+
+function confirmLink() {
+  const url = normalizeLinkUrl(linkUrlInput.value);
   if (!url) {
     window.alert("Не похоже на ссылку — проверьте адрес.");
     return;
   }
   focusEditor();
   const selection = window.getSelection();
+  if (selection && savedRange) {
+    selection.removeAllRanges();
+    selection.addRange(savedRange);
+  }
   if (selection && !selection.isCollapsed) {
     document.execCommand("createLink", false, url);
   } else {
     document.execCommand("insertHTML", false, `<a href="${url}">${url}</a>`);
   }
   emitCurrentContent();
+  linkPickerOpen.value = false;
 }
 
 function pickImage() {
@@ -139,16 +202,24 @@ async function onImageChange(event: Event) {
   if (!file) return;
   try {
     const relativeUrl = await upload(file);
+    // Prompted right after upload, not left for later — an admin editing
+    // an image's alt text after the fact would need a raw-HTML mode this
+    // editor doesn't have, so this is the only chance to set it.
+    const altText = window.prompt("Alt-текст картинки (для SEO и доступности):", "") ?? "";
     focusEditor();
     document.execCommand(
       "insertHTML",
       false,
-      `<figure><img src="${resolveMediaUrl(relativeUrl)}" alt=""></figure><p><br></p>`,
+      `<figure><img src="${resolveMediaUrl(relativeUrl)}" alt="${escapeHtmlAttr(altText)}"></figure><p><br></p>`,
     );
     emitCurrentContent();
   } catch {
     // upload() already captured the failure in `error` below.
   }
+}
+
+function escapeHtmlAttr(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 }
 
 function onPaste(event: ClipboardEvent) {
@@ -181,7 +252,7 @@ function onKeydown(event: KeyboardEvent) {
       break;
     case "k":
       event.preventDefault();
-      onLink();
+      openLinkPicker();
       break;
   }
 }
@@ -217,14 +288,54 @@ function onKeydown(event: KeyboardEvent) {
       <button type="button" class="rounded p-1.5 hover:bg-gray-200" title="Цитата" @click="onQuote">
         <Quote class="size-5" />
       </button>
-      <button
-        type="button"
-        class="rounded p-1.5 hover:bg-gray-200"
-        title="Ссылка (Ctrl+K)"
-        @click="onLink"
-      >
-        <LinkIcon class="size-5" />
-      </button>
+      <div ref="linkPickerRef" class="relative">
+        <button
+          type="button"
+          class="rounded p-1.5 hover:bg-gray-200"
+          title="Ссылка (Ctrl+K)"
+          @click="openLinkPicker"
+        >
+          <LinkIcon class="size-5" />
+        </button>
+        <div
+          v-if="linkPickerOpen"
+          class="absolute left-0 top-full z-10 mt-1 w-80 rounded border border-gray-200 bg-white p-3 text-sm shadow-md"
+        >
+          <input
+            v-model="linkUrlInput"
+            type="text"
+            placeholder="URL или название статьи блога…"
+            class="w-full rounded border border-gray-300 px-2 py-1 text-sm"
+            @keydown.enter.prevent="confirmLink"
+          />
+          <p v-if="linkPostsLoading" class="mt-2 text-xs text-[var(--color-text-muted)]">
+            Загрузка статей…
+          </p>
+          <div v-else-if="filteredLinkPosts.length" class="mt-2 max-h-40 overflow-y-auto">
+            <button
+              v-for="post in filteredLinkPosts"
+              :key="post.slug"
+              type="button"
+              class="block w-full truncate rounded px-2 py-1 text-left hover:bg-gray-50"
+              @click="pickLinkPost(post)"
+            >
+              {{ post.title }}
+            </button>
+          </div>
+          <div class="mt-2 flex justify-end gap-2">
+            <button type="button" class="rounded px-2 py-1 text-xs" @click="closeLinkPicker">
+              Отмена
+            </button>
+            <button
+              type="button"
+              class="rounded bg-[var(--color-primary)] px-2 py-1 text-xs text-white"
+              @click="confirmLink"
+            >
+              Вставить
+            </button>
+          </div>
+        </div>
+      </div>
       <button
         type="button"
         class="rounded p-1.5 hover:bg-gray-200 disabled:opacity-50"
