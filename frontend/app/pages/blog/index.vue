@@ -22,35 +22,37 @@ function formatDate(dateString: string | null) {
 </script>
 
 <template>
-  <div class="container flex flex-col gap-48 py-48 sm:py-64 lg:py-80">
-    <h1 class="font-display text-h1 text-ink">Блог</h1>
+  <UiGlassPage>
+    <div class="flex flex-col gap-48">
+      <h1 class="font-display text-h1 text-ink">Блог</h1>
 
-    <p v-if="pending" class="font-body text-body text-ink">Загрузка…</p>
-    <p v-else-if="error" class="font-body text-body text-ink">
-      Не удалось загрузить статьи. Попробуйте позже.
-    </p>
-    <p v-else-if="!posts?.length" class="font-body text-body text-ink">
-      Пока нет опубликованных статей.
-    </p>
+      <p v-if="pending" class="font-body text-body text-ink">Загрузка…</p>
+      <p v-else-if="error" class="font-body text-body text-ink">
+        Не удалось загрузить статьи. Попробуйте позже.
+      </p>
+      <p v-else-if="!posts?.length" class="font-body text-body text-ink">
+        Пока нет опубликованных статей.
+      </p>
 
-    <div v-else class="grid grid-cols-1 gap-24 md:grid-cols-2 lg:grid-cols-3">
-      <NuxtLink v-for="post in posts" :key="post.id" :to="`/blog/${post.slug}`" class="block">
-        <UiCard>
-          <template v-if="post.coverImage" #media>
-            <UiContentImage
-              :src="resolveOptimizedMediaUrl(post.coverImage)"
-              :alt="post.title"
-              class="aspect-[4/3] w-full rounded-sm object-cover"
-              sizes="400:100vw md:50vw lg:33vw"
-            />
-          </template>
-          <template v-if="post.category" #title>{{ post.category }}</template>
-          <p class="mb-8 font-display text-h4 text-ink">{{ post.title }}</p>
-          <p v-if="post.publishedAt" class="text-body text-ink">
-            {{ formatDate(post.publishedAt) }}
-          </p>
-        </UiCard>
-      </NuxtLink>
+      <div v-else class="grid grid-cols-1 gap-24 md:grid-cols-2 lg:grid-cols-3">
+        <NuxtLink v-for="post in posts" :key="post.id" :to="`/blog/${post.slug}`" class="block">
+          <UiCard>
+            <template v-if="post.coverImage" #media>
+              <UiContentImage
+                :src="resolveOptimizedMediaUrl(post.coverImage)"
+                :alt="post.title"
+                class="aspect-[4/3] w-full rounded-sm object-cover"
+                sizes="400:100vw md:50vw lg:33vw"
+              />
+            </template>
+            <template v-if="post.category" #title>{{ post.category }}</template>
+            <p class="mb-8 font-display text-h4 text-ink">{{ post.title }}</p>
+            <p v-if="post.publishedAt" class="text-body text-ink">
+              {{ formatDate(post.publishedAt) }}
+            </p>
+          </UiCard>
+        </NuxtLink>
+      </div>
     </div>
-  </div>
+  </UiGlassPage>
 </template>

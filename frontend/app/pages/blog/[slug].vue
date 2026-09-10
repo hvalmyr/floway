@@ -38,33 +38,35 @@ function formatDate(dateString: string | null) {
 </script>
 
 <template>
-  <div v-if="post" class="container flex flex-col gap-24 py-48 sm:py-64 lg:py-80">
-    <NuxtLink to="/blog" class="font-body text-body text-primary hover:underline"
-      >← Ко всем статьям</NuxtLink
-    >
+  <UiGlassPage v-if="post">
+    <div class="flex flex-col gap-24">
+      <NuxtLink to="/blog" class="font-body text-body text-primary hover:underline"
+        >← Ко всем статьям</NuxtLink
+      >
 
-    <div class="flex flex-col gap-8">
-      <p v-if="post.category" class="font-body text-body text-primary">{{ post.category }}</p>
-      <h1 class="font-display text-h1 text-ink">{{ post.title }}</h1>
-      <p class="font-body text-body text-ink">
-        <span v-if="post.author">{{ post.author }}</span>
-        <span v-if="post.author && post.publishedAt"> · </span>
-        <span v-if="post.publishedAt">{{ formatDate(post.publishedAt) }}</span>
-      </p>
+      <div class="flex flex-col gap-8">
+        <p v-if="post.category" class="font-body text-body text-primary">{{ post.category }}</p>
+        <h1 class="font-display text-h1 text-ink">{{ post.title }}</h1>
+        <p class="font-body text-body text-ink">
+          <span v-if="post.author">{{ post.author }}</span>
+          <span v-if="post.author && post.publishedAt"> · </span>
+          <span v-if="post.publishedAt">{{ formatDate(post.publishedAt) }}</span>
+        </p>
+      </div>
+
+      <UiContentImage
+        v-if="post.coverImage"
+        :src="resolveOptimizedMediaUrl(post.coverImage)"
+        :alt="post.title"
+        class="aspect-[16/9] w-full max-w-[720px] rounded-md object-cover"
+        sizes="400:100vw lg:720px"
+      />
+
+      <RichTextContent :source="post.content" class="max-w-[720px]" />
+
+      <div v-if="post.tags.length" class="flex flex-wrap gap-8">
+        <UiBadge v-for="tag in post.tags" :key="tag">{{ tag }}</UiBadge>
+      </div>
     </div>
-
-    <UiContentImage
-      v-if="post.coverImage"
-      :src="resolveOptimizedMediaUrl(post.coverImage)"
-      :alt="post.title"
-      class="aspect-[16/9] w-full max-w-[720px] rounded-md object-cover"
-      sizes="400:100vw lg:720px"
-    />
-
-    <RichTextContent :source="post.content" class="max-w-[720px]" />
-
-    <div v-if="post.tags.length" class="flex flex-wrap gap-8">
-      <UiBadge v-for="tag in post.tags" :key="tag">{{ tag }}</UiBadge>
-    </div>
-  </div>
+  </UiGlassPage>
 </template>
