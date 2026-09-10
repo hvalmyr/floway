@@ -72,6 +72,13 @@ const FOCUS_IDLE_MS = 3000;
 let focusActive = false;
 let focusIdleTimer: number | null = null;
 
+// Once the user has manually zoomed/orbited at least once, the ambient
+// closeup/normal-distance lerp (see the render loop below) stops running
+// forever — otherwise the instant they leave focus, `!focusActive` goes
+// true again and the very next frame starts dollying their chosen distance
+// back toward the page's fixed default, undoing the zoom they just did.
+let hasEverFocused = false;
+
 // Against the actual mesh, a sparse asymmetric branch (thin twigs, small
 // flowers) has a tiny real hit area relative to how big it reads visually —
 // missing it on every other attempt, worse still with an imprecise touch.
@@ -137,6 +144,7 @@ function unlockFocusInteraction() {
 function enterFocus() {
   if (focusActive) return;
   focusActive = true;
+  hasEverFocused = true;
   if (controls) controls.autoRotate = false;
   if (autoRotateResumeTimer !== null) {
     window.clearTimeout(autoRotateResumeTimer);
@@ -878,8 +886,9 @@ onMounted(() => {
   // Close-up mode dollies the ambient (unfocused) camera in to a fraction
   // of its normal distance — a smooth lerp toward the target each frame
   // rather than a jump cut, since route changes toggle `closeup` without
-  // remounting this component. Skipped entirely while the user has
-  // manually zoomed in (focusActive): their own interaction always wins.
+  // remounting this component. Skipped once the user has ever manually
+  // focused (hasEverFocused): their own chosen distance always wins from
+  // then on, not just while actively focused — see hasEverFocused's comment.
   const CLOSEUP_DISTANCE_SCALE = 0.4;
   const cameraOffset = new THREE.Vector3();
 
@@ -887,7 +896,7 @@ onMounted(() => {
     if (disposed) return;
     frameId = requestAnimationFrame(loop);
     if (document.hidden || !controls || !renderer || !scene || !camera) return;
-    if (!focusActive) {
+    if (!focusActive && !hasEverFocused) {
       const targetDist = dist * (props.closeup ? CLOSEUP_DISTANCE_SCALE : 1);
       cameraOffset.copy(camera.position).sub(controls.target);
       const currentDist = cameraOffset.length();

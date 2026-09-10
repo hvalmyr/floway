@@ -44,9 +44,11 @@ watch(isOpen, async (open) => {
 const leftLinks = [
   { to: "/#courses", label: "Курсы" },
   { to: "/masterclasses", label: "Мастер-классы" },
-  { to: "/blog", label: "Блог" },
 ];
-const rightLinks = [{ to: "/contacts", label: "Контакты" }];
+const rightLinks = [
+  { to: "/blog", label: "Блог" },
+  { to: "/contacts", label: "Контакты" },
+];
 
 // "Курсы" ведёт на якорь на главной ("/#courses") — на самой главной странице
 // (без явного скролла к якорю) её всё равно считаем открытой страницей,

@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { ArrowLeft } from "lucide-vue-next";
 
-// Hero block matches the site's shared Hero.vue layout (category/title/
-// author/CTA left, 1:1 cover photo right, media-first on mobile) — reimplemented
-// here rather than reusing that component since it's a standalone <section>
-// with its own container/py padding meant to sit directly on the page
-// background, while this page's content lives inside UiGlassPage's own
-// container+padding. The content column below is centered visually (an
-// mx-auto max-w wrapper) while its text itself stays left-aligned. Контент —
-// HTML, написанный через AdminRichTextEditor.vue (см. RichTextContent.vue про
-// доверие к источнику).
+// Hero block matches the site's shared Hero.vue layout exactly (same
+// classes/breakpoints — category/title/author/CTA left, 1:1 cover photo
+// right, media-first on mobile) but isn't <Hero> itself, which has no
+// category/author slots. It sits directly on the page background as its own
+// <section>, NOT inside UiGlassPage — nesting it in that card's own
+// container+padding made the cover photo render noticeably smaller than
+// every other hero photo on the site (same lg:w-1/2 share of a narrower
+// box). The running text below is its own UiGlassPage instead, since a
+// reading surface benefits article text in a way it doesn't a hero photo.
+// The content column there is centered visually (an mx-auto max-w wrapper)
+// while its text itself stays left-aligned. Контент — HTML, написанный через
+// AdminRichTextEditor.vue (см. RichTextContent.vue про доверие к источнику).
 const route = useRoute();
 const slug = route.params.slug as string;
 
@@ -46,9 +49,9 @@ function formatDate(dateString: string | null) {
 </script>
 
 <template>
-  <UiGlassPage v-if="post">
-    <div class="flex flex-col gap-24 lg:gap-64">
-      <div class="flex flex-col gap-24 lg:flex-row lg:items-stretch lg:gap-64">
+  <div v-if="post">
+    <section class="py-48 sm:py-64 lg:py-80">
+      <div class="container flex flex-col gap-32 lg:flex-row lg:items-stretch lg:gap-64">
         <div class="order-2 flex flex-col items-start gap-24 lg:order-1 lg:w-1/2">
           <div class="flex flex-col gap-8">
             <p v-if="post.category" class="font-body text-h4 font-medium text-primary">
@@ -72,12 +75,14 @@ function formatDate(dateString: string | null) {
             :src="resolveOptimizedMediaUrl(post.coverImage)"
             :alt="post.title"
             class="aspect-square w-full rounded-lg object-cover"
-            sizes="400:100vw lg:480px"
+            sizes="400:100vw lg:576px"
           />
           <UiMediaPlaceholder v-else aspect="1/1" />
         </div>
       </div>
+    </section>
 
+    <UiGlassPage>
       <div class="mx-auto flex w-full max-w-[720px] flex-col gap-24">
         <RichTextContent :source="post.content" />
 
@@ -85,6 +90,6 @@ function formatDate(dateString: string | null) {
           <UiBadge v-for="tag in post.tags" :key="tag">{{ tag }}</UiBadge>
         </div>
       </div>
-    </div>
-  </UiGlassPage>
+    </UiGlassPage>
+  </div>
 </template>
