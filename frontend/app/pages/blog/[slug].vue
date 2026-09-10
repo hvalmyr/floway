@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ArrowLeft } from "lucide-vue-next";
+
 // Hero block matches the site's shared Hero.vue layout (category/title/
 // author/CTA left, 1:1 cover photo right, media-first on mobile) — reimplemented
 // here rather than reusing that component since it's a standalone <section>
@@ -49,7 +51,7 @@ function formatDate(dateString: string | null) {
       <div class="flex flex-col gap-24 lg:flex-row lg:items-stretch lg:gap-64">
         <div class="order-2 flex flex-col items-start gap-24 lg:order-1 lg:w-1/2">
           <div class="flex flex-col gap-8">
-            <p v-if="post.category" class="font-body text-body text-primary">
+            <p v-if="post.category" class="font-body text-h4 font-medium text-primary">
               {{ post.category }}
             </p>
             <h1 class="font-display text-h1 text-ink">{{ post.title }}</h1>
@@ -59,7 +61,10 @@ function formatDate(dateString: string | null) {
               <span v-if="post.publishedAt">{{ formatDate(post.publishedAt) }}</span>
             </p>
           </div>
-          <UiButton variant="outline" to="/blog" class="mt-auto">← Ко всем статьям</UiButton>
+          <UiButton variant="outline" to="/blog" block class="mt-auto">
+            <ArrowLeft class="size-24" aria-hidden="true" />
+            Ко всем статьям
+          </UiButton>
         </div>
         <div class="order-1 lg:order-2 lg:w-1/2">
           <UiContentImage

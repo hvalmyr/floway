@@ -33,16 +33,24 @@
  *    depends on that same img — real browsers resolve that circular replaced-
  *    element sizing to 0×0 rather than the intended box.
  * <picture>'s box is already exactly right once it alone carries the full
- * class (confirmed: 100% of caller intent — order, sticky, aspect-ratio,
- * max-height — applies correctly to a plain block box with no img inside
- * competing for the same computation). <img> only needs to fill that
- * already-correctly-sized box, no aspect-ratio math of its own: `size-full
- * object-cover`, plus non-`class` attrs (draggable, event handlers) via
- * `restAttrs` so e.g. the carousel's `draggable="false"` still suppresses
- * the native drag ghost on the actual <img>. `overflow-hidden` is forced
- * onto <picture> alongside the caller's class so a caller's `rounded-*`
- * still visually clips the (now full-bleed) <img> the way it clipped a
- * bare <img> directly before this component existed.
+ * class. <img> only needs to fill that already-correctly-sized box, no
+ * aspect-ratio math of its own: `size-full object-cover`, plus non-`class`
+ * attrs (draggable, event handlers) via `restAttrs` so e.g. the carousel's
+ * `draggable="false"` still suppresses the native drag ghost on the actual
+ * <img>. `overflow-hidden` is forced onto <picture> alongside the caller's
+ * class so a caller's `rounded-*` still visually clips the (now full-bleed)
+ * <img> the way it clipped a bare <img> directly before this component
+ * existed — same reasoning applies to the forced `block`: <picture> has no
+ * UA default display of its own (unlike <img>, which Tailwind's preflight
+ * already blockifies), so it's `display: inline` by default. A caller's
+ * `w-full`/`aspect-square`/etc. silently no-ops on an inline box — this only
+ * went unnoticed because the couple of call sites it was "confirmed live"
+ * against (index.vue's trial photo, MasterclassCard's cover) happen to sit
+ * as DIRECT flex/grid items, where the browser blockifies them regardless
+ * of the specified `display` (CSS Display §2.7). Every other call site —
+ * blog cards, the blog hero, teacher photos — sat one div deeper than its
+ * flex/grid container and rendered at the source photo's native aspect
+ * ratio instead of the requested crop, until this `block` was added.
  *
  * @example
  * <UiContentImage
@@ -96,7 +104,7 @@ const webpDesktop = computed(() =>
 </script>
 
 <template>
-  <picture v-bind="$attrs" class="overflow-hidden">
+  <picture v-bind="$attrs" class="block overflow-hidden">
     <source type="image/avif" :srcset="avif.srcset" :sizes="avif.sizes" />
     <source
       :media="MOBILE_MEDIA"
