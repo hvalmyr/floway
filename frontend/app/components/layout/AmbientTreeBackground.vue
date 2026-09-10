@@ -895,6 +895,16 @@ onMounted(() => {
   // while on the current closeup/normal category (lockedForCloseup matches
   // props.closeup): their own chosen distance wins for that category, not
   // just while actively focused — see lockedForCloseup's comment.
+  //
+  // Also re-centers controls.target back onto centroid over the same lerp,
+  // not just the distance: right-drag panning while focused can leave
+  // target anywhere (pan is never distance-clamped the way zoom is), and
+  // the distance-only lerp used to measure `targetDist` from wherever that
+  // drifted point was — around a pan that had wandered close to the
+  // branch's own geometry, "0.4× the normal distance from here" could
+  // still land the camera inside a twig. Recentering alongside the zoom
+  // restores the actual documented framing (dist from centroid) instead of
+  // just rescaling whatever offset panning left behind.
   const CLOSEUP_DISTANCE_SCALE = 0.4;
   const cameraOffset = new THREE.Vector3();
 
@@ -906,10 +916,16 @@ onMounted(() => {
       const targetDist = dist * (props.closeup ? CLOSEUP_DISTANCE_SCALE : 1);
       cameraOffset.copy(camera.position).sub(controls.target);
       const currentDist = cameraOffset.length();
-      if (currentDist > 0.0001 && Math.abs(currentDist - targetDist) > 0.001) {
+      const distSettled = currentDist <= 0.0001 || Math.abs(currentDist - targetDist) <= 0.001;
+      const centerSettled = controls.target.distanceTo(centroid) <= 0.001;
+      if (!distSettled) {
         const nextDist = THREE.MathUtils.lerp(currentDist, targetDist, 0.04);
         camera.position.copy(controls.target).addScaledVector(cameraOffset.normalize(), nextDist);
-      } else {
+      }
+      if (!centerSettled) {
+        controls.target.lerp(centroid, 0.04);
+      }
+      if (distSettled && centerSettled) {
         lockedForCloseup = props.closeup ?? false;
       }
     }
