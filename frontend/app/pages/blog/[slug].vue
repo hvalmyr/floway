@@ -14,8 +14,12 @@ import { ArrowLeft } from "lucide-vue-next";
 // column, matching the photo's own rounded-lg (rounded-pill was tried
 // first, matching the button instead — on this column's near-square
 // stretched-height box that read as a circle, not a card, so it's back to
-// the site's normal card radius). The photo column stays plain, at full
-// size, with no glass of its own. The
+// the site's normal card radius). Padding is vertical-only (py-*, no
+// horizontal) so the text column's actual content width still matches
+// every other hero on the site exactly — horizontal padding here would
+// narrow it — py stays comfortably above the rounded-lg corner radius so
+// nothing gets visually clipped by the curve. The photo column stays
+// plain, at full size, with no glass of its own. The
 // running text below is its own UiGlassPage instead, since a reading
 // surface benefits article text in a way it doesn't a hero photo. The
 // content column there is centered visually (an mx-auto max-w wrapper)
@@ -61,7 +65,7 @@ function formatDate(dateString: string | null) {
     <section class="py-48 sm:py-64 lg:py-80">
       <div class="container flex flex-col gap-32 lg:flex-row lg:items-stretch lg:gap-64">
         <div
-          class="order-2 flex flex-col items-start gap-24 rounded-lg bg-white/55 p-32 backdrop-blur backdrop-saturate-150 sm:p-40 lg:order-1 lg:w-1/2 lg:p-48"
+          class="order-2 flex flex-col items-start gap-24 rounded-lg bg-white/55 py-32 backdrop-blur backdrop-saturate-150 sm:py-40 lg:order-1 lg:w-1/2 lg:py-48"
         >
           <div class="flex flex-col gap-8">
             <p v-if="post.category" class="font-body text-h4 font-medium text-primary">
