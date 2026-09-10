@@ -9,6 +9,11 @@
  */
 const ALLOWED_TAGS = new Set([
   "P",
+  "H2",
+  // H3 stays whitelisted for backward compat with posts saved before the
+  // editor's single heading level was renamed H3 -> H2 (matches the H1 page
+  // title semantically, and the toolbar's Heading2 icon) — without this,
+  // re-editing an old post would silently unwrap its existing headings.
   "H3",
   "BLOCKQUOTE",
   "A",

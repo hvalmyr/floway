@@ -24,6 +24,7 @@ defineProps<{ source: string }>();
 .rich-text-content :deep(p:last-child) {
   margin-bottom: 0;
 }
+.rich-text-content :deep(h2),
 .rich-text-content :deep(h3) {
   margin-top: 1.5em;
   margin-bottom: 0.5em;

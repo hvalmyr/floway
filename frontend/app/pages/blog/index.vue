@@ -45,7 +45,9 @@ function formatDate(dateString: string | null) {
                 sizes="400:100vw md:50vw lg:33vw"
               />
             </template>
-            <template v-if="post.category" #title>{{ post.category }}</template>
+            <template v-if="post.category" #title
+              ><span class="font-body">{{ post.category }}</span></template
+            >
             <p class="mb-8 font-display text-h4 text-ink">{{ post.title }}</p>
             <p v-if="post.publishedAt" class="text-body text-ink">
               {{ formatDate(post.publishedAt) }}

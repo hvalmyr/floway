@@ -75,7 +75,7 @@ function currentBlockTag(): string {
   const selection = window.getSelection();
   let node = selection?.anchorNode ?? null;
   while (node && node !== editorRef.value) {
-    if (node instanceof HTMLElement && ["P", "H3", "BLOCKQUOTE"].includes(node.tagName)) {
+    if (node instanceof HTMLElement && ["P", "H2", "H3", "BLOCKQUOTE"].includes(node.tagName)) {
       return node.tagName;
     }
     node = node.parentNode;
@@ -97,7 +97,8 @@ function onItalic() {
 
 function onHeading() {
   focusEditor();
-  document.execCommand("formatBlock", false, currentBlockTag() === "H3" ? "P" : "H3");
+  const isHeading = ["H2", "H3"].includes(currentBlockTag());
+  document.execCommand("formatBlock", false, isHeading ? "P" : "H2");
   emitCurrentContent();
 }
 
@@ -191,6 +192,81 @@ function confirmLink() {
   linkPickerOpen.value = false;
 }
 
+// Image insertion: instead of an immediate file picker + prompt(), clicking
+// the toolbar button drops a "![Alt Text](URL or Image Path)" template at
+// the caret so alt text and source are entered inline, in the flow of
+// writing, the way a markdown-savvy admin already expects that syntax to
+// work — see insertImageTemplate(). It only ever becomes a real <img> once
+// finalizeImageTemplate() runs (on Enter), so a half-filled template that
+// never gets finished just sits as inert text rather than a broken image.
+function selectElementContents(el: Node) {
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  const selection = window.getSelection();
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+}
+
+function closestInEditor(node: Node | null, selector: string): HTMLElement | null {
+  const el = node instanceof HTMLElement ? node : (node?.parentElement ?? null);
+  if (!el || !editorRef.value?.contains(el)) return null;
+  return el.closest<HTMLElement>(selector);
+}
+
+function selectionAncestor(selector: string): HTMLElement | null {
+  return closestInEditor(window.getSelection()?.anchorNode ?? null, selector);
+}
+
+function insertImageTemplate() {
+  focusEditor();
+  const selection = window.getSelection();
+  if (
+    !selection ||
+    selection.rangeCount === 0 ||
+    !editorRef.value?.contains(selection.anchorNode)
+  ) {
+    return;
+  }
+  const range = selection.getRangeAt(0);
+  range.deleteContents();
+
+  const altSpan = document.createElement("span");
+  altSpan.className = "img-tpl-alt";
+  altSpan.textContent = "Alt Text";
+
+  const urlWord = document.createElement("span");
+  urlWord.className = "img-tpl-opt";
+  urlWord.dataset.action = "url";
+  urlWord.textContent = "URL";
+
+  const pathWord = document.createElement("span");
+  pathWord.className = "img-tpl-opt";
+  pathWord.dataset.action = "path";
+  pathWord.textContent = "Image Path";
+
+  const urlSpan = document.createElement("span");
+  urlSpan.className = "img-tpl-url";
+  urlSpan.append(urlWord, document.createTextNode(" или "), pathWord);
+
+  const wrapper = document.createElement("span");
+  wrapper.className = "img-tpl";
+  wrapper.append(
+    document.createTextNode("!["),
+    altSpan,
+    document.createTextNode("]("),
+    urlSpan,
+    document.createTextNode(")"),
+  );
+
+  range.insertNode(wrapper);
+  selectElementContents(altSpan);
+}
+
+// Set right before fileInput.value.click() so onImageChange() knows which
+// template's URL field to fill once the upload resolves — the file picker
+// is only ever opened from a template's "Image Path" word, never directly.
+const pendingUrlTarget = ref<HTMLElement | null>(null);
+
 function pickImage() {
   fileInput.value?.click();
 }
@@ -199,23 +275,57 @@ async function onImageChange(event: Event) {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
   input.value = "";
-  if (!file) return;
+  const target = pendingUrlTarget.value;
+  pendingUrlTarget.value = null;
+  if (!file || !target) return;
   try {
     const relativeUrl = await upload(file);
-    // Prompted right after upload, not left for later — an admin editing
-    // an image's alt text after the fact would need a raw-HTML mode this
-    // editor doesn't have, so this is the only chance to set it.
-    const altText = window.prompt("Alt-текст картинки (для SEO и доступности):", "") ?? "";
-    focusEditor();
-    document.execCommand(
-      "insertHTML",
-      false,
-      `<figure><img src="${resolveMediaUrl(relativeUrl)}" alt="${escapeHtmlAttr(altText)}"></figure><p><br></p>`,
-    );
-    emitCurrentContent();
+    target.textContent = resolveMediaUrl(relativeUrl);
+    selectElementContents(target);
   } catch {
     // upload() already captured the failure in `error` below.
   }
+}
+
+function onTemplateOptionClick(event: MouseEvent) {
+  const opt = closestInEditor(event.target as Node, ".img-tpl-opt");
+  if (!opt) return;
+  event.preventDefault();
+  const urlSpan = opt.closest<HTMLElement>(".img-tpl-url");
+  if (!urlSpan) return;
+  if (opt.dataset.action === "path") {
+    pendingUrlTarget.value = urlSpan;
+    pickImage();
+    return;
+  }
+  urlSpan.textContent = "";
+  focusEditor();
+  selectElementContents(urlSpan);
+}
+
+// Ready once the two option words have been replaced by a real value,
+// either typed by hand or filled in by onImageChange() after an upload.
+function finalizeImageTemplate(tpl: HTMLElement): boolean {
+  const urlSpan = tpl.querySelector(".img-tpl-url");
+  if (!urlSpan || urlSpan.querySelector(".img-tpl-opt")) return false;
+  const url = normalizeLinkUrl(urlSpan.textContent?.trim() ?? "");
+  if (!url) {
+    window.alert("Не похоже на ссылку — проверьте адрес картинки.");
+    return false;
+  }
+  const altRaw = tpl.querySelector(".img-tpl-alt")?.textContent?.trim() ?? "";
+  const alt = altRaw && altRaw !== "Alt Text" ? altRaw : "";
+
+  const fragment = document
+    .createRange()
+    .createContextualFragment(
+      `<figure><img src="${escapeHtmlAttr(url)}" alt="${escapeHtmlAttr(alt)}"></figure><p><br></p>`,
+    );
+  const paragraph = fragment.querySelector("p");
+  tpl.replaceWith(fragment);
+  if (paragraph) selectElementContents(paragraph);
+  emitCurrentContent();
+  return true;
 }
 
 function escapeHtmlAttr(value: string): string {
@@ -234,11 +344,25 @@ function onPaste(event: ClipboardEvent) {
 }
 
 function onKeydown(event: KeyboardEvent) {
+  if (event.key === "Tab" && selectionAncestor(".img-tpl-alt")) {
+    event.preventDefault();
+    const urlSpan = selectionAncestor(".img-tpl")?.querySelector<HTMLElement>(".img-tpl-url");
+    if (urlSpan) selectElementContents(urlSpan);
+    return;
+  }
+  if (event.key === "Enter") {
+    const tpl = selectionAncestor(".img-tpl");
+    if (tpl) {
+      event.preventDefault();
+      finalizeImageTemplate(tpl);
+      return;
+    }
+  }
   if (!(event.ctrlKey || event.metaKey)) return;
   const key = event.key.toLowerCase();
   if (key === "i" && event.shiftKey) {
     event.preventDefault();
-    pickImage();
+    insertImageTemplate();
     return;
   }
   switch (key) {
@@ -341,7 +465,7 @@ function onKeydown(event: KeyboardEvent) {
         class="rounded p-1.5 hover:bg-gray-200 disabled:opacity-50"
         title="Картинка (Ctrl+Shift+I)"
         :disabled="uploading"
-        @click="pickImage"
+        @click="insertImageTemplate"
       >
         <ImageIcon class="size-5" />
       </button>
@@ -354,6 +478,7 @@ function onKeydown(event: KeyboardEvent) {
       @input="emitCurrentContent"
       @keydown="onKeydown"
       @paste="onPaste"
+      @click="onTemplateOptionClick"
     />
     <p v-if="error" class="border-t border-gray-200 px-3 py-1 text-xs text-red-600">{{ error }}</p>
     <input
@@ -374,11 +499,13 @@ function onKeydown(event: KeyboardEvent) {
 .rich-text-editor :deep(p) {
   margin-bottom: 0.75em;
 }
+.rich-text-editor :deep(h2),
 .rich-text-editor :deep(h3) {
   margin-top: 1em;
   margin-bottom: 0.5em;
+  font-family: var(--font-display);
   font-weight: 700;
-  font-size: 1.25em;
+  font-size: var(--text-h4);
 }
 .rich-text-editor :deep(blockquote) {
   margin: 0.75em 0;
@@ -396,5 +523,10 @@ function onKeydown(event: KeyboardEvent) {
 .rich-text-editor :deep(a) {
   color: var(--color-primary);
   text-decoration: underline;
+}
+.rich-text-editor :deep(.img-tpl-opt) {
+  color: var(--color-primary);
+  text-decoration: underline;
+  cursor: pointer;
 }
 </style>
