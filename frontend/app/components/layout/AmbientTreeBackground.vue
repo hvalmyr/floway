@@ -725,6 +725,19 @@ onMounted(() => {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  // Nothing that casts or receives a shadow ever moves after this point —
+  // autoRotate (see controls below) orbits the *camera*, not the branch or
+  // the key light, and the focus ring/flash overlay don't cast/receive
+  // shadows at all. The shadow map's contents are therefore correct forever
+  // after one render, yet WebGLShadowMap's default (autoUpdate: true)
+  // recomputes that whole depth pass on every single frame of the infinite
+  // render loop below — a real mobile audit traced ~40s of main-thread/GPU
+  // work over the trace to this component, and a static-content shadow pass
+  // repeated 30 times a second forever is pure waste. needsUpdate is set
+  // once, right before the loop's first render call, and three.js clears it
+  // back to false after that one pass runs.
+  renderer.shadowMap.autoUpdate = false;
+  renderer.shadowMap.needsUpdate = true;
 
   // enableZoom / enablePan default to true, and the default mouseButtons
   // mapping is already LEFT=ROTATE, MIDDLE=DOLLY, RIGHT=PAN — exactly the
