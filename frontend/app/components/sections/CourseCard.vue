@@ -77,7 +77,7 @@ const colorClasses = displayStyleColorClasses;
     variant="custom"
     :class="[
       colorClasses[displayStyle],
-      'flex w-full flex-col sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-22px)]',
+      'flex w-full min-w-[320px] flex-col sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-22px)]',
     ]"
   >
     <template #title>{{ name }}</template>

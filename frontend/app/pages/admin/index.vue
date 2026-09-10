@@ -22,6 +22,7 @@ const editingGroups: EditingGroup[] = [
       { to: "/admin/page-content/hero", label: "Hero-блок" },
       { to: "/admin/gallery-photos", label: "Фотогалерея" },
       { to: "/admin/gift-certificate-photos", label: "Карусель (сертификаты)" },
+      { to: "/admin/thank-you-page", label: "Страница благодарности" },
       { to: "/admin/page-content/apply-form-titles", label: "Заголовки формы заявки" },
       { to: "/admin/icons", label: "Библиотека иконок" },
     ],

@@ -121,6 +121,15 @@ func (s *ContentExportService) Export(ctx context.Context) (model.SiteContent, e
 	if out.PageContent, err = queryAll(ctx, s.db, `SELECT key, label, value, type, updated_at FROM page_content ORDER BY key`, scanPageContent); err != nil {
 		return out, fmt.Errorf("export page content: %w", err)
 	}
+	if out.ThankYouPages, err = queryAll(ctx, s.db, `SELECT `+thankYouPageColumns+` FROM thank_you_pages ORDER BY variant`, scanThankYouPage); err != nil {
+		return out, fmt.Errorf("export thank you pages: %w", err)
+	}
+	if out.ThankYouPagePhotos, err = queryAll(ctx, s.db, `SELECT `+thankYouPagePhotoColumns+` FROM thank_you_page_photos ORDER BY id`, scanThankYouPagePhoto); err != nil {
+		return out, fmt.Errorf("export thank you page photos: %w", err)
+	}
+	if out.ThankYouPageFAQItems, err = queryAll(ctx, s.db, `SELECT `+thankYouPageFAQItemColumns+` FROM thank_you_page_faq_items ORDER BY id`, scanThankYouPageFAQItem); err != nil {
+		return out, fmt.Errorf("export thank you page faq items: %w", err)
+	}
 	if out.Files, err = s.exportFiles(ctx); err != nil {
 		return out, fmt.Errorf("export files: %w", err)
 	}
@@ -188,7 +197,7 @@ func (s *ContentExportService) Import(ctx context.Context, data model.SiteConten
 		// page_faq_settings are never deleted (see importPageContent and
 		// importPageFAQSettings) — page_faq_items needs its own explicit
 		// clear since its parent row survives.
-		for _, table := range []string{"course_sections", "masterclasses", "teachers", "gallery_photos", "blog_posts", "faq_items", "features", "about_items", "social_links", "page_faq_items"} {
+		for _, table := range []string{"course_sections", "masterclasses", "teachers", "gallery_photos", "blog_posts", "faq_items", "features", "about_items", "social_links", "page_faq_items", "thank_you_page_photos", "thank_you_page_faq_items"} {
 			if _, err := tx.Exec(ctx, "DELETE FROM "+table); err != nil {
 				return ImportResult{}, fmt.Errorf("clear %s: %w", table, err)
 			}
@@ -284,10 +293,22 @@ func (s *ContentExportService) Import(ctx context.Context, data model.SiteConten
 	}
 	result.Counts["socialLinks"] = n
 
+	n, err = bulkWrite(ctx, tx, "thank_you_page_photos", []string{"id", "variant", "image", "sort_order"}, data.ThankYouPagePhotos, thankYouPagePhotoArgs, conflictCol)
+	if err != nil {
+		return ImportResult{}, fmt.Errorf("import thank you page photos: %w", err)
+	}
+	result.Counts["thankYouPagePhotos"] = n
+
+	n, err = bulkWrite(ctx, tx, "thank_you_page_faq_items", []string{"id", "variant", "question", "answer", "sort_order"}, data.ThankYouPageFAQItems, thankYouPageFAQItemArgs, conflictCol)
+	if err != nil {
+		return ImportResult{}, fmt.Errorf("import thank you page faq items: %w", err)
+	}
+	result.Counts["thankYouPageFaqItems"] = n
+
 	// Every id-bearing table above just got explicit ids inserted — bump each
 	// sequence past the highest one, or the next plain admin-panel Create()
 	// (which never specifies an id) will collide with an imported row.
-	for _, table := range []string{"course_sections", "courses", "course_blocks", "lessons", "course_faq_items", "page_faq_items", "masterclasses", "teachers", "gallery_photos", "blog_posts", "faq_items", "features", "about_items", "social_links"} {
+	for _, table := range []string{"course_sections", "courses", "course_blocks", "lessons", "course_faq_items", "page_faq_items", "masterclasses", "teachers", "gallery_photos", "blog_posts", "faq_items", "features", "about_items", "social_links", "thank_you_page_photos", "thank_you_page_faq_items"} {
 		if _, err := tx.Exec(ctx, `SELECT setval(pg_get_serial_sequence($1, 'id'), GREATEST((SELECT COALESCE(MAX(id), 0) FROM `+table+`), 1))`, table); err != nil {
 			return ImportResult{}, fmt.Errorf("reset %s id sequence: %w", table, err)
 		}
@@ -305,6 +326,12 @@ func (s *ContentExportService) Import(ctx context.Context, data model.SiteConten
 		return ImportResult{}, fmt.Errorf("import page faq settings: %w", err)
 	}
 	result.Counts["pageFaqSettings"] = updated
+
+	updated, err = importThankYouPages(ctx, tx, data.ThankYouPages)
+	if err != nil {
+		return ImportResult{}, fmt.Errorf("import thank you pages: %w", err)
+	}
+	result.Counts["thankYouPages"] = updated
 
 	if err := tx.Commit(ctx); err != nil {
 		return ImportResult{}, err
@@ -374,6 +401,34 @@ func importPageFAQSettings(ctx context.Context, tx pgx.Tx, items []model.PageFAQ
 		}
 		if tag.RowsAffected() == 0 {
 			return 0, fmt.Errorf("page faq settings: unknown page %q", item.Page)
+		}
+		updated++
+	}
+	return updated, nil
+}
+
+// importThankYouPages mirrors importPageFAQSettings's reasoning: every valid
+// variant's settings row is seeded by migration 00047, never created or
+// deleted through the API — only its content/show-* columns are ever
+// updated. A variant not present on this server is a genuine error (there
+// are only ever the three known variants) rather than a skip.
+func importThankYouPages(ctx context.Context, tx pgx.Tx, items []model.ThankYouPage) (int, error) {
+	updated := 0
+	for _, item := range items {
+		tag, err := tx.Exec(ctx, `
+			UPDATE thank_you_pages
+			SET title = $1, subtitle = $2, description = $3, show_messengers = $4, show_social_links = $5,
+			    show_blog_link = $6, blog_link_text = $7, blog_link_url = $8, show_carousel = $9,
+			    show_faq = $10, show_community = $11, community_text = $12, community_url = $13, updated_at = now()
+			WHERE variant = $14
+		`, item.Title, item.Subtitle, item.Description, item.ShowMessengers, item.ShowSocialLinks,
+			item.ShowBlogLink, item.BlogLinkText, item.BlogLinkURL, item.ShowCarousel,
+			item.ShowFAQ, item.ShowCommunity, item.CommunityText, item.CommunityURL, item.Variant)
+		if err != nil {
+			return 0, err
+		}
+		if tag.RowsAffected() == 0 {
+			return 0, fmt.Errorf("thank you pages: unknown variant %q", item.Variant)
 		}
 		updated++
 	}
@@ -594,4 +649,37 @@ func scanPageFAQItem(row pgx.CollectableRow) (model.PageFAQItem, error) {
 }
 func pageFAQItemArgs(m model.PageFAQItem) []any {
 	return []any{m.ID, m.Page, m.Question, m.Answer, m.SortOrder}
+}
+
+// thankYouPageColumns/scanThankYouPage duplicate
+// repository.thankYouPageColumns/scanThankYouPage (unexported there) — see
+// comment on exportMasterclassColumns above.
+const thankYouPageColumns = "variant, title, subtitle, description, show_messengers, show_social_links, show_blog_link, blog_link_text, blog_link_url, show_carousel, show_faq, show_community, community_text, community_url, updated_at"
+
+func scanThankYouPage(row pgx.CollectableRow) (model.ThankYouPage, error) {
+	var m model.ThankYouPage
+	err := row.Scan(&m.Variant, &m.Title, &m.Subtitle, &m.Description, &m.ShowMessengers, &m.ShowSocialLinks, &m.ShowBlogLink, &m.BlogLinkText, &m.BlogLinkURL, &m.ShowCarousel, &m.ShowFAQ, &m.ShowCommunity, &m.CommunityText, &m.CommunityURL, &m.UpdatedAt)
+	return m, err
+}
+
+const thankYouPagePhotoColumns = "id, variant, image, sort_order, created_at, updated_at"
+
+func scanThankYouPagePhoto(row pgx.CollectableRow) (model.ThankYouPagePhoto, error) {
+	var m model.ThankYouPagePhoto
+	err := row.Scan(&m.ID, &m.Variant, &m.Image, &m.SortOrder, &m.CreatedAt, &m.UpdatedAt)
+	return m, err
+}
+func thankYouPagePhotoArgs(m model.ThankYouPagePhoto) []any {
+	return []any{m.ID, m.Variant, m.Image, m.SortOrder}
+}
+
+const thankYouPageFAQItemColumns = "id, variant, question, answer, sort_order, created_at, updated_at"
+
+func scanThankYouPageFAQItem(row pgx.CollectableRow) (model.ThankYouPageFAQItem, error) {
+	var m model.ThankYouPageFAQItem
+	err := row.Scan(&m.ID, &m.Variant, &m.Question, &m.Answer, &m.SortOrder, &m.CreatedAt, &m.UpdatedAt)
+	return m, err
+}
+func thankYouPageFAQItemArgs(m model.ThankYouPageFAQItem) []any {
+	return []any{m.ID, m.Variant, m.Question, m.Answer, m.SortOrder}
 }

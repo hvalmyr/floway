@@ -20,6 +20,8 @@ import type {
   PageFaq,
   SocialLink,
   Teacher,
+  ThankYouPage,
+  ThankYouPageVariant,
 } from "~/types/api";
 
 function toApiError(err: unknown): ApiError {
@@ -221,6 +223,21 @@ export function useApi() {
   }
 
   /**
+   * GET /api/v1/thank-you-pages/{variant} — public, no auth. Content
+   * ApplyForm.vue navigates to after a successful submission — title/
+   * subtitle/description, show-* flags, and its photos/faqItems, all in one
+   * response (thank_you_page_handler.go's get route has no admin
+   * middleware).
+   */
+  async function getThankYouPage(variant: ThankYouPageVariant): Promise<ThankYouPage> {
+    try {
+      return await client<ThankYouPage>(`/api/v1/thank-you-pages/${variant}`);
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
    * GET /api/v1/about-items — public, no auth. Badge+description cards for
    * the homepage "О школе" section. Already sorted by sortOrder.
    */
@@ -299,6 +316,7 @@ export function useApi() {
     getFAQItems,
     getFeatures,
     getPageFaq,
+    getThankYouPage,
     getAboutItems,
     getIcons,
     getPageContent,

@@ -302,9 +302,67 @@ export interface BlogPost {
   status: BlogPostStatus;
 }
 
+/**
+ * One slide of a thank-you page variant's optional photo carousel. Shape
+ * returned as part of the public GET /api/v1/thank-you-pages/{variant}
+ * (ThankYouPage.photos), pre-sorted by sortOrder.
+ */
+export interface ThankYouPagePhoto {
+  id: number;
+  variant: ThankYouPageVariant;
+  image: string;
+  sortOrder: number;
+}
+
+/**
+ * One Q&A pair in a thank-you page variant's optional mini-FAQ. Shape
+ * returned as part of the public GET /api/v1/thank-you-pages/{variant}
+ * (ThankYouPage.faqItems), pre-sorted by sortOrder.
+ */
+export interface ThankYouPageFaqItem {
+  id: number;
+  variant: ThankYouPageVariant;
+  question: string;
+  answer: string;
+  sortOrder: number;
+}
+
+/**
+ * Shape returned by the public GET /api/v1/thank-you-pages/{variant} — the
+ * content ApplyForm.vue navigates to after a successful submission. The
+ * messenger icons and social-network links shown alongside this content are
+ * NOT part of this shape — they're the site's existing global contact
+ * channels (usePageContent's contact_*_url keys, same ones AppFooter.vue
+ * renders) and useSocialLinks(); showMessengers/showSocialLinks only toggle
+ * whether that shared, already-editable content appears for this variant.
+ */
+export interface ThankYouPage {
+  variant: ThankYouPageVariant;
+  title: string;
+  subtitle: string;
+  description: string;
+  showMessengers: boolean;
+  showSocialLinks: boolean;
+  showBlogLink: boolean;
+  blogLinkText: string;
+  blogLinkUrl: string;
+  showCarousel: boolean;
+  showFaq: boolean;
+  showCommunity: boolean;
+  communityText: string;
+  communityUrl: string;
+  photos: ThankYouPagePhoto[];
+  faqItems: ThankYouPageFaqItem[];
+}
+
 export type ContactMethod = "call" | "telegram" | "whatsapp" | "max";
 export type LeadSource = "referral" | "ads" | "internet" | "social" | "maps";
 export type LeadRequestType = "course" | "masterclass" | "trial_lesson";
+
+/** Thank-you page variants — identical to LeadRequestType, since the page a
+ * lead is sent to after ApplyForm.vue submits is keyed by the same
+ * "context" the lead itself records. */
+export type ThankYouPageVariant = LeadRequestType;
 
 /** POST body for /api/v1/leads (public route — see lead_handler.go). */
 export interface ApplicationPayload {

@@ -67,6 +67,7 @@ type Services struct {
 	SocialLink                   *service.SocialLinkService
 	GalleryPhoto                 *service.GalleryPhotoService
 	GiftCertificateCarouselPhoto *service.GiftCertificateCarouselPhotoService
+	ThankYouPage                 *service.ThankYouPageService
 	NotificationEmail            *service.NotificationEmailService
 	Icon                         *service.IconService
 	ContentExport                *service.ContentExportService
@@ -169,6 +170,7 @@ func NewRouter(services Services) http.Handler {
 			r.Route("/page-faq/{page}", newPageFAQHandler(services.PageFAQ, admin).routes)
 			r.Route("/gallery-photos", newGalleryPhotoHandler(services.GalleryPhoto, admin).routes)
 			r.Route("/gift-certificate-carousel-photos", newGiftCertificateCarouselPhotoHandler(services.GiftCertificateCarouselPhoto, admin).routes)
+			r.Route("/thank-you-pages/{variant}", newThankYouPageHandler(services.ThankYouPage, admin).routes)
 			r.Route("/notification-emails", newNotificationEmailHandler(services.NotificationEmail, admin).routes)
 			r.Route("/leads", newLeadHandler(services.Lead, admin, leadLimiter).routes)
 			r.Route("/clients", newClientHandler(services.Client, admin).routes)

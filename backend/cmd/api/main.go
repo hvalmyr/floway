@@ -142,6 +142,7 @@ func run(logger *slog.Logger) error {
 		SocialLink:                   service.NewSocialLinkService(repository.NewSocialLinkRepository(pool)),
 		GalleryPhoto:                 service.NewGalleryPhotoService(repository.NewGalleryPhotoRepository(pool)),
 		GiftCertificateCarouselPhoto: service.NewGiftCertificateCarouselPhotoService(repository.NewGiftCertificateCarouselPhotoRepository(pool)),
+		ThankYouPage:                 service.NewThankYouPageService(repository.NewThankYouPageRepository(pool)),
 		NotificationEmail:            service.NewNotificationEmailService(notificationEmailRepo),
 		Icon:                         service.NewIconService(repository.NewIconRepository(pool)),
 		ContentExport:                service.NewContentExportService(pool, garageClient),

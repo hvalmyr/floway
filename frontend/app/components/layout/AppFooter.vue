@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import type { Component } from "vue";
-import IconInstagram from "~/components/ui/IconInstagram.vue";
-import IconMax from "~/components/ui/IconMax.vue";
-import IconTelegram from "~/components/ui/IconTelegram.vue";
-import IconVk from "~/components/ui/IconVk.vue";
-import IconWhatsapp from "~/components/ui/IconWhatsapp.vue";
+import { socialIcons } from "~/constants/social-icons";
 import { contactInfo } from "~/constants/contact-info";
 
 const { text } = await usePageContent();
 const { socialLinks } = await useSocialLinks();
+// "Связь со школой": те же мессенджеры, что и в форме заявки (contactMethod),
+// плюс Telegram уже есть в "соцсети" ниже.
+const { contactChannels } = await useContactChannels();
 const route = useRoute();
 const year = new Date().getFullYear();
 
@@ -19,30 +17,6 @@ function isActive(to: string) {
   if (to === "/#courses") return route.path === "/";
   return !to.includes("#") && to !== "/" && route.path.startsWith(to);
 }
-
-const socialIcons: Record<string, Component> = {
-  Telegram: IconTelegram,
-  VK: IconVk,
-  Instagram: IconInstagram,
-};
-
-// "Связь со школой": те же мессенджеры, что и в форме заявки (contactMethod),
-// плюс Telegram уже есть в "соцсети" ниже.
-const contactChannels = computed(() =>
-  [
-    {
-      label: "Telegram",
-      href: text("contact_telegram_url", contactInfo.telegramUrl),
-      icon: IconTelegram,
-    },
-    {
-      label: "Whatsapp",
-      href: text("contact_whatsapp_url", contactInfo.whatsappUrl),
-      icon: IconWhatsapp,
-    },
-    { label: "Max", href: text("contact_max_url", contactInfo.maxUrl), icon: IconMax },
-  ].filter((channel) => channel.href),
-);
 
 const schoolLinks = [
   { to: "/#courses", label: "Курсы" },
