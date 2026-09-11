@@ -110,7 +110,9 @@ function formatDate(dateString: string | null) {
          metadata about the article, not part of its running text, so they
          don't need to match the narrower prose measure. -->
     <section v-if="post.tags.length" class="container pb-48 sm:pb-64 lg:pb-80">
-      <div class="flex w-full flex-wrap justify-between gap-8">
+      <div
+        class="flex w-full flex-wrap justify-between gap-8 rounded-md bg-white/55 p-16 backdrop-blur backdrop-saturate-150"
+      >
         <UiBadge v-for="tag in post.tags" :key="tag">{{ tag }}</UiBadge>
       </div>
     </section>
