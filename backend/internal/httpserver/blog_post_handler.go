@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -38,18 +39,39 @@ func (h *blogPostHandler) routes(r chi.Router) {
 }
 
 type blogPostRequest struct {
-	Slug            string     `json:"slug"`
-	Title           string     `json:"title"`
-	MetaTitle       string     `json:"metaTitle"`
-	MetaDescription string     `json:"metaDescription"`
-	CoverImage      string     `json:"coverImage"`
-	DisplayStyle    string     `json:"displayStyle"`
-	Category        string     `json:"category"`
-	Tags            []string   `json:"tags"`
-	Author          string     `json:"author"`
-	PublishedAt     *time.Time `json:"publishedAt,omitempty"`
-	Content         string     `json:"content"`
-	Status          string     `json:"status"`
+	Slug            string   `json:"slug"`
+	Title           string   `json:"title"`
+	MetaTitle       string   `json:"metaTitle"`
+	MetaDescription string   `json:"metaDescription"`
+	CoverImage      string   `json:"coverImage"`
+	DisplayStyle    string   `json:"displayStyle"`
+	Category        string   `json:"category"`
+	Tags            []string `json:"tags"`
+	Author          string   `json:"author"`
+	// A plain string, not *time.Time — the admin form (a free-text field,
+	// not a date picker) lets an admin type anything, and *time.Time's
+	// strict RFC3339-only UnmarshalJSON used to fail the whole request
+	// (every other field along with it) on the slightest typo. Parsed
+	// leniently in toModel() instead: an unparseable value just saves as
+	// "no publish date" rather than blocking the save entirely.
+	PublishedAt *string `json:"publishedAt,omitempty"`
+	Content     string  `json:"content"`
+	Status      string  `json:"status"`
+}
+
+func parsePublishedAt(raw *string) *time.Time {
+	if raw == nil {
+		return nil
+	}
+	trimmed := strings.TrimSpace(*raw)
+	if trimmed == "" {
+		return nil
+	}
+	t, err := time.Parse(time.RFC3339, trimmed)
+	if err != nil {
+		return nil
+	}
+	return &t
 }
 
 // list is a public route (no requireAdminMiddleware — the admin panel's own
@@ -97,7 +119,7 @@ func (h *blogPostHandler) toModel(req blogPostRequest) model.BlogPost {
 		Category:        req.Category,
 		Tags:            req.Tags,
 		Author:          req.Author,
-		PublishedAt:     req.PublishedAt,
+		PublishedAt:     parsePublishedAt(req.PublishedAt),
 		Content:         req.Content,
 		Status:          model.BlogPostStatus(req.Status),
 	}
