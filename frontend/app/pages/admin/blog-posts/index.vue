@@ -48,13 +48,18 @@ const editingId = ref<number | null>(null);
 const form = ref(emptyForm());
 const saving = ref(false);
 const formError = ref("");
+const slugTouched = ref(false);
+
+// Restores an in-progress edit/create after a reload and keeps saving it as
+// the admin types, so a refresh or an accidental tab close doesn't lose
+// unsaved work. Cleared on successful submit and on explicit cancel.
+const { clearDraft } = useAdminFormDraft("blog-posts", { editingId, form, slugTouched });
 
 await fetchAll();
 
 // Auto-fills slug from title for a brand-new post, right up until the user
 // types into the slug field themselves — editing an existing post's title
 // never touches its (possibly already-live) slug.
-const slugTouched = ref(false);
 watch(
   () => form.value.title,
   (title) => {
@@ -85,6 +90,7 @@ function cancelEdit() {
   editingId.value = null;
   form.value = emptyForm();
   slugTouched.value = false;
+  clearDraft();
 }
 
 async function onSubmit() {

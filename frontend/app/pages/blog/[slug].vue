@@ -100,7 +100,7 @@ function formatDate(dateString: string | null) {
       <div class="mx-auto flex w-full max-w-[720px] flex-col gap-24">
         <RichTextContent :source="post.content" />
 
-        <div v-if="post.tags.length" class="flex flex-wrap gap-8">
+        <div v-if="post.tags.length" class="flex flex-wrap justify-between gap-8">
           <UiBadge v-for="tag in post.tags" :key="tag">{{ tag }}</UiBadge>
         </div>
       </div>

@@ -6,9 +6,10 @@ import {
   Italic,
   Link as LinkIcon,
   Quote,
+  X,
 } from "lucide-vue-next";
 import { onClickOutside } from "@vueuse/core";
-import { onMounted, ref } from "vue";
+import { nextTick, onMounted, onUnmounted, ref } from "vue";
 import { normalizeLinkUrl, sanitizeRichTextHtml } from "~/lib/richTextSanitize";
 
 /**
@@ -32,9 +33,57 @@ const props = withDefaults(
 );
 const emit = defineEmits<{ "update:modelValue": [value: string] }>();
 
+const wrapperRef = ref<HTMLDivElement | null>(null);
 const editorRef = ref<HTMLDivElement | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
 const { upload, uploading, error } = useAdminUpload();
+
+// Clicking an inserted image selects its <figure> and shows a floating
+// delete button over it — contenteditable's native "select + Backspace"
+// doesn't reliably remove a replaced element like an <img>, so this is the
+// only way to remove one once inserted.
+const selectedFigure = ref<HTMLElement | null>(null);
+const deleteButtonStyle = ref<{ top: string; left: string } | null>(null);
+
+function updateDeleteButtonPosition() {
+  if (!selectedFigure.value || !wrapperRef.value) {
+    deleteButtonStyle.value = null;
+    return;
+  }
+  const figureRect = selectedFigure.value.getBoundingClientRect();
+  const wrapperRect = wrapperRef.value.getBoundingClientRect();
+  deleteButtonStyle.value = {
+    top: `${figureRect.top - wrapperRect.top + 8}px`,
+    left: `${figureRect.right - wrapperRect.left - 32}px`,
+  };
+}
+
+function selectImage(img: HTMLElement) {
+  selectedFigure.value = img.closest("figure") ?? img;
+  nextTick(updateDeleteButtonPosition);
+}
+
+function clearImageSelection() {
+  selectedFigure.value = null;
+  deleteButtonStyle.value = null;
+}
+
+function deleteSelectedImage() {
+  if (!selectedFigure.value) return;
+  selectedFigure.value.remove();
+  clearImageSelection();
+  emitCurrentContent();
+}
+
+onClickOutside(wrapperRef, clearImageSelection);
+onMounted(() => {
+  window.addEventListener("scroll", updateDeleteButtonPosition, true);
+  window.addEventListener("resize", updateDeleteButtonPosition);
+});
+onUnmounted(() => {
+  window.removeEventListener("scroll", updateDeleteButtonPosition, true);
+  window.removeEventListener("resize", updateDeleteButtonPosition);
+});
 
 // Tracks our own last emission so the modelValue watcher can tell "the
 // parent echoed back what we just sent" (skip re-sync, keep the caret)
@@ -95,10 +144,13 @@ function onItalic() {
   emitCurrentContent();
 }
 
+// Cycles the current block through normal text -> H2 -> H3 -> normal text,
+// both from the toolbar button and from Ctrl+Shift+H.
 function onHeading() {
   focusEditor();
-  const isHeading = ["H2", "H3"].includes(currentBlockTag());
-  document.execCommand("formatBlock", false, isHeading ? "P" : "H2");
+  const current = currentBlockTag();
+  const next = current === "H2" ? "H3" : current === "H3" ? "P" : "H2";
+  document.execCommand("formatBlock", false, next);
   emitCurrentContent();
 }
 
@@ -287,6 +339,17 @@ async function onImageChange(event: Event) {
   }
 }
 
+function onEditorClick(event: MouseEvent) {
+  const target = event.target as HTMLElement;
+  if (target.tagName === "IMG" && closestInEditor(target, "figure")) {
+    event.preventDefault();
+    selectImage(target);
+    return;
+  }
+  clearImageSelection();
+  onTemplateOptionClick(event);
+}
+
 function onTemplateOptionClick(event: MouseEvent) {
   const opt = closestInEditor(event.target as Node, ".img-tpl-opt");
   if (!opt) return;
@@ -344,6 +407,11 @@ function onPaste(event: ClipboardEvent) {
 }
 
 function onKeydown(event: KeyboardEvent) {
+  if ((event.key === "Delete" || event.key === "Backspace") && selectedFigure.value) {
+    event.preventDefault();
+    deleteSelectedImage();
+    return;
+  }
   if (event.key === "Tab" && selectionAncestor(".img-tpl-alt")) {
     event.preventDefault();
     const urlSpan = selectionAncestor(".img-tpl")?.querySelector<HTMLElement>(".img-tpl-url");
@@ -360,9 +428,14 @@ function onKeydown(event: KeyboardEvent) {
   }
   if (!(event.ctrlKey || event.metaKey)) return;
   const key = event.key.toLowerCase();
-  if (key === "i" && event.shiftKey) {
+  if (event.shiftKey && key === "i") {
     event.preventDefault();
     insertImageTemplate();
+    return;
+  }
+  if (event.shiftKey && key === "h") {
+    event.preventDefault();
+    onHeading();
     return;
   }
   switch (key) {
@@ -383,7 +456,7 @@ function onKeydown(event: KeyboardEvent) {
 </script>
 
 <template>
-  <div class="flex flex-col rounded border border-gray-300">
+  <div ref="wrapperRef" class="relative flex flex-col rounded border border-gray-300">
     <div class="flex items-center gap-1 border-b border-gray-200 bg-gray-50 px-2 py-1">
       <button
         type="button"
@@ -404,7 +477,7 @@ function onKeydown(event: KeyboardEvent) {
       <button
         type="button"
         class="rounded p-1.5 hover:bg-gray-200"
-        title="Заголовок"
+        title="Заголовок (Ctrl+Shift+H)"
         @click="onHeading"
       >
         <Heading2 class="size-5" />
@@ -478,8 +551,18 @@ function onKeydown(event: KeyboardEvent) {
       @input="emitCurrentContent"
       @keydown="onKeydown"
       @paste="onPaste"
-      @click="onTemplateOptionClick"
+      @click="onEditorClick"
     />
+    <button
+      v-if="selectedFigure && deleteButtonStyle"
+      type="button"
+      class="absolute z-10 grid size-6 place-items-center rounded-full bg-red-600 text-white shadow hover:bg-red-700"
+      title="Удалить картинку"
+      :style="deleteButtonStyle"
+      @click="deleteSelectedImage"
+    >
+      <X class="size-4" />
+    </button>
     <p v-if="error" class="border-t border-gray-200 px-3 py-1 text-xs text-red-600">{{ error }}</p>
     <input
       ref="fileInput"
@@ -505,6 +588,11 @@ function onKeydown(event: KeyboardEvent) {
   margin-bottom: 0.5em;
   font-family: var(--font-display);
   font-weight: 700;
+}
+.rich-text-editor :deep(h2) {
+  font-size: var(--text-h2);
+}
+.rich-text-editor :deep(h3) {
   font-size: var(--text-h4);
 }
 .rich-text-editor :deep(blockquote) {
@@ -518,7 +606,13 @@ function onKeydown(event: KeyboardEvent) {
 }
 .rich-text-editor :deep(img) {
   max-width: 100%;
+  max-height: 400px;
   border-radius: 0.25rem;
+  /* display:block + auto margins, not the figure's text-align — Tailwind's
+     preflight forces img to display:block, which text-align can't center. */
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 .rich-text-editor :deep(a) {
   color: var(--color-primary);
