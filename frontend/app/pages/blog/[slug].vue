@@ -102,11 +102,17 @@ function formatDate(dateString: string | null) {
     <UiGlassPage>
       <div class="mx-auto flex w-full max-w-[720px] flex-col gap-24">
         <RichTextContent :source="post.content" />
-
-        <div v-if="post.tags.length" class="flex flex-wrap justify-between gap-8">
-          <UiBadge v-for="tag in post.tags" :key="tag">{{ tag }}</UiBadge>
-        </div>
       </div>
     </UiGlassPage>
+
+    <!-- Own full-width `container` (same width as the hero section above),
+         not nested inside UiGlassPage's own 720px reading column — tags are
+         metadata about the article, not part of its running text, so they
+         don't need to match the narrower prose measure. -->
+    <section v-if="post.tags.length" class="container pb-48 sm:pb-64 lg:pb-80">
+      <div class="flex w-full flex-wrap justify-between gap-8">
+        <UiBadge v-for="tag in post.tags" :key="tag">{{ tag }}</UiBadge>
+      </div>
+    </section>
   </div>
 </template>

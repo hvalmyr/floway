@@ -149,6 +149,7 @@ function unlockFocusInteraction() {
 function enterFocus() {
   if (focusActive) return;
   focusActive = true;
+  document.body.style.cursor = "";
   lockedForCloseup = props.closeup ?? false;
   if (controls) controls.autoRotate = false;
   if (autoRotateResumeTimer !== null) {
@@ -372,6 +373,23 @@ function isOrbitExcluded(target: EventTarget | null): boolean {
 
 function isFunctionalElement(target: EventTarget | null): boolean {
   return target instanceof Element && target.closest(FUNCTIONAL_SELECTOR) !== null;
+}
+
+// Hints that the branch is double-click-able before the user commits to it —
+// same loose hit test entering focus already uses (hitsBranchLoose), same
+// exclusion real site UI already gets (isOrbitExcluded), just driven by
+// hover instead of a click. Only for mouse: touch has no hover concept, and
+// while already focused the object is being orbited/panned, not something
+// left to double-click again, so a "you can click this" cursor would be
+// misleading there. Set on <body> rather than the canvas — the canvas is
+// pointer-events:none (see lockFocusInteraction's comment), so it's never
+// actually the hovered element; body is whatever's really under the cursor
+// wherever no closer element declares its own `cursor`.
+function updateHoverCursor(e: PointerEvent) {
+  if (e.pointerType !== "mouse") return;
+  const showPointer =
+    !focusActive && !isOrbitExcluded(e.target) && hitsBranchLoose(e.clientX, e.clientY);
+  document.body.style.cursor = showPointer ? "pointer" : "";
 }
 
 // Forwarded events are built explicitly (not by passing the real event as
@@ -836,6 +854,7 @@ onMounted(() => {
   controls.update();
   window.addEventListener("pointerdown", handlePointerDown);
   window.addEventListener("pointerdown", handleTouchStart);
+  window.addEventListener("pointermove", updateHoverCursor);
   window.addEventListener("pointermove", handleFocusedGestureMove, { capture: true });
   window.addEventListener("pointerup", endTouch);
   window.addEventListener("pointercancel", endTouch);
@@ -971,8 +990,10 @@ onBeforeUnmount(() => {
   lastPinchDistance = null;
   unlockFocusInteraction();
   resizeObserver?.disconnect();
+  document.body.style.cursor = "";
   window.removeEventListener("pointerdown", handlePointerDown);
   window.removeEventListener("pointerdown", handleTouchStart);
+  window.removeEventListener("pointermove", updateHoverCursor);
   window.removeEventListener("pointermove", handleFocusedGestureMove, { capture: true });
   window.removeEventListener("pointerup", endTouch);
   window.removeEventListener("pointercancel", endTouch);

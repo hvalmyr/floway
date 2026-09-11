@@ -56,6 +56,7 @@ onUnmounted(() => {
   <!-- eslint-disable-next-line vue/no-v-html -->
   <div
     class="rich-text-content font-body text-body text-ink"
+    data-no-orbit
     v-html="source"
     @click="onContentClick"
   />
@@ -69,6 +70,7 @@ onUnmounted(() => {
       aria-modal="true"
       aria-label="Просмотр изображения"
       tabindex="-1"
+      data-no-orbit
       @click.self="closeLightbox"
       @keydown="onKeydown"
     >
