@@ -696,24 +696,35 @@ onUnmounted(() => {
             @click="zoomed = !zoomed"
           />
         </div>
-        <svg
+        <div
           v-if="lightboxLoading"
-          class="pointer-events-none absolute left-1/2 top-1/2 size-48 -translate-x-1/2 -translate-y-1/2 animate-spin text-white motion-reduce:hidden"
-          viewBox="0 0 24 24"
-          fill="none"
+          class="pointer-events-none absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 gap-8 motion-reduce:hidden"
           aria-hidden="true"
         >
-          <circle
-            class="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            stroke-width="4"
-          />
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z" />
-        </svg>
+          <span class="loading-dot size-12 rounded-pill bg-white" style="animation-delay: 0ms" />
+          <span class="loading-dot size-12 rounded-pill bg-white" style="animation-delay: 150ms" />
+          <span class="loading-dot size-12 rounded-pill bg-white" style="animation-delay: 300ms" />
+        </div>
       </div>
     </Teleport>
   </div>
 </template>
+
+<style scoped>
+.loading-dot {
+  animation: loading-dot-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes loading-dot-pulse {
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.75);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+</style>
