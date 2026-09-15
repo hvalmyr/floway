@@ -3,6 +3,7 @@ package httpserver
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"image"
 	_ "image/jpeg" // registers the jpeg decoder for image.DecodeConfig
 	_ "image/png"  // registers the png decoder for image.DecodeConfig
@@ -18,7 +19,9 @@ import (
 )
 
 const (
-	maxUploadSize = 10 << 20 // 10 MB
+	// Keep in sync with maxUploadBodyBytes in router.go, which enforces the
+	// same limit first (this is defense in depth, not a tighter inner cap).
+	maxUploadSize = 20 << 20 // 20 MB
 
 	// Admin-uploaded photos are typically straight off a phone camera —
 	// several thousand pixels wide, multiple megabytes — far beyond
@@ -63,6 +66,11 @@ func (h *uploadHandler) upload(w http.ResponseWriter, r *http.Request) {
 
 	file, _, err := r.FormFile("file")
 	if err != nil {
+		var maxBytesErr *http.MaxBytesError
+		if errors.As(err, &maxBytesErr) {
+			writeError(w, http.StatusBadRequest, fmt.Errorf("file too large, max %d MB", maxUploadSize>>20))
+			return
+		}
 		writeError(w, http.StatusBadRequest, err)
 		return
 	}

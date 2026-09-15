@@ -32,6 +32,15 @@ const maxRequestBodyBytes = 10 << 20 // 10 MB, matches upload_handler's own cap
 // public DoS surface the default limit exists for.
 const maxContentImportBodyBytes = 500 << 20 // 500 MB
 
+// maxUploadBodyBytes is another deliberate exception to maxRequestBodyBytes:
+// admin photo uploads (e.g. the gift-certificate carousel) are routinely
+// straight off a phone camera, which commonly exceeds the default 10 MB cap
+// on its own — that was rejecting legitimate JPEGs with a confusing 400.
+// Admin-only, same reasoning as maxContentImportBodyBytes above. Keep this
+// in sync with maxUploadSize in upload_handler.go, which enforces the same
+// limit a second time (defense in depth, not layered tightening).
+const maxUploadBodyBytes = 20 << 20 // 20 MB
+
 func limitBodySize(next http.Handler) http.Handler {
 	return newBodySizeLimiter(maxRequestBodyBytes)(next)
 }
@@ -150,7 +159,6 @@ func NewRouter(services Services) http.Handler {
 
 		r.Route("/api/v1", func(r chi.Router) {
 			r.Route("/admin", newAuthHandler(services.AdminUser, services.Tokens, services.SecureCookies, admin, loginLimiter).routes)
-			r.Route("/admin/uploads", uploads.adminRoutes)
 			r.Route("/faq", newFAQHandler(services.FAQ, admin).routes)
 			r.Route("/teachers", newTeacherHandler(services.Teacher, admin).routes)
 			r.Route("/blog-posts", newBlogPostHandler(services.BlogPost, services.Tokens, services.AdminUser, admin).routes)
@@ -188,6 +196,13 @@ func NewRouter(services Services) http.Handler {
 	r.Group(func(r chi.Router) {
 		r.Use(newBodySizeLimiter(maxContentImportBodyBytes))
 		r.Route("/api/v1/admin/content", newContentExportHandler(services.ContentExport, admin).routes)
+	})
+
+	// Its own group, with its own (higher) body-size cap — see
+	// maxUploadBodyBytes.
+	r.Group(func(r chi.Router) {
+		r.Use(newBodySizeLimiter(maxUploadBodyBytes))
+		r.Route("/api/v1/admin/uploads", uploads.adminRoutes)
 	})
 
 	return r
