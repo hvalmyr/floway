@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { toTypedSchema } from "@vee-validate/zod";
+import { useDebounceFn } from "@vueuse/core";
 import { useForm } from "vee-validate";
 import { applyFormSchema } from "~/lib/validation/applyForm";
 import type { ContactMethod, LeadRequestType, LeadSource } from "~/types/api";
@@ -43,10 +44,52 @@ const props = withDefaults(
 const api = useApi();
 const { text } = await usePageContent();
 
-const { handleSubmit, isSubmitting } = useForm({
+const { handleSubmit, isSubmitting, values, setValues } = useForm({
   validationSchema: toTypedSchema(applyFormSchema),
   initialValues: { name: "", phone: "", email: "", consent: false },
 });
+
+// Persist in-progress input (not `consent` — re-agreeing after a reload is
+// the right default) so a reload or an accidental tab close doesn't throw
+// away what the visitor already typed. Keyed by `context` alone, not
+// relatedSlug/relatedId: those come back in via props on remount, and
+// sharing one draft across e.g. different course pages is a feature, not a
+// bug — the same visitor's name/phone/email don't change per course.
+const draftStorageKey = `apply-form-draft:${props.context}`;
+
+function readDraft() {
+  if (!import.meta.client) return null;
+  try {
+    const raw = localStorage.getItem(draftStorageKey);
+    return raw ? (JSON.parse(raw) as Partial<Record<string, string>>) : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearDraft() {
+  if (!import.meta.client) return;
+  localStorage.removeItem(draftStorageKey);
+}
+
+// Restored after mount (not via `initialValues`) so the client's first
+// render still matches the server-rendered empty form — no hydration
+// mismatch, just a one-frame fill-in once the draft is read.
+onMounted(() => {
+  const draft = readDraft();
+  if (draft) setValues(draft, false);
+});
+
+const saveDraft = useDebounceFn(() => {
+  if (!import.meta.client) return;
+  const { name, phone, email, contactMethod, source } = values;
+  localStorage.setItem(
+    draftStorageKey,
+    JSON.stringify({ name, phone, email, contactMethod, source }),
+  );
+}, 300);
+
+watch(values, saveDraft, { deep: true });
 
 const status = ref<"idle" | "error">("idle");
 const submitError = ref("");
@@ -89,6 +132,7 @@ const onSubmit = handleSubmit(async (values) => {
       relatedId: props.relatedId,
       relatedSlug: props.relatedSlug,
     });
+    clearDraft();
     // Navigate away rather than swap in an inline success block — the
     // thank-you page (see pages/thank-you/[variant].vue) is its own
     // destination with per-variant copy and a "back to home" way out.
