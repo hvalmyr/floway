@@ -12,6 +12,7 @@ import (
 type ClientLookupRepository interface {
 	FindByID(ctx context.Context, id int64) (model.Client, error)
 	List(ctx context.Context) ([]model.ClientListItem, error)
+	Delete(ctx context.Context, id int64) error
 }
 
 type ClientLeadRepository interface {
@@ -64,6 +65,16 @@ func NewClientService(
 
 func (s *ClientService) List(ctx context.Context) ([]model.ClientListItem, error) {
 	return s.clients.List(ctx)
+}
+
+// Delete removes the client and, via ON DELETE CASCADE (migration 00053),
+// every lead/comment/reminder/tag assignment attached to it — irreversible,
+// same as CourseService.Delete cascading to a course's blocks.
+func (s *ClientService) Delete(ctx context.Context, id int64) error {
+	if id == 0 {
+		return errors.Join(ErrValidation, errors.New("id is required"))
+	}
+	return s.clients.Delete(ctx, id)
 }
 
 func (s *ClientService) GetDetail(ctx context.Context, id int64) (model.ClientDetail, error) {

@@ -41,6 +41,14 @@ func (f *fakeClientLookupRepository) List(ctx context.Context) ([]model.ClientLi
 	return items, nil
 }
 
+func (f *fakeClientLookupRepository) Delete(ctx context.Context, id int64) error {
+	if _, ok := f.byID[id]; !ok {
+		return service.ErrNotFound
+	}
+	delete(f.byID, id)
+	return nil
+}
+
 type fakeClientLeadRepository struct {
 	byClientID map[int64][]model.Lead
 }
@@ -159,6 +167,33 @@ func TestClientService_List(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, items, 1)
 	assert.Equal(t, "Иван", items[0].Name)
+}
+
+func TestClientService_Delete(t *testing.T) {
+	t.Run("removes the client", func(t *testing.T) {
+		svc, clients, _, _, _, _, _ := newTestClientService()
+
+		err := svc.Delete(context.Background(), 1)
+
+		require.NoError(t, err)
+		assert.Len(t, clients.byID, 0)
+	})
+
+	t.Run("requires an id", func(t *testing.T) {
+		svc, _, _, _, _, _, _ := newTestClientService()
+
+		err := svc.Delete(context.Background(), 0)
+
+		require.Error(t, err)
+	})
+
+	t.Run("propagates not-found for an unknown id", func(t *testing.T) {
+		svc, _, _, _, _, _, _ := newTestClientService()
+
+		err := svc.Delete(context.Background(), 999)
+
+		require.ErrorIs(t, err, service.ErrNotFound)
+	})
 }
 
 func TestClientService_SetProductTags(t *testing.T) {

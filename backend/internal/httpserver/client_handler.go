@@ -24,6 +24,7 @@ func (h *clientHandler) routes(r chi.Router) {
 	r.Use(h.admin)
 	r.Get("/", h.list)
 	r.Get("/{id}", h.detail)
+	r.Delete("/{id}", h.delete)
 	r.Put("/{id}/tags/product", h.setProductTags)
 	r.Put("/{id}/tags/client-type", h.setClientTypeTags)
 	r.Post("/{id}/comments", h.addComment)
@@ -53,6 +54,20 @@ func (h *clientHandler) detail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, detail)
+}
+
+func (h *clientHandler) delete(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := h.svc.Delete(r.Context(), id); err != nil {
+		writeServiceError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 type setTagsRequest struct {

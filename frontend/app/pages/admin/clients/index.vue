@@ -85,6 +85,15 @@ const filteredItems = computed(() =>
     sortMode.value,
   ),
 );
+
+// Cascades to the client's leads/comments/reminders/tags on the backend
+// (migration 00053) — the confirm text says so explicitly since this is
+// more destructive than deleting a single lead.
+async function onDelete(client: ClientListItem) {
+  if (!confirm(`Удалить клиента «${client.name}» вместе со всеми его заявками?`)) return;
+  await api(`/api/v1/clients/${client.id}`, { method: "DELETE" });
+  items.value = items.value.filter((c) => c.id !== client.id);
+}
 </script>
 
 <template>
@@ -160,12 +169,21 @@ const filteredItems = computed(() =>
       >
         <div class="flex flex-wrap items-center justify-between gap-2">
           <span class="font-medium text-[var(--color-primary)]">{{ client.name }}</span>
-          <span
-            v-if="client.latestStatus"
-            class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-[var(--color-text-muted)]"
-          >
-            {{ LEAD_STATUS_LABELS[client.latestStatus] }}
-          </span>
+          <div class="flex items-center gap-3">
+            <span
+              v-if="client.latestStatus"
+              class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-[var(--color-text-muted)]"
+            >
+              {{ LEAD_STATUS_LABELS[client.latestStatus] }}
+            </span>
+            <button
+              type="button"
+              class="text-xs text-red-600 hover:underline"
+              @click.stop.prevent="onDelete(client)"
+            >
+              Удалить
+            </button>
+          </div>
         </div>
         <p class="mt-1 text-sm text-[var(--color-text-muted)]">
           {{ client.phone }}<span v-if="client.email"> · {{ client.email }}</span> ·

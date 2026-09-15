@@ -113,6 +113,15 @@ func (r *ClientRepository) List(ctx context.Context) ([]model.ClientListItem, er
 	return items, rows.Err()
 }
 
+// Delete cascades to the client's leads (migration 00053), which in turn
+// cascade to client_comments/reminders/client_*_tags (migrations 00032-
+// 00034) — deleting a client removes its entire CRM history in one
+// statement, not just the profile row.
+func (r *ClientRepository) Delete(ctx context.Context, id int64) error {
+	tag, err := r.db.Exec(ctx, `DELETE FROM clients WHERE id = $1`, id)
+	return checkDeleted(tag, err)
+}
+
 // RefreshContactInfo overwrites the client's profile with the latest
 // submitted contact details — the newest submission is more likely to be
 // current than whatever's on file. The lead's own historical snapshot is

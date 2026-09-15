@@ -6,6 +6,7 @@ import type { ClientDetail } from "~/types/api";
 definePageMeta({ layout: "admin", middleware: "admin-auth" });
 
 const route = useRoute();
+const router = useRouter();
 const clientId = Number(route.params.id);
 const api = useApiClient();
 
@@ -68,6 +69,23 @@ function isToday(iso: string): boolean {
 }
 
 const openReminders = computed(() => detail.value?.reminders.filter((r) => !r.completedAt) ?? []);
+
+const deleting = ref(false);
+
+// Cascades to the client's leads/comments/reminders/tags on the backend
+// (migration 00053) — the confirm text says so explicitly since this is
+// more destructive than deleting a single lead.
+async function onDeleteClient() {
+  if (!detail.value) return;
+  if (!confirm(`Удалить клиента «${detail.value.name}» вместе со всеми его заявками?`)) return;
+  deleting.value = true;
+  try {
+    await api(`/api/v1/clients/${clientId}`, { method: "DELETE" });
+    await router.push("/admin/clients");
+  } finally {
+    deleting.value = false;
+  }
+}
 </script>
 
 <template>
@@ -82,8 +100,18 @@ const openReminders = computed(() => detail.value?.reminders.filter((r) => !r.co
     <template v-else-if="detail">
       <div class="mt-4 flex flex-wrap items-baseline justify-between gap-3">
         <h1 class="text-2xl font-semibold">{{ detail.name }}</h1>
-        <div class="text-sm text-[var(--color-text-muted)]">
-          {{ detail.phone }} · {{ detail.email || "—" }}
+        <div class="flex items-baseline gap-4">
+          <div class="text-sm text-[var(--color-text-muted)]">
+            {{ detail.phone }} · {{ detail.email || "—" }}
+          </div>
+          <button
+            type="button"
+            :disabled="deleting"
+            class="text-sm text-red-600 hover:underline disabled:opacity-50"
+            @click="onDeleteClient"
+          >
+            Удалить клиента
+          </button>
         </div>
       </div>
 
