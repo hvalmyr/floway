@@ -50,11 +50,17 @@ type Course struct {
 	// description and items — without deleting anything, same convention as
 	// Visible above. Not to be confused with the global faq_items table
 	// (model.FAQItem) rendered once on the homepage.
-	FAQTitle       string    `db:"faq_title" json:"faqTitle"`
-	FAQDescription string    `db:"faq_description" json:"faqDescription"`
-	FAQVisible     bool      `db:"faq_visible" json:"faqVisible"`
-	CreatedAt      time.Time `db:"created_at" json:"createdAt"`
-	UpdatedAt      time.Time `db:"updated_at" json:"updatedAt"`
+	FAQTitle       string `db:"faq_title" json:"faqTitle"`
+	FAQDescription string `db:"faq_description" json:"faqDescription"`
+	FAQVisible     bool   `db:"faq_visible" json:"faqVisible"`
+	// CustomDisplayStyleID, when set, overrides DisplayStyle's fixed enum
+	// with an admin-defined bg/text color pair (see CustomDisplayStyle) —
+	// for one-off looks like a seasonal course the 6 standard combos don't
+	// cover. ON DELETE SET NULL: deleting the custom style just falls the
+	// course back to its DisplayStyle enum, not an error.
+	CustomDisplayStyleID *int64    `db:"custom_display_style_id" json:"customDisplayStyleId,omitempty"`
+	CreatedAt            time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt            time.Time `db:"updated_at" json:"updatedAt"`
 }
 
 type CourseBlockDisplayStyle string
@@ -64,7 +70,23 @@ const (
 	DisplayStyleBrownBeige CourseBlockDisplayStyle = "brown-beige"
 	DisplayStyleBeigeBlue  CourseBlockDisplayStyle = "beige-blue"
 	DisplayStyleBeigeBrown CourseBlockDisplayStyle = "beige-brown"
+	DisplayStyleBlueBrown  CourseBlockDisplayStyle = "blue-brown"
+	DisplayStyleBrownBlue  CourseBlockDisplayStyle = "brown-blue"
 )
+
+// CustomDisplayStyle is an admin-defined bg/text color pair, for courses
+// that need a look outside the fixed CourseBlockDisplayStyle palette (e.g.
+// a New Year or autumn seasonal course). BgColor/TextColor are "#rrggbb"
+// hex strings. Referenced by Course/CourseBlock.CustomDisplayStyleID.
+type CustomDisplayStyle struct {
+	ID        int64     `db:"id" json:"id"`
+	Name      string    `db:"name" json:"name"`
+	BgColor   string    `db:"bg_color" json:"bgColor"`
+	TextColor string    `db:"text_color" json:"textColor"`
+	SortOrder int       `db:"sort_order" json:"sortOrder"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
+}
 
 // CourseBlock carries its own lesson list directly (via CourseBlockWithLessons
 // below) — there's no separate "curriculum" level. lesson_count/time_length/
@@ -88,8 +110,10 @@ type CourseBlock struct {
 	DisplayStyle CourseBlockDisplayStyle `db:"display_style" json:"displayStyle"`
 	Visible      bool                    `db:"visible" json:"visible"`
 	SortOrder    int                     `db:"sort_order" json:"sortOrder"`
-	CreatedAt    time.Time               `db:"created_at" json:"createdAt"`
-	UpdatedAt    time.Time               `db:"updated_at" json:"updatedAt"`
+	// See Course.CustomDisplayStyleID's doc comment — same override rule.
+	CustomDisplayStyleID *int64    `db:"custom_display_style_id" json:"customDisplayStyleId,omitempty"`
+	CreatedAt            time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt            time.Time `db:"updated_at" json:"updatedAt"`
 }
 
 // Lesson belongs to exactly one parent — CourseBlockID (a course split into
@@ -605,6 +629,7 @@ type SiteContent struct {
 	Version              int                   `json:"version"`
 	ExportedAt           time.Time             `json:"exportedAt"`
 	CourseSections       []CourseSection       `json:"courseSections"`
+	CustomDisplayStyles  []CustomDisplayStyle  `json:"customDisplayStyles"`
 	Courses              []Course              `json:"courses"`
 	CourseBlocks         []CourseBlock         `json:"courseBlocks"`
 	Lessons              []Lesson              `json:"lessons"`

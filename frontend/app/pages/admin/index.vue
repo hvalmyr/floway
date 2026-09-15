@@ -12,6 +12,7 @@ const editingGroups: EditingGroup[] = [
     links: [
       { to: "/admin/course-sections", label: "Курсы" },
       { to: "/admin/masterclasses", label: "Мастер-классы" },
+      { to: "/admin/custom-styles", label: "Особые стили карточек" },
     ],
   },
   {

@@ -65,6 +65,8 @@ const colorClasses: Record<CourseBlockDisplayStyle, string> = {
   "beige-blue":
     "border-2 border-primary bg-white/55 text-primary backdrop-blur backdrop-saturate-150",
   "beige-brown": "border-2 border-ink bg-surface/55 text-ink backdrop-blur backdrop-saturate-150",
+  "blue-brown": "bg-primary/70 text-ink backdrop-blur backdrop-saturate-150",
+  "brown-blue": "bg-ink/70 text-primary backdrop-blur backdrop-saturate-150",
 };
 </script>
 

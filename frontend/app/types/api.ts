@@ -23,7 +23,31 @@ export interface ImportResult {
 export type MasterclassStatus = "active" | "archived";
 
 /** Background/text color pair for a course block's homepage card — see CourseCard.vue. */
-export type CourseBlockDisplayStyle = "blue-beige" | "brown-beige" | "beige-blue" | "beige-brown";
+export type CourseBlockDisplayStyle =
+  | "blue-beige"
+  | "brown-beige"
+  | "beige-blue"
+  | "beige-brown"
+  | "blue-brown"
+  | "brown-blue";
+
+/**
+ * Admin-defined bg/text color pair for a one-off course look the 6 fixed
+ * CourseBlockDisplayStyle combos don't cover (e.g. a New Year or autumn
+ * seasonal course). Shape returned by the public GET
+ * /api/v1/custom-display-styles (list, no auth, pre-sorted by sortOrder).
+ * When a Course/CourseBlock's customDisplayStyleId is set, it overrides
+ * displayStyle for that card's colors — see CourseCard.vue.
+ */
+export interface CustomDisplayStyle {
+  id: number;
+  name: string;
+  /** "#rrggbb" hex color. */
+  bgColor: string;
+  /** "#rrggbb" hex color. */
+  textColor: string;
+  sortOrder: number;
+}
 
 export interface CourseSection {
   id: number;
@@ -62,6 +86,8 @@ export interface Course {
   faqDescription: string;
   /** Shows/hides the whole FAQ block (title, description and items) without deleting anything. */
   faqVisible: boolean;
+  /** Overrides displayStyle with an admin-defined CustomDisplayStyle when set — see CourseCard.vue. */
+  customDisplayStyleId?: number | null;
 }
 
 /**
@@ -118,6 +144,8 @@ export interface CourseBlock {
   sortOrder: number;
   /** Hides this block's homepage card (and drops it from the course page) without deleting it. */
   visible: boolean;
+  /** Overrides displayStyle with an admin-defined CustomDisplayStyle when set — see CourseCard.vue. */
+  customDisplayStyleId?: number | null;
 }
 
 // A lesson belongs to exactly one parent — courseBlockId (a course split

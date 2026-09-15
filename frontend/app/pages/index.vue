@@ -15,6 +15,13 @@ const { data: courseSectionsData } = await useAsyncData("home-course-sections", 
 );
 const courseSections = computed(() => courseSectionsData.value ?? []);
 
+const { data: customDisplayStylesData } = await useAsyncData("home-custom-display-styles", () =>
+  api.getCustomDisplayStyles(),
+);
+const customDisplayStylesById = computed(
+  () => new Map((customDisplayStylesData.value ?? []).map((s) => [s.id, s])),
+);
+
 /**
  * One card per VISIBLE block — a course with a single block (or none at
  * all, in which case the backend hands back one synthetic block built from
@@ -36,6 +43,9 @@ function sectionCards(section: CourseSectionWithCourses) {
       timeLength: block.timeLength || undefined,
       coverImage: block.blockCover || undefined,
       displayStyle: block.displayStyle,
+      customColors: block.customDisplayStyleId
+        ? customDisplayStylesById.value.get(block.customDisplayStyleId)
+        : undefined,
       to: `/courses/${course.slug}`,
     })),
   );
@@ -141,6 +151,7 @@ function capitalizeName(name: string): string {
             :key="card.key"
             :name="card.name"
             :display-style="card.displayStyle"
+            :custom-colors="card.customColors"
             :block-label="card.blockLabel"
             :lesson-count="card.lessonCount"
             :time-length="card.timeLength"

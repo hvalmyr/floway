@@ -32,6 +32,8 @@ var validDisplayStyles = map[model.CourseBlockDisplayStyle]bool{
 	model.DisplayStyleBrownBeige: true,
 	model.DisplayStyleBeigeBlue:  true,
 	model.DisplayStyleBeigeBrown: true,
+	model.DisplayStyleBlueBrown:  true,
+	model.DisplayStyleBrownBlue:  true,
 }
 
 // validateDisplayStyle defaults an empty value (a client that doesn't send
@@ -42,7 +44,7 @@ func validateDisplayStyle(style model.CourseBlockDisplayStyle) (model.CourseBloc
 		return model.DisplayStyleBlueBeige, nil
 	}
 	if !validDisplayStyles[style] {
-		return "", errors.Join(ErrValidation, errors.New("displayStyle must be one of blue-beige, brown-beige, beige-blue, beige-brown"))
+		return "", errors.Join(ErrValidation, errors.New("displayStyle must be one of blue-beige, brown-beige, beige-blue, beige-brown, blue-brown, brown-blue"))
 	}
 	return style, nil
 }

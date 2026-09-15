@@ -62,6 +62,7 @@ type Services struct {
 	CourseSection                *service.CourseSectionService
 	Course                       *service.CourseService
 	CourseBlock                  *service.CourseBlockService
+	CustomDisplayStyle           *service.CustomDisplayStyleService
 	Lesson                       *service.LessonService
 	CourseFAQ                    *service.CourseFAQService
 	PageFAQ                      *service.PageFAQService
@@ -177,6 +178,7 @@ func NewRouter(services Services) http.Handler {
 			r.Route("/course-blocks/{blockId}/lessons", newLessonHandler(services.Lesson, admin).routes)
 			r.Route("/page-faq/{page}", newPageFAQHandler(services.PageFAQ, admin).routes)
 			r.Route("/gallery-photos", newGalleryPhotoHandler(services.GalleryPhoto, admin).routes)
+			r.Route("/custom-display-styles", newCustomDisplayStyleHandler(services.CustomDisplayStyle, admin).routes)
 			r.Route("/gift-certificate-carousel-photos", newGiftCertificateCarouselPhotoHandler(services.GiftCertificateCarouselPhoto, admin).routes)
 			r.Route("/thank-you-pages/{variant}", newThankYouPageHandler(services.ThankYouPage, admin).routes)
 			r.Route("/notification-emails", newNotificationEmailHandler(services.NotificationEmail, admin).routes)

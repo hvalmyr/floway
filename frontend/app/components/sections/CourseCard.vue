@@ -53,6 +53,10 @@ const props = withDefaults(
     name: string;
     description?: string;
     displayStyle?: CourseBlockDisplayStyle;
+    /** Admin-defined bg/text color pair (see CustomDisplayStyle) — when set,
+     * overrides displayStyle's fixed palette with these inline colors
+     * instead, for a one-off look like a seasonal course. */
+    customColors?: { bgColor: string; textColor: string } | null;
     coverImage?: string;
     /** The block's own name/label (e.g. `Блок "Букеты"`) — blank for a
      * synthetic single block, so it's simply omitted for a blockless
@@ -70,15 +74,25 @@ const props = withDefaults(
 );
 
 const colorClasses = displayStyleColorClasses;
+
+// customColors, when present, wins over displayStyle entirely — inline
+// style rather than a class, since these are arbitrary admin-picked hex
+// values with no matching Tailwind utility.
+const customStyle = computed(() =>
+  props.customColors
+    ? { backgroundColor: props.customColors.bgColor, color: props.customColors.textColor }
+    : undefined,
+);
 </script>
 
 <template>
   <UiCard
     variant="custom"
     :class="[
-      colorClasses[displayStyle],
+      !customColors && colorClasses[displayStyle],
       'flex w-full min-w-[320px] flex-col sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-22px)]',
     ]"
+    :style="customStyle"
   >
     <template #title>{{ name }}</template>
 

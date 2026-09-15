@@ -1,13 +1,33 @@
 <script setup lang="ts">
 definePageMeta({ layout: "admin", middleware: "admin-auth" });
 
-type DisplayStyle = "blue-beige" | "brown-beige" | "beige-blue" | "beige-brown";
+type DisplayStyle =
+  | "blue-beige"
+  | "brown-beige"
+  | "beige-blue"
+  | "beige-brown"
+  | "blue-brown"
+  | "brown-blue";
 
 const displayStyleLabels: Record<DisplayStyle, string> = {
   "blue-beige": "Голубой фон, бежевый текст",
   "brown-beige": "Коричневый фон, бежевый текст",
   "beige-blue": "Бежевый фон, голубой текст",
   "beige-brown": "Бежевый фон, коричневый текст",
+  "blue-brown": "Голубой фон, коричневый текст",
+  "brown-blue": "Коричневый фон, голубой текст",
+};
+
+// Mirrors the 3 hex values in tailwind.config.ts (--color-primary/-surface/-ink)
+// — only needed here to render the same preview for the fixed enum styles
+// that AdminCourseCardPreview otherwise only gets for custom styles.
+const displayStyleColors: Record<DisplayStyle, { bgColor: string; textColor: string }> = {
+  "blue-beige": { bgColor: "#82B1CC", textColor: "#F7F5F3" },
+  "brown-beige": { bgColor: "#41342A", textColor: "#F7F5F3" },
+  "beige-blue": { bgColor: "#F7F5F3", textColor: "#82B1CC" },
+  "beige-brown": { bgColor: "#F7F5F3", textColor: "#41342A" },
+  "blue-brown": { bgColor: "#82B1CC", textColor: "#41342A" },
+  "brown-blue": { bgColor: "#41342A", textColor: "#82B1CC" },
 };
 
 interface CourseBlock {
@@ -22,6 +42,14 @@ interface CourseBlock {
   displayStyle: DisplayStyle;
   sortOrder: number;
   visible: boolean;
+  customDisplayStyleId: number | null;
+}
+
+interface CustomDisplayStyle {
+  id: number;
+  name: string;
+  bgColor: string;
+  textColor: string;
 }
 
 const route = useRoute();
@@ -37,6 +65,7 @@ const emptyForm = (): Omit<CourseBlock, "id" | "courseId"> => ({
   displayStyle: "blue-beige",
   sortOrder: 0,
   visible: true,
+  customDisplayStyleId: null,
 });
 
 const { items, loading, error, fetchAll, create, update, remove } = useAdminResource<CourseBlock>(
@@ -48,7 +77,14 @@ const form = ref(emptyForm());
 const saving = ref(false);
 const formError = ref("");
 
+const customStyles = ref<CustomDisplayStyle[]>([]);
+const previewColors = computed(() => {
+  const custom = customStyles.value.find((s) => s.id === form.value.customDisplayStyleId);
+  return custom ?? displayStyleColors[form.value.displayStyle];
+});
+
 await fetchAll();
+customStyles.value = await useApi().getCustomDisplayStyles();
 
 const { draggingIndex, onPointerDown } = useAdminDragReorder(items, (item) =>
   update(item.id, item),
@@ -66,6 +102,7 @@ function startEdit(block: CourseBlock) {
     displayStyle: block.displayStyle,
     sortOrder: block.sortOrder,
     visible: block.visible,
+    customDisplayStyleId: block.customDisplayStyleId,
   };
 }
 
@@ -116,71 +153,91 @@ async function onToggleVisible(block: CourseBlock) {
       прямо в карточке курса на предыдущей странице.
     </p>
 
-    <form
-      class="mt-6 grid gap-3 rounded border border-gray-200 bg-white p-4 sm:grid-cols-2"
-      @submit.prevent="onSubmit"
-    >
-      <input
-        v-model="form.blockName"
-        type="text"
-        placeholder="Название блока (например, «Букеты»)"
-        class="rounded border border-gray-300 px-3 py-2 sm:col-span-2"
-      />
-      <AdminMarkdownField
-        v-model="form.description"
-        placeholder="Вступительный текст над учебным планом блока"
-        :rows="3"
-        class="sm:col-span-2"
-      />
-      <AdminImageUpload v-model="form.blockCover" label="Обложка блока" />
-      <input
-        v-model="form.lessonCount"
-        type="text"
-        placeholder="Количество занятий (например, «7 занятий»)"
-        class="rounded border border-gray-300 px-3 py-2"
-      />
-      <input
-        v-model="form.timeLength"
-        type="text"
-        placeholder="Продолжительность (например, «30 часов»)"
-        class="rounded border border-gray-300 px-3 py-2"
-      />
-      <input
-        v-model="form.price"
-        type="text"
-        placeholder="Цена (например, «38 500 ₽»)"
-        class="rounded border border-gray-300 px-3 py-2"
-      />
-      <select v-model="form.displayStyle" class="rounded border border-gray-300 px-3 py-2">
-        <option v-for="(label, value) in displayStyleLabels" :key="value" :value="value">
-          {{ label }}
-        </option>
-      </select>
-      <label class="flex items-center gap-2 text-sm">
-        <input v-model="form.visible" type="checkbox" class="size-5" />
-        Показывать на сайте
-      </label>
-
-      <p v-if="formError" class="text-sm text-red-600 sm:col-span-2">{{ formError }}</p>
-
-      <div class="flex gap-2 sm:col-span-2">
-        <button
-          type="submit"
-          :disabled="saving"
-          class="rounded bg-[var(--color-primary)] px-4 py-2 text-white disabled:opacity-50"
+    <div class="mt-6 grid gap-6 lg:grid-cols-[1fr_auto] lg:items-start">
+      <form
+        class="grid gap-3 rounded border border-gray-200 bg-white p-4 sm:grid-cols-2"
+        @submit.prevent="onSubmit"
+      >
+        <input
+          v-model="form.blockName"
+          type="text"
+          placeholder="Название блока (например, «Букеты»)"
+          class="rounded border border-gray-300 px-3 py-2 sm:col-span-2"
+        />
+        <AdminMarkdownField
+          v-model="form.description"
+          placeholder="Вступительный текст над учебным планом блока"
+          :rows="3"
+          class="sm:col-span-2"
+        />
+        <AdminImageUpload v-model="form.blockCover" label="Обложка блока" />
+        <input
+          v-model="form.lessonCount"
+          type="text"
+          placeholder="Количество занятий (например, «7 занятий»)"
+          class="rounded border border-gray-300 px-3 py-2"
+        />
+        <input
+          v-model="form.timeLength"
+          type="text"
+          placeholder="Продолжительность (например, «30 часов»)"
+          class="rounded border border-gray-300 px-3 py-2"
+        />
+        <input
+          v-model="form.price"
+          type="text"
+          placeholder="Цена (например, «38 500 ₽»)"
+          class="rounded border border-gray-300 px-3 py-2"
+        />
+        <select v-model="form.displayStyle" class="rounded border border-gray-300 px-3 py-2">
+          <option v-for="(label, value) in displayStyleLabels" :key="value" :value="value">
+            {{ label }}
+          </option>
+        </select>
+        <select
+          v-model="form.customDisplayStyleId"
+          class="rounded border border-gray-300 px-3 py-2"
         >
-          {{ editingId === null ? "Добавить" : "Сохранить" }}
-        </button>
-        <button
-          v-if="editingId !== null"
-          type="button"
-          class="rounded border border-gray-300 px-4 py-2"
-          @click="cancelEdit"
-        >
-          Отмена
-        </button>
+          <option :value="null">— Обычный стиль (см. слева) —</option>
+          <option v-for="style in customStyles" :key="style.id" :value="style.id">
+            {{ style.name }}
+          </option>
+        </select>
+        <label class="flex items-center gap-2 text-sm">
+          <input v-model="form.visible" type="checkbox" class="size-5" />
+          Показывать на сайте
+        </label>
+
+        <p v-if="formError" class="text-sm text-red-600 sm:col-span-2">{{ formError }}</p>
+
+        <div class="flex gap-2 sm:col-span-2">
+          <button
+            type="submit"
+            :disabled="saving"
+            class="rounded bg-[var(--color-primary)] px-4 py-2 text-white disabled:opacity-50"
+          >
+            {{ editingId === null ? "Добавить" : "Сохранить" }}
+          </button>
+          <button
+            v-if="editingId !== null"
+            type="button"
+            class="rounded border border-gray-300 px-4 py-2"
+            @click="cancelEdit"
+          >
+            Отмена
+          </button>
+        </div>
+      </form>
+
+      <div class="flex flex-col items-center gap-2 justify-self-center">
+        <p class="text-sm text-[var(--color-text-muted)]">Так будет выглядеть карточка блока</p>
+        <AdminCourseCardPreview
+          :bg-color="previewColors.bgColor"
+          :text-color="previewColors.textColor"
+          :title="form.blockName || 'Название курса'"
+        />
       </div>
-    </form>
+    </div>
 
     <p v-if="loading" class="mt-6 text-[var(--color-text-muted)]">Загрузка…</p>
     <p v-else-if="error" class="mt-6 text-red-600">{{ error }}</p>
@@ -215,7 +272,12 @@ async function onToggleVisible(block: CourseBlock) {
           <td class="px-4 py-2">{{ block.lessonCount }}</td>
           <td class="px-4 py-2">{{ block.timeLength }}</td>
           <td class="px-4 py-2">{{ block.price }}</td>
-          <td class="px-4 py-2">{{ displayStyleLabels[block.displayStyle] }}</td>
+          <td class="px-4 py-2">
+            {{
+              customStyles.find((s) => s.id === block.customDisplayStyleId)?.name ??
+              displayStyleLabels[block.displayStyle]
+            }}
+          </td>
           <td class="px-4 py-2">
             <AdminVisibilityDot :visible="block.visible" @click="onToggleVisible(block)" />
           </td>

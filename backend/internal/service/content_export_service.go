@@ -76,10 +76,13 @@ func (s *ContentExportService) Export(ctx context.Context) (model.SiteContent, e
 	if out.CourseSections, err = queryAll(ctx, s.db, `SELECT id, heading, description, visible, sort_order, created_at, updated_at FROM course_sections ORDER BY id`, scanCourseSection); err != nil {
 		return out, fmt.Errorf("export course sections: %w", err)
 	}
-	if out.Courses, err = queryAll(ctx, s.db, `SELECT id, section_id, slug, name, description, cover_image, lesson_count, time_length, price, display_style, visible, sort_order, single_card, faq_title, faq_description, faq_visible, created_at, updated_at FROM courses ORDER BY id`, scanCourse); err != nil {
+	if out.CustomDisplayStyles, err = queryAll(ctx, s.db, `SELECT id, name, bg_color, text_color, sort_order, created_at, updated_at FROM custom_display_styles ORDER BY id`, scanCustomDisplayStyle); err != nil {
+		return out, fmt.Errorf("export custom display styles: %w", err)
+	}
+	if out.Courses, err = queryAll(ctx, s.db, `SELECT id, section_id, slug, name, description, cover_image, lesson_count, time_length, price, display_style, visible, sort_order, single_card, faq_title, faq_description, faq_visible, custom_display_style_id, created_at, updated_at FROM courses ORDER BY id`, scanCourse); err != nil {
 		return out, fmt.Errorf("export courses: %w", err)
 	}
-	if out.CourseBlocks, err = queryAll(ctx, s.db, `SELECT id, course_id, block_name, description, block_cover, lesson_count, time_length, price, display_style, visible, sort_order, created_at, updated_at FROM course_blocks ORDER BY id`, scanCourseBlock); err != nil {
+	if out.CourseBlocks, err = queryAll(ctx, s.db, `SELECT id, course_id, block_name, description, block_cover, lesson_count, time_length, price, display_style, visible, sort_order, custom_display_style_id, created_at, updated_at FROM course_blocks ORDER BY id`, scanCourseBlock); err != nil {
 		return out, fmt.Errorf("export course blocks: %w", err)
 	}
 	if out.Lessons, err = queryAll(ctx, s.db, `SELECT id, course_block_id, course_id, name, description, sort_order, created_at, updated_at FROM lessons ORDER BY id`, scanLesson); err != nil {
@@ -197,7 +200,7 @@ func (s *ContentExportService) Import(ctx context.Context, data model.SiteConten
 		// page_faq_settings are never deleted (see importPageContent and
 		// importPageFAQSettings) — page_faq_items needs its own explicit
 		// clear since its parent row survives.
-		for _, table := range []string{"course_sections", "masterclasses", "teachers", "gallery_photos", "blog_posts", "faq_items", "features", "about_items", "social_links", "page_faq_items", "thank_you_page_photos", "thank_you_page_faq_items"} {
+		for _, table := range []string{"course_sections", "custom_display_styles", "masterclasses", "teachers", "gallery_photos", "blog_posts", "faq_items", "features", "about_items", "social_links", "page_faq_items", "thank_you_page_photos", "thank_you_page_faq_items"} {
 			if _, err := tx.Exec(ctx, "DELETE FROM "+table); err != nil {
 				return ImportResult{}, fmt.Errorf("clear %s: %w", table, err)
 			}
@@ -215,13 +218,22 @@ func (s *ContentExportService) Import(ctx context.Context, data model.SiteConten
 	}
 	result.Counts["courseSections"] = n
 
-	n, err = bulkWrite(ctx, tx, "courses", []string{"id", "section_id", "slug", "name", "description", "cover_image", "lesson_count", "time_length", "price", "display_style", "visible", "sort_order", "single_card", "faq_title", "faq_description", "faq_visible"}, data.Courses, courseArgs, conflictCol)
+	// Must run before courses/course_blocks below — they reference this
+	// table's ids via custom_display_style_id, and the FK check fails if the
+	// referenced row doesn't exist yet.
+	n, err = bulkWrite(ctx, tx, "custom_display_styles", []string{"id", "name", "bg_color", "text_color", "sort_order"}, data.CustomDisplayStyles, customDisplayStyleArgs, conflictCol)
+	if err != nil {
+		return ImportResult{}, fmt.Errorf("import custom display styles: %w", err)
+	}
+	result.Counts["customDisplayStyles"] = n
+
+	n, err = bulkWrite(ctx, tx, "courses", []string{"id", "section_id", "slug", "name", "description", "cover_image", "lesson_count", "time_length", "price", "display_style", "visible", "sort_order", "single_card", "faq_title", "faq_description", "faq_visible", "custom_display_style_id"}, data.Courses, courseArgs, conflictCol)
 	if err != nil {
 		return ImportResult{}, fmt.Errorf("import courses: %w", err)
 	}
 	result.Counts["courses"] = n
 
-	n, err = bulkWrite(ctx, tx, "course_blocks", []string{"id", "course_id", "block_name", "description", "block_cover", "lesson_count", "time_length", "price", "display_style", "visible", "sort_order"}, data.CourseBlocks, courseBlockArgs, conflictCol)
+	n, err = bulkWrite(ctx, tx, "course_blocks", []string{"id", "course_id", "block_name", "description", "block_cover", "lesson_count", "time_length", "price", "display_style", "visible", "sort_order", "custom_display_style_id"}, data.CourseBlocks, courseBlockArgs, conflictCol)
 	if err != nil {
 		return ImportResult{}, fmt.Errorf("import course blocks: %w", err)
 	}
@@ -308,7 +320,7 @@ func (s *ContentExportService) Import(ctx context.Context, data model.SiteConten
 	// Every id-bearing table above just got explicit ids inserted — bump each
 	// sequence past the highest one, or the next plain admin-panel Create()
 	// (which never specifies an id) will collide with an imported row.
-	for _, table := range []string{"course_sections", "courses", "course_blocks", "lessons", "course_faq_items", "page_faq_items", "masterclasses", "teachers", "gallery_photos", "blog_posts", "faq_items", "features", "about_items", "social_links", "thank_you_page_photos", "thank_you_page_faq_items"} {
+	for _, table := range []string{"course_sections", "custom_display_styles", "courses", "course_blocks", "lessons", "course_faq_items", "page_faq_items", "masterclasses", "teachers", "gallery_photos", "blog_posts", "faq_items", "features", "about_items", "social_links", "thank_you_page_photos", "thank_you_page_faq_items"} {
 		if _, err := tx.Exec(ctx, `SELECT setval(pg_get_serial_sequence($1, 'id'), GREATEST((SELECT COALESCE(MAX(id), 0) FROM `+table+`), 1))`, table); err != nil {
 			return ImportResult{}, fmt.Errorf("reset %s id sequence: %w", table, err)
 		}
@@ -512,11 +524,20 @@ func courseSectionArgs(m model.CourseSection) []any {
 
 func scanCourse(row pgx.CollectableRow) (model.Course, error) {
 	var m model.Course
-	err := row.Scan(&m.ID, &m.SectionID, &m.Slug, &m.Name, &m.Description, &m.CoverImage, &m.LessonCount, &m.TimeLength, &m.Price, &m.DisplayStyle, &m.Visible, &m.SortOrder, &m.SingleCard, &m.FAQTitle, &m.FAQDescription, &m.FAQVisible, &m.CreatedAt, &m.UpdatedAt)
+	err := row.Scan(&m.ID, &m.SectionID, &m.Slug, &m.Name, &m.Description, &m.CoverImage, &m.LessonCount, &m.TimeLength, &m.Price, &m.DisplayStyle, &m.Visible, &m.SortOrder, &m.SingleCard, &m.FAQTitle, &m.FAQDescription, &m.FAQVisible, &m.CustomDisplayStyleID, &m.CreatedAt, &m.UpdatedAt)
 	return m, err
 }
 func courseArgs(m model.Course) []any {
-	return []any{m.ID, m.SectionID, m.Slug, m.Name, m.Description, m.CoverImage, m.LessonCount, m.TimeLength, m.Price, m.DisplayStyle, m.Visible, m.SortOrder, m.SingleCard, m.FAQTitle, m.FAQDescription, m.FAQVisible}
+	return []any{m.ID, m.SectionID, m.Slug, m.Name, m.Description, m.CoverImage, m.LessonCount, m.TimeLength, m.Price, m.DisplayStyle, m.Visible, m.SortOrder, m.SingleCard, m.FAQTitle, m.FAQDescription, m.FAQVisible, m.CustomDisplayStyleID}
+}
+
+func scanCustomDisplayStyle(row pgx.CollectableRow) (model.CustomDisplayStyle, error) {
+	var m model.CustomDisplayStyle
+	err := row.Scan(&m.ID, &m.Name, &m.BgColor, &m.TextColor, &m.SortOrder, &m.CreatedAt, &m.UpdatedAt)
+	return m, err
+}
+func customDisplayStyleArgs(m model.CustomDisplayStyle) []any {
+	return []any{m.ID, m.Name, m.BgColor, m.TextColor, m.SortOrder}
 }
 
 func scanCourseFAQItem(row pgx.CollectableRow) (model.CourseFAQItem, error) {
@@ -530,11 +551,11 @@ func courseFAQItemArgs(m model.CourseFAQItem) []any {
 
 func scanCourseBlock(row pgx.CollectableRow) (model.CourseBlock, error) {
 	var m model.CourseBlock
-	err := row.Scan(&m.ID, &m.CourseID, &m.BlockName, &m.Description, &m.BlockCover, &m.LessonCount, &m.TimeLength, &m.Price, &m.DisplayStyle, &m.Visible, &m.SortOrder, &m.CreatedAt, &m.UpdatedAt)
+	err := row.Scan(&m.ID, &m.CourseID, &m.BlockName, &m.Description, &m.BlockCover, &m.LessonCount, &m.TimeLength, &m.Price, &m.DisplayStyle, &m.Visible, &m.SortOrder, &m.CustomDisplayStyleID, &m.CreatedAt, &m.UpdatedAt)
 	return m, err
 }
 func courseBlockArgs(m model.CourseBlock) []any {
-	return []any{m.ID, m.CourseID, m.BlockName, m.Description, m.BlockCover, m.LessonCount, m.TimeLength, m.Price, m.DisplayStyle, m.Visible, m.SortOrder}
+	return []any{m.ID, m.CourseID, m.BlockName, m.Description, m.BlockCover, m.LessonCount, m.TimeLength, m.Price, m.DisplayStyle, m.Visible, m.SortOrder, m.CustomDisplayStyleID}
 }
 
 func scanLesson(row pgx.CollectableRow) (model.Lesson, error) {

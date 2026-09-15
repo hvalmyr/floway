@@ -17,11 +17,11 @@ func NewCourseRepository(db *pgxpool.Pool) *CourseRepository {
 	return &CourseRepository{db: db}
 }
 
-const courseColumns = "id, section_id, slug, name, description, cover_image, lesson_count, time_length, price, display_style, visible, sort_order, single_card, faq_title, faq_description, faq_visible, created_at, updated_at"
+const courseColumns = "id, section_id, slug, name, description, cover_image, lesson_count, time_length, price, display_style, visible, sort_order, single_card, faq_title, faq_description, faq_visible, custom_display_style_id, created_at, updated_at"
 
 func scanCourse(row pgx.Row) (model.Course, error) {
 	var item model.Course
-	err := row.Scan(&item.ID, &item.SectionID, &item.Slug, &item.Name, &item.Description, &item.CoverImage, &item.LessonCount, &item.TimeLength, &item.Price, &item.DisplayStyle, &item.Visible, &item.SortOrder, &item.SingleCard, &item.FAQTitle, &item.FAQDescription, &item.FAQVisible, &item.CreatedAt, &item.UpdatedAt)
+	err := row.Scan(&item.ID, &item.SectionID, &item.Slug, &item.Name, &item.Description, &item.CoverImage, &item.LessonCount, &item.TimeLength, &item.Price, &item.DisplayStyle, &item.Visible, &item.SortOrder, &item.SingleCard, &item.FAQTitle, &item.FAQDescription, &item.FAQVisible, &item.CustomDisplayStyleID, &item.CreatedAt, &item.UpdatedAt)
 	return item, err
 }
 
@@ -87,8 +87,8 @@ func (r *CourseRepository) FindBySlug(ctx context.Context, slug string) (model.C
 
 func (r *CourseRepository) Create(ctx context.Context, item model.Course) (model.Course, error) {
 	err := r.db.QueryRow(ctx, `
-		INSERT INTO courses (section_id, slug, name, description, cover_image, lesson_count, time_length, price, display_style, visible, sort_order, single_card, faq_title, faq_description, faq_visible)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+		INSERT INTO courses (section_id, slug, name, description, cover_image, lesson_count, time_length, price, display_style, visible, sort_order, single_card, faq_title, faq_description, faq_visible, custom_display_style_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
 		RETURNING id, created_at, updated_at
 	`,
 		item.SectionID,
@@ -106,6 +106,7 @@ func (r *CourseRepository) Create(ctx context.Context, item model.Course) (model
 		item.FAQTitle,
 		item.FAQDescription,
 		item.FAQVisible,
+		item.CustomDisplayStyleID,
 	).Scan(&item.ID, &item.CreatedAt, &item.UpdatedAt)
 	return item, err
 }
@@ -118,8 +119,8 @@ func (r *CourseRepository) Update(ctx context.Context, item model.Course) (model
 		UPDATE courses
 		SET slug = $1, name = $2, description = $3, cover_image = $4, lesson_count = $5, time_length = $6,
 		    price = $7, display_style = $8, visible = $9, sort_order = $10, single_card = $11,
-		    faq_title = $12, faq_description = $13, faq_visible = $14, updated_at = now()
-		WHERE id = $15 AND section_id = $16
+		    faq_title = $12, faq_description = $13, faq_visible = $14, custom_display_style_id = $15, updated_at = now()
+		WHERE id = $16 AND section_id = $17
 		RETURNING section_id, updated_at
 	`,
 		item.Slug,
@@ -136,6 +137,7 @@ func (r *CourseRepository) Update(ctx context.Context, item model.Course) (model
 		item.FAQTitle,
 		item.FAQDescription,
 		item.FAQVisible,
+		item.CustomDisplayStyleID,
 		item.ID,
 		item.SectionID,
 	).Scan(&item.SectionID, &item.UpdatedAt)

@@ -7,6 +7,7 @@ import type {
   BlogPost,
   CourseSectionWithCourses,
   CourseWithBlocks,
+  CustomDisplayStyle,
   FAQItem,
   FaqPage,
   Feature,
@@ -115,6 +116,19 @@ export function useApi() {
   async function getGalleryPhotos(): Promise<GalleryPhoto[]> {
     try {
       return await client<GalleryPhoto[]>("/api/v1/gallery-photos");
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/custom-display-styles — public, no auth. Admin-defined
+   * bg/text color pairs for courses with a one-off (e.g. seasonal) look,
+   * pre-sorted by sortOrder — see Course.customDisplayStyleId.
+   */
+  async function getCustomDisplayStyles(): Promise<CustomDisplayStyle[]> {
+    try {
+      return await client<CustomDisplayStyle[]>("/api/v1/custom-display-styles");
     } catch (err) {
       throw toApiError(err);
     }
@@ -312,6 +326,7 @@ export function useApi() {
     getMasterClasses,
     getTeachers,
     getGalleryPhotos,
+    getCustomDisplayStyles,
     getGiftCertificateCarouselPhotos,
     getFAQItems,
     getFeatures,

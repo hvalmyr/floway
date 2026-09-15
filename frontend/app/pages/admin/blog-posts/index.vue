@@ -1,13 +1,21 @@
 <script setup lang="ts">
 definePageMeta({ layout: "admin", middleware: "admin-auth" });
 
-type DisplayStyle = "blue-beige" | "brown-beige" | "beige-blue" | "beige-brown";
+type DisplayStyle =
+  | "blue-beige"
+  | "brown-beige"
+  | "beige-blue"
+  | "beige-brown"
+  | "blue-brown"
+  | "brown-blue";
 
 const displayStyleLabels: Record<DisplayStyle, string> = {
   "blue-beige": "Голубой фон, бежевый текст",
   "brown-beige": "Коричневый фон, бежевый текст",
   "beige-blue": "Бежевый фон, голубой текст",
   "beige-brown": "Бежевый фон, коричневый текст",
+  "blue-brown": "Голубой фон, коричневый текст",
+  "brown-blue": "Коричневый фон, голубой текст",
 };
 
 interface BlogPost {

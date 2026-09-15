@@ -17,11 +17,11 @@ func NewCourseBlockRepository(db *pgxpool.Pool) *CourseBlockRepository {
 	return &CourseBlockRepository{db: db}
 }
 
-const courseBlockColumns = "id, course_id, block_name, description, block_cover, lesson_count, time_length, price, display_style, visible, sort_order, created_at, updated_at"
+const courseBlockColumns = "id, course_id, block_name, description, block_cover, lesson_count, time_length, price, display_style, visible, sort_order, custom_display_style_id, created_at, updated_at"
 
 func scanCourseBlock(row pgx.Row) (model.CourseBlock, error) {
 	var item model.CourseBlock
-	err := row.Scan(&item.ID, &item.CourseID, &item.BlockName, &item.Description, &item.BlockCover, &item.LessonCount, &item.TimeLength, &item.Price, &item.DisplayStyle, &item.Visible, &item.SortOrder, &item.CreatedAt, &item.UpdatedAt)
+	err := row.Scan(&item.ID, &item.CourseID, &item.BlockName, &item.Description, &item.BlockCover, &item.LessonCount, &item.TimeLength, &item.Price, &item.DisplayStyle, &item.Visible, &item.SortOrder, &item.CustomDisplayStyleID, &item.CreatedAt, &item.UpdatedAt)
 	return item, err
 }
 
@@ -76,10 +76,10 @@ func (r *CourseBlockRepository) ListByCourseIDs(ctx context.Context, courseIDs [
 
 func (r *CourseBlockRepository) Create(ctx context.Context, item model.CourseBlock) (model.CourseBlock, error) {
 	err := r.db.QueryRow(ctx, `
-		INSERT INTO course_blocks (course_id, block_name, description, block_cover, lesson_count, time_length, price, display_style, visible, sort_order)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		INSERT INTO course_blocks (course_id, block_name, description, block_cover, lesson_count, time_length, price, display_style, visible, sort_order, custom_display_style_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		RETURNING id, created_at, updated_at
-	`, item.CourseID, item.BlockName, item.Description, item.BlockCover, item.LessonCount, item.TimeLength, item.Price, item.DisplayStyle, item.Visible, item.SortOrder).Scan(&item.ID, &item.CreatedAt, &item.UpdatedAt)
+	`, item.CourseID, item.BlockName, item.Description, item.BlockCover, item.LessonCount, item.TimeLength, item.Price, item.DisplayStyle, item.Visible, item.SortOrder, item.CustomDisplayStyleID).Scan(&item.ID, &item.CreatedAt, &item.UpdatedAt)
 	return item, err
 }
 
@@ -89,10 +89,10 @@ func (r *CourseBlockRepository) Create(ctx context.Context, item model.CourseBlo
 func (r *CourseBlockRepository) Update(ctx context.Context, item model.CourseBlock) (model.CourseBlock, error) {
 	err := r.db.QueryRow(ctx, `
 		UPDATE course_blocks
-		SET block_name = $1, description = $2, block_cover = $3, lesson_count = $4, time_length = $5, price = $6, display_style = $7, visible = $8, sort_order = $9, updated_at = now()
-		WHERE id = $10 AND course_id = $11
+		SET block_name = $1, description = $2, block_cover = $3, lesson_count = $4, time_length = $5, price = $6, display_style = $7, visible = $8, sort_order = $9, custom_display_style_id = $10, updated_at = now()
+		WHERE id = $11 AND course_id = $12
 		RETURNING course_id, updated_at
-	`, item.BlockName, item.Description, item.BlockCover, item.LessonCount, item.TimeLength, item.Price, item.DisplayStyle, item.Visible, item.SortOrder, item.ID, item.CourseID).Scan(&item.CourseID, &item.UpdatedAt)
+	`, item.BlockName, item.Description, item.BlockCover, item.LessonCount, item.TimeLength, item.Price, item.DisplayStyle, item.Visible, item.SortOrder, item.CustomDisplayStyleID, item.ID, item.CourseID).Scan(&item.CourseID, &item.UpdatedAt)
 	return item, translateNotFound(err)
 }
 

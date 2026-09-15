@@ -32,15 +32,16 @@ func (h *courseBlockHandler) routes(r chi.Router) {
 }
 
 type courseBlockCreateRequest struct {
-	BlockName    string                        `json:"blockName"`
-	Description  string                        `json:"description"`
-	BlockCover   string                        `json:"blockCover"`
-	LessonCount  string                        `json:"lessonCount"`
-	TimeLength   string                        `json:"timeLength"`
-	Price        string                        `json:"price"`
-	DisplayStyle model.CourseBlockDisplayStyle `json:"displayStyle"`
-	Visible      bool                          `json:"visible"`
-	SortOrder    int                           `json:"sortOrder"`
+	BlockName            string                        `json:"blockName"`
+	Description          string                        `json:"description"`
+	BlockCover           string                        `json:"blockCover"`
+	LessonCount          string                        `json:"lessonCount"`
+	TimeLength           string                        `json:"timeLength"`
+	Price                string                        `json:"price"`
+	DisplayStyle         model.CourseBlockDisplayStyle `json:"displayStyle"`
+	Visible              bool                          `json:"visible"`
+	SortOrder            int                           `json:"sortOrder"`
+	CustomDisplayStyleID *int64                        `json:"customDisplayStyleId"`
 }
 
 func (h *courseBlockHandler) list(w http.ResponseWriter, r *http.Request) {
@@ -72,16 +73,17 @@ func (h *courseBlockHandler) create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	item, err := h.svc.Create(r.Context(), model.CourseBlock{
-		CourseID:     courseID,
-		BlockName:    req.BlockName,
-		Description:  req.Description,
-		BlockCover:   req.BlockCover,
-		LessonCount:  req.LessonCount,
-		TimeLength:   req.TimeLength,
-		Price:        req.Price,
-		DisplayStyle: req.DisplayStyle,
-		Visible:      req.Visible,
-		SortOrder:    req.SortOrder,
+		CourseID:             courseID,
+		BlockName:            req.BlockName,
+		Description:          req.Description,
+		BlockCover:           req.BlockCover,
+		LessonCount:          req.LessonCount,
+		TimeLength:           req.TimeLength,
+		Price:                req.Price,
+		DisplayStyle:         req.DisplayStyle,
+		Visible:              req.Visible,
+		SortOrder:            req.SortOrder,
+		CustomDisplayStyleID: req.CustomDisplayStyleID,
 	})
 	if err != nil {
 		writeServiceError(w, r, err)
@@ -110,17 +112,18 @@ func (h *courseBlockHandler) update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	item, err := h.svc.Update(r.Context(), model.CourseBlock{
-		ID:           id,
-		CourseID:     courseID,
-		BlockName:    req.BlockName,
-		Description:  req.Description,
-		BlockCover:   req.BlockCover,
-		LessonCount:  req.LessonCount,
-		TimeLength:   req.TimeLength,
-		Price:        req.Price,
-		DisplayStyle: req.DisplayStyle,
-		Visible:      req.Visible,
-		SortOrder:    req.SortOrder,
+		ID:                   id,
+		CourseID:             courseID,
+		BlockName:            req.BlockName,
+		Description:          req.Description,
+		BlockCover:           req.BlockCover,
+		LessonCount:          req.LessonCount,
+		TimeLength:           req.TimeLength,
+		Price:                req.Price,
+		DisplayStyle:         req.DisplayStyle,
+		Visible:              req.Visible,
+		SortOrder:            req.SortOrder,
+		CustomDisplayStyleID: req.CustomDisplayStyleID,
 	})
 	if err != nil {
 		writeServiceError(w, r, err)

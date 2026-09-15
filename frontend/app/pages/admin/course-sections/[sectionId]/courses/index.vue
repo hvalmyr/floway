@@ -1,13 +1,33 @@
 <script setup lang="ts">
 definePageMeta({ layout: "admin", middleware: "admin-auth" });
 
-type DisplayStyle = "blue-beige" | "brown-beige" | "beige-blue" | "beige-brown";
+type DisplayStyle =
+  | "blue-beige"
+  | "brown-beige"
+  | "beige-blue"
+  | "beige-brown"
+  | "blue-brown"
+  | "brown-blue";
 
 const displayStyleLabels: Record<DisplayStyle, string> = {
   "blue-beige": "Голубой фон, бежевый текст",
   "brown-beige": "Коричневый фон, бежевый текст",
   "beige-blue": "Бежевый фон, голубой текст",
   "beige-brown": "Бежевый фон, коричневый текст",
+  "blue-brown": "Голубой фон, коричневый текст",
+  "brown-blue": "Коричневый фон, голубой текст",
+};
+
+// Mirrors the 3 hex values in tailwind.config.ts (--color-primary/-surface/-ink)
+// — only needed here to render the same preview for the fixed enum styles
+// that AdminCourseCardPreview otherwise only gets for custom styles.
+const displayStyleColors: Record<DisplayStyle, { bgColor: string; textColor: string }> = {
+  "blue-beige": { bgColor: "#82B1CC", textColor: "#F7F5F3" },
+  "brown-beige": { bgColor: "#41342A", textColor: "#F7F5F3" },
+  "beige-blue": { bgColor: "#F7F5F3", textColor: "#82B1CC" },
+  "beige-brown": { bgColor: "#F7F5F3", textColor: "#41342A" },
+  "blue-brown": { bgColor: "#82B1CC", textColor: "#41342A" },
+  "brown-blue": { bgColor: "#41342A", textColor: "#82B1CC" },
 };
 
 interface Course {
@@ -27,6 +47,14 @@ interface Course {
   faqTitle: string;
   faqDescription: string;
   faqVisible: boolean;
+  customDisplayStyleId: number | null;
+}
+
+interface CustomDisplayStyle {
+  id: number;
+  name: string;
+  bgColor: string;
+  textColor: string;
 }
 
 const route = useRoute();
@@ -47,6 +75,7 @@ const emptyForm = (): Omit<Course, "id" | "sectionId"> => ({
   faqTitle: "",
   faqDescription: "",
   faqVisible: false,
+  customDisplayStyleId: null,
 });
 
 const { items, loading, error, fetchAll, create, update, remove } = useAdminResource<Course>(
@@ -58,7 +87,14 @@ const form = ref(emptyForm());
 const saving = ref(false);
 const formError = ref("");
 
+const customStyles = ref<CustomDisplayStyle[]>([]);
+const previewColors = computed(() => {
+  const custom = customStyles.value.find((s) => s.id === form.value.customDisplayStyleId);
+  return custom ?? displayStyleColors[form.value.displayStyle];
+});
+
 await fetchAll();
+customStyles.value = await useApi().getCustomDisplayStyles();
 
 const { draggingIndex, onPointerDown } = useAdminDragReorder(items, (item) =>
   update(item.id, item),
@@ -93,6 +129,7 @@ function startEdit(course: Course) {
     faqTitle: course.faqTitle,
     faqDescription: course.faqDescription,
     faqVisible: course.faqVisible,
+    customDisplayStyleId: course.customDisplayStyleId,
   };
 }
 
@@ -142,6 +179,7 @@ async function onDuplicate(course: Course) {
     sortOrder: items.value.length,
     visible: false,
     singleCard: course.singleCard,
+    customDisplayStyleId: course.customDisplayStyleId,
   });
 }
 
@@ -177,117 +215,137 @@ async function onBulkDelete() {
     >
     <h1 class="mt-2 text-2xl font-semibold">Курсы секции #{{ sectionId }}</h1>
 
-    <form
-      class="mt-6 grid gap-3 rounded border border-gray-200 bg-white p-4 sm:grid-cols-2"
-      @submit.prevent="onSubmit"
-    >
-      <input
-        v-model="form.name"
-        type="text"
-        placeholder="Название курса"
-        required
-        class="rounded border border-gray-300 px-3 py-2"
-      />
-      <input
-        v-model="form.slug"
-        type="text"
-        placeholder="Slug"
-        required
-        class="rounded border border-gray-300 px-3 py-2"
-        @input="slugTouched = true"
-      />
-      <AdminMarkdownField
-        v-model="form.description"
-        placeholder="Описание"
-        :rows="3"
-        class="sm:col-span-2"
-      />
+    <div class="mt-6 grid gap-6 lg:grid-cols-[1fr_auto] lg:items-start">
+      <form
+        class="grid gap-3 rounded border border-gray-200 bg-white p-4 sm:grid-cols-2"
+        @submit.prevent="onSubmit"
+      >
+        <input
+          v-model="form.name"
+          type="text"
+          placeholder="Название курса"
+          required
+          class="rounded border border-gray-300 px-3 py-2"
+        />
+        <input
+          v-model="form.slug"
+          type="text"
+          placeholder="Slug"
+          required
+          class="rounded border border-gray-300 px-3 py-2"
+          @input="slugTouched = true"
+        />
+        <AdminMarkdownField
+          v-model="form.description"
+          placeholder="Описание"
+          :rows="3"
+          class="sm:col-span-2"
+        />
 
-      <div class="sm:col-span-2">
-        <p class="text-sm font-medium">Карточка курса на сайте</p>
-        <p class="text-sm text-[var(--color-text-muted)]">
-          Используется, если у курса нет блоков, или если включена опция «Одна карточка» ниже.
-          Иначе, если у курса есть блоки (вкладка «Блоки»), вместо неё показывается по одной
-          карточке на каждый блок.
-        </p>
-      </div>
-      <AdminImageUpload v-model="form.coverImage" label="Обложка курса" />
-      <input
-        v-model="form.lessonCount"
-        type="text"
-        placeholder="Количество занятий (например, «7 занятий»)"
-        class="rounded border border-gray-300 px-3 py-2"
-      />
-      <input
-        v-model="form.timeLength"
-        type="text"
-        placeholder="Продолжительность (например, «30 часов»)"
-        class="rounded border border-gray-300 px-3 py-2"
-      />
-      <input
-        v-model="form.price"
-        type="text"
-        placeholder="Цена (например, «38 500 ₽»)"
-        class="rounded border border-gray-300 px-3 py-2"
-      />
-      <select v-model="form.displayStyle" class="rounded border border-gray-300 px-3 py-2">
-        <option v-for="(label, value) in displayStyleLabels" :key="value" :value="value">
-          {{ label }}
-        </option>
-      </select>
-      <label class="flex items-center gap-2 text-sm">
-        <input v-model="form.visible" type="checkbox" class="size-5" />
-        Показывать на сайте
-      </label>
-      <label class="flex items-center gap-2 text-sm">
-        <input v-model="form.singleCard" type="checkbox" class="size-5" />
-        Одна карточка (даже если есть несколько блоков)
-      </label>
-
-      <div class="sm:col-span-2">
-        <p class="text-sm font-medium">FAQ курса</p>
-        <p class="text-sm text-[var(--color-text-muted)]">
-          Показывается на странице курса после формы заявки. Сами вопросы и ответы редактируются на
-          отдельной странице (ссылка «FAQ» в списке курсов ниже).
-        </p>
-      </div>
-      <input
-        v-model="form.faqTitle"
-        type="text"
-        placeholder="Заголовок FAQ (например, «Вопросы и ответы»)"
-        class="rounded border border-gray-300 px-3 py-2 sm:col-span-2"
-      />
-      <AdminMarkdownField
-        v-model="form.faqDescription"
-        placeholder="Текст перед вопросами"
-        :rows="2"
-        class="sm:col-span-2"
-      />
-      <label class="flex items-center gap-2 text-sm">
-        <input v-model="form.faqVisible" type="checkbox" class="size-5" />
-        Показывать FAQ на странице курса
-      </label>
-
-      <p v-if="formError" class="text-sm text-red-600 sm:col-span-2">{{ formError }}</p>
-
-      <div class="flex gap-2 sm:col-span-2">
-        <button
-          type="submit"
-          :disabled="saving"
-          class="rounded bg-[var(--color-primary)] px-4 py-2 text-white disabled:opacity-50"
+        <div class="sm:col-span-2">
+          <p class="text-sm font-medium">Карточка курса на сайте</p>
+          <p class="text-sm text-[var(--color-text-muted)]">
+            Используется, если у курса нет блоков, или если включена опция «Одна карточка» ниже.
+            Иначе, если у курса есть блоки (вкладка «Блоки»), вместо неё показывается по одной
+            карточке на каждый блок.
+          </p>
+        </div>
+        <AdminImageUpload v-model="form.coverImage" label="Обложка курса" />
+        <input
+          v-model="form.lessonCount"
+          type="text"
+          placeholder="Количество занятий (например, «7 занятий»)"
+          class="rounded border border-gray-300 px-3 py-2"
+        />
+        <input
+          v-model="form.timeLength"
+          type="text"
+          placeholder="Продолжительность (например, «30 часов»)"
+          class="rounded border border-gray-300 px-3 py-2"
+        />
+        <input
+          v-model="form.price"
+          type="text"
+          placeholder="Цена (например, «38 500 ₽»)"
+          class="rounded border border-gray-300 px-3 py-2"
+        />
+        <select v-model="form.displayStyle" class="rounded border border-gray-300 px-3 py-2">
+          <option v-for="(label, value) in displayStyleLabels" :key="value" :value="value">
+            {{ label }}
+          </option>
+        </select>
+        <select
+          v-model="form.customDisplayStyleId"
+          class="rounded border border-gray-300 px-3 py-2"
         >
-          {{ editingId === null ? "Добавить" : "Сохранить" }}
-        </button>
-        <button
-          v-if="editingId !== null"
-          type="button"
-          class="rounded border border-gray-300 px-4 py-2"
-          @click="cancelEdit"
-        >
-          Отмена
-        </button>
+          <option :value="null">— Обычный стиль (см. превью справа) —</option>
+          <option v-for="style in customStyles" :key="style.id" :value="style.id">
+            {{ style.name }}
+          </option>
+        </select>
+        <label class="flex items-center gap-2 text-sm">
+          <input v-model="form.visible" type="checkbox" class="size-5" />
+          Показывать на сайте
+        </label>
+        <label class="flex items-center gap-2 text-sm">
+          <input v-model="form.singleCard" type="checkbox" class="size-5" />
+          Одна карточка (даже если есть несколько блоков)
+        </label>
+
+        <div class="sm:col-span-2">
+          <p class="text-sm font-medium">FAQ курса</p>
+          <p class="text-sm text-[var(--color-text-muted)]">
+            Показывается на странице курса после формы заявки. Сами вопросы и ответы редактируются
+            на отдельной странице (ссылка «FAQ» в списке курсов ниже).
+          </p>
+        </div>
+        <input
+          v-model="form.faqTitle"
+          type="text"
+          placeholder="Заголовок FAQ (например, «Вопросы и ответы»)"
+          class="rounded border border-gray-300 px-3 py-2 sm:col-span-2"
+        />
+        <AdminMarkdownField
+          v-model="form.faqDescription"
+          placeholder="Текст перед вопросами"
+          :rows="2"
+          class="sm:col-span-2"
+        />
+        <label class="flex items-center gap-2 text-sm">
+          <input v-model="form.faqVisible" type="checkbox" class="size-5" />
+          Показывать FAQ на странице курса
+        </label>
+
+        <p v-if="formError" class="text-sm text-red-600 sm:col-span-2">{{ formError }}</p>
+
+        <div class="flex gap-2 sm:col-span-2">
+          <button
+            type="submit"
+            :disabled="saving"
+            class="rounded bg-[var(--color-primary)] px-4 py-2 text-white disabled:opacity-50"
+          >
+            {{ editingId === null ? "Добавить" : "Сохранить" }}
+          </button>
+          <button
+            v-if="editingId !== null"
+            type="button"
+            class="rounded border border-gray-300 px-4 py-2"
+            @click="cancelEdit"
+          >
+            Отмена
+          </button>
+        </div>
+      </form>
+
+      <div class="flex flex-col items-center gap-2 justify-self-center">
+        <p class="text-sm text-[var(--color-text-muted)]">Так будет выглядеть карточка курса</p>
+        <AdminCourseCardPreview
+          :bg-color="previewColors.bgColor"
+          :text-color="previewColors.textColor"
+          :title="form.name || 'Название курса'"
+        />
       </div>
-    </form>
+    </div>
 
     <div class="mt-6 flex flex-wrap items-center gap-3">
       <input
