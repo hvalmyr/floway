@@ -20,4 +20,5 @@ export const requestTypeLabels: Record<string, string> = {
   course: "Курс",
   masterclass: "Мастер-класс",
   trial_lesson: "Пробный урок",
+  gift_certificate: "Подарочный сертификат",
 };

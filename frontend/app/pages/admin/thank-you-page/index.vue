@@ -12,6 +12,7 @@ const variantTabs: { value: ThankYouPageVariant; label: string }[] = [
   { value: "course", label: "Курс" },
   { value: "masterclass", label: "Мастер-класс" },
   { value: "trial_lesson", label: "Пробное занятие" },
+  { value: "gift_certificate", label: "Подарочный сертификат" },
 ];
 
 const activeVariant = ref<ThankYouPageVariant>("course");

@@ -8,18 +8,19 @@ import (
 	"floway-backend/internal/model"
 )
 
-// validThankYouPageVariants mirrors model.LeadRequestType's three values —
-// the thank-you page a lead is sent to after ApplyForm.vue submits is keyed
-// by the same "context" the lead itself records.
+// validThankYouPageVariants mirrors model.LeadRequestType's values — the
+// thank-you page a lead is sent to after ApplyForm.vue submits is keyed by
+// the same "context" the lead itself records.
 var validThankYouPageVariants = map[string]bool{
-	"course":       true,
-	"masterclass":  true,
-	"trial_lesson": true,
+	"course":           true,
+	"masterclass":      true,
+	"trial_lesson":     true,
+	"gift_certificate": true,
 }
 
 func validateThankYouPageVariant(variant string) error {
 	if !validThankYouPageVariants[variant] {
-		return errors.Join(ErrValidation, errors.New("variant must be one of: course, masterclass, trial_lesson"))
+		return errors.Join(ErrValidation, errors.New("variant must be one of: course, masterclass, trial_lesson, gift_certificate"))
 	}
 	return nil
 }

@@ -4,12 +4,17 @@ import type { ThankYouPageVariant } from "~/types/api";
 
 /**
  * Where ApplyForm.vue navigates to after a successful submission — content
- * is fully admin-editable per variant (course/masterclass/trial_lesson) via
- * /admin/thank-you-page. Messenger icons and social links are the site's
- * existing global contact channels (see ThankYouPage's doc comment in
- * types/api.ts), just toggled on/off per variant.
+ * is fully admin-editable per variant (course/masterclass/trial_lesson/
+ * gift_certificate) via /admin/thank-you-page. Messenger icons and social
+ * links are the site's existing global contact channels (see ThankYouPage's
+ * doc comment in types/api.ts), just toggled on/off per variant.
  */
-const validVariants: ThankYouPageVariant[] = ["course", "masterclass", "trial_lesson"];
+const validVariants: ThankYouPageVariant[] = [
+  "course",
+  "masterclass",
+  "trial_lesson",
+  "gift_certificate",
+];
 
 const route = useRoute();
 const variantParam = route.params.variant as string;

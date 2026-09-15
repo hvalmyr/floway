@@ -14,11 +14,17 @@ import type {
 } from "~/types/api";
 
 // Ordered option lists for the manual "add lead" form below — same values
-// the public ApplyForm offers, plus trial_lesson/course/masterclass for
-// request type (ApplyForm fixes that per-page instead of offering a choice).
+// the public ApplyForm offers, plus trial_lesson/course/masterclass/
+// gift_certificate for request type (ApplyForm fixes that per-page instead
+// of offering a choice).
 const CONTACT_METHODS: ContactMethod[] = ["call", "telegram", "whatsapp", "max"];
 const SOURCES: LeadSource[] = ["referral", "ads", "internet", "social", "maps"];
-const REQUEST_TYPES: LeadRequestType[] = ["trial_lesson", "course", "masterclass"];
+const REQUEST_TYPES: LeadRequestType[] = [
+  "trial_lesson",
+  "course",
+  "masterclass",
+  "gift_certificate",
+];
 
 definePageMeta({ layout: "admin", middleware: "admin-auth" });
 
@@ -111,7 +117,7 @@ async function onCreateLead() {
         source: createForm.source,
         requestType: createForm.requestType,
         relatedSlug:
-          createForm.requestType === "trial_lesson"
+          createForm.requestType === "trial_lesson" || createForm.requestType === "gift_certificate"
             ? undefined
             : createForm.relatedSlug.trim() || undefined,
       },
@@ -341,7 +347,11 @@ async function onBulkStatusChange(status: string) {
           </option>
         </select>
       </div>
-      <div v-if="createForm.requestType !== 'trial_lesson'">
+      <div
+        v-if="
+          createForm.requestType !== 'trial_lesson' && createForm.requestType !== 'gift_certificate'
+        "
+      >
         <label class="text-xs text-[var(--color-text-muted)]"
           >Slug курса/мастер-класса (необязательно)</label
         >

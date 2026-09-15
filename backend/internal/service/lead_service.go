@@ -26,9 +26,10 @@ var validLeadSources = map[model.LeadSource]struct{}{
 }
 
 var validLeadRequestTypes = map[model.LeadRequestType]struct{}{
-	model.LeadRequestTypeCourse:      {},
-	model.LeadRequestTypeMasterclass: {},
-	model.LeadRequestTypeTrialLesson: {},
+	model.LeadRequestTypeCourse:          {},
+	model.LeadRequestTypeMasterclass:     {},
+	model.LeadRequestTypeTrialLesson:     {},
+	model.LeadRequestTypeGiftCertificate: {},
 }
 
 var validLeadStatuses = map[model.LeadStatus]struct{}{

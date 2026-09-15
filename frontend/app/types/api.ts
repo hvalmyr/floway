@@ -363,7 +363,7 @@ export interface ThankYouPage {
 
 export type ContactMethod = "call" | "telegram" | "whatsapp" | "max";
 export type LeadSource = "referral" | "ads" | "internet" | "social" | "maps";
-export type LeadRequestType = "course" | "masterclass" | "trial_lesson";
+export type LeadRequestType = "course" | "masterclass" | "trial_lesson" | "gift_certificate";
 
 /** Thank-you page variants — identical to LeadRequestType, since the page a
  * lead is sent to after ApplyForm.vue submits is keyed by the same

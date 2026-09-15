@@ -23,9 +23,10 @@ var leadSourceLabels = map[model.LeadSource]string{
 }
 
 var leadRequestTypeLabels = map[model.LeadRequestType]string{
-	model.LeadRequestTypeCourse:      "курс",
-	model.LeadRequestTypeMasterclass: "мастер-класс",
-	model.LeadRequestTypeTrialLesson: "пробное занятие",
+	model.LeadRequestTypeCourse:          "курс",
+	model.LeadRequestTypeMasterclass:     "мастер-класс",
+	model.LeadRequestTypeTrialLesson:     "пробное занятие",
+	model.LeadRequestTypeGiftCertificate: "подарочный сертификат",
 }
 
 // label falls back to the raw enum value for anything not in the map above,

@@ -377,9 +377,10 @@ const (
 type LeadRequestType string
 
 const (
-	LeadRequestTypeCourse      LeadRequestType = "course"
-	LeadRequestTypeMasterclass LeadRequestType = "masterclass"
-	LeadRequestTypeTrialLesson LeadRequestType = "trial_lesson"
+	LeadRequestTypeCourse          LeadRequestType = "course"
+	LeadRequestTypeMasterclass     LeadRequestType = "masterclass"
+	LeadRequestTypeTrialLesson     LeadRequestType = "trial_lesson"
+	LeadRequestTypeGiftCertificate LeadRequestType = "gift_certificate"
 )
 
 type LeadStatus string
