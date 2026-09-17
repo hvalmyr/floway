@@ -9,14 +9,15 @@ import type { CourseBlockDisplayStyle } from "~/types/api";
  * card per block; a course with a single block, real or synthetic, just
  * means one call). Order: title (the course's name — same across every
  * card of a multi-block course), then an optional description, then up to
- * 3 stacked caption lines (blockLabel/lessonCount/timeLength, each own
- * line, shown only when set), then the block's cover, then the CTA.
+ * 4 stacked caption lines (blockLabel, lessonCount+timeLength on one line,
+ * then price on its own line below, each shown only when set), then the
+ * block's cover, then the CTA.
  *
  * `displayStyle` is the admin-chosen background/text color pair (one of the
  * design system's 4 standard colors combined into a readable pair) — picked
  * per block, not cycled automatically. The card hugs its own content (no
  * fixed min-height); `mt-auto` sits on the caption block (blockLabel /
- * lessonCount / timeLength), not the cover image or button, so that caption
+ * lessonCount / timeLength / price), not the cover image or button, so that caption
  * always lands directly above the image, flush with the bottom edge as a
  * unit with the image+CTA — regardless of how many lines the title (or an
  * optional description) takes above it. That's what keeps the "x занятий *
@@ -44,6 +45,7 @@ import type { CourseBlockDisplayStyle } from "~/types/api";
  *   display-style="blue-beige"
  *   lesson-count="7 занятий"
  *   time-length="30 часов"
+ *   price="38 500 ₽"
  *   cover-image="courses/buketi.jpg"
  *   to="/courses/osnovy-floristiki"
  * />
@@ -64,6 +66,7 @@ const props = withDefaults(
     blockLabel?: string;
     lessonCount?: string;
     timeLength?: string;
+    price?: string;
     to: string;
     ctaLabel?: string;
   }>(),
@@ -100,7 +103,10 @@ const customStyle = computed(() =>
       {{ description }}
     </p>
 
-    <div v-if="blockLabel || lessonCount || timeLength" class="mt-auto mb-16 flex flex-col gap-4">
+    <div
+      v-if="blockLabel || lessonCount || timeLength || price"
+      class="mt-auto mb-16 flex flex-col gap-4"
+    >
       <p v-if="blockLabel" class="font-body text-body">{{ blockLabel }}</p>
       <p
         v-if="lessonCount || timeLength"
@@ -114,6 +120,7 @@ const customStyle = computed(() =>
         />
         <span v-if="timeLength">{{ timeLength }}</span>
       </p>
+      <p v-if="price" class="font-body text-body">{{ price }}</p>
     </div>
 
     <component
@@ -121,7 +128,7 @@ const customStyle = computed(() =>
       :to="to"
       :class="[
         'mb-24 block aspect-square w-full min-h-0',
-        !(blockLabel || lessonCount || timeLength) && 'mt-auto',
+        !(blockLabel || lessonCount || timeLength || price) && 'mt-auto',
       ]"
     >
       <UiContentImage

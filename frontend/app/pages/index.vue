@@ -41,6 +41,7 @@ function sectionCards(section: CourseSectionWithCourses) {
       blockLabel: block.blockName || undefined,
       lessonCount: block.lessonCount || undefined,
       timeLength: block.timeLength || undefined,
+      price: block.price || undefined,
       coverImage: block.blockCover || undefined,
       displayStyle: block.displayStyle,
       customColors: block.customDisplayStyleId
@@ -155,6 +156,7 @@ function capitalizeName(name: string): string {
             :block-label="card.blockLabel"
             :lesson-count="card.lessonCount"
             :time-length="card.timeLength"
+            :price="card.price"
             :cover-image="card.coverImage"
             :to="card.to"
             class="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-22px)]"
