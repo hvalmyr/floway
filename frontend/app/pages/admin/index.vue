@@ -13,7 +13,6 @@ const editingGroups: EditingGroup[] = [
       { to: "/admin/course-sections", label: "Курсы" },
       { to: "/admin/masterclasses", label: "Мастер-классы" },
       { to: "/admin/custom-styles", label: "Особые стили карточек" },
-      { to: "/admin/page-content/masterclasses-marquee", label: "Бегущая строка мастер-классов" },
     ],
   },
   {

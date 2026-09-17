@@ -1,17 +1,78 @@
 <script setup lang="ts">
 /**
- * Masterclasses-page strip promoting the catalog below it, linking down to
- * the apply form. Content is admin-editable (see
- * /admin/page-content/masterclasses-marquee); rendering itself lives in
- * MarqueeStrip.
+ * Full-width scrolling promo strip for gift certificates — masterclasses
+ * page, placed right above the masterclass catalog (see
+ * pages/masterclasses/index.vue). Copy of GiftCertificateMarquee (see that
+ * file for the animation/loop details) so this page can carry the same
+ * banner independently of the homepage one.
+ *
+ * The whole strip is one link (single accessible name via aria-label); the
+ * scrolling text itself is aria-hidden since it's the same sentence
+ * repeated many times purely for the continuous-scroll effect, which would
+ * otherwise be read out loud once per repeat.
+ *
+ * Seamless loop: REPEAT_COUNT copies of one unit (icon + text) sit in a
+ * `w-max` row, scrolled from translateX(0) to translateX(-50%). Because
+ * every copy is identical, sliding by exactly half the track's width lands
+ * on a pixel-identical frame to the start — this only self-aligns when
+ * REPEAT_COUNT is even, so it must stay even if ever changed.
+ *
+ * The scroll runs on the Web Animations API rather than a CSS `animation`,
+ * specifically so hover can *slow it down* without a visual jump: a CSS
+ * `animation-duration` change recomputes position as (elapsed / duration)
+ * of the keyframe distance, so swapping duration mid-flight snaps the
+ * track to a different point instantly. `playbackRate` instead changes how
+ * fast the same running timeline advances from wherever it currently is —
+ * same position, just a different speed from that moment on.
  */
+const REPEAT_COUNT = 8;
+const BASE_DURATION_MS = 40_000;
+const HOVER_PLAYBACK_RATE = 0.4;
+
 const { text } = await usePageContent();
 const message = computed(() =>
-  text("masterclasses_marquee_text", "Мастер-классы по флористике — запишитесь прямо сейчас"),
+  text("gift_certificate_marquee_text", "Подарочные сертификаты — порадуйте близких цветами"),
 );
-const icon = computed(() => text("masterclasses_marquee_icon", "tulips"));
+const icon = computed(() => text("gift_certificate_marquee_icon", "gift"));
+
+const trackEl = ref<HTMLElement | null>(null);
+let scrollAnimation: Animation | null = null;
+
+onMounted(() => {
+  if (!trackEl.value) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  scrollAnimation = trackEl.value.animate(
+    [{ transform: "translateX(0)" }, { transform: "translateX(-50%)" }],
+    { duration: BASE_DURATION_MS, iterations: Infinity, easing: "linear" },
+  );
+});
+
+onUnmounted(() => {
+  scrollAnimation?.cancel();
+});
+
+function onHoverStart() {
+  if (scrollAnimation) scrollAnimation.playbackRate = HOVER_PLAYBACK_RATE;
+}
+function onHoverEnd() {
+  if (scrollAnimation) scrollAnimation.playbackRate = 1;
+}
 </script>
 
 <template>
-  <MarqueeStrip :message="message" :icon="icon" to="#apply" />
+  <NuxtLink
+    to="/sertifikaty"
+    :aria-label="message"
+    class="group relative block w-full cursor-pointer overflow-hidden bg-primary py-12 transition-transform duration-300 ease-out hover:-translate-y-4 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+    @mouseenter="onHoverStart"
+    @mouseleave="onHoverEnd"
+  >
+    <div ref="trackEl" aria-hidden="true" class="flex w-max items-center gap-48 whitespace-nowrap">
+      <span v-for="n in REPEAT_COUNT" :key="n" class="flex shrink-0 items-center gap-12">
+        <AppIcon :icon="icon" class="size-24 shrink-0 text-white" />
+        <span class="font-display text-h4 text-white">{{ message }}</span>
+      </span>
+    </div>
+  </NuxtLink>
 </template>
