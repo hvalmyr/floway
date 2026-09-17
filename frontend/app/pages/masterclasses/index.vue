@@ -72,6 +72,8 @@ const features = computed(
       </div>
     </section>
 
+    <MasterclassesMarquee />
+
     <section id="masterclasses-list" class="scroll-mt-64 py-48 sm:py-64 lg:scroll-mt-96 lg:py-80">
       <div class="container flex flex-col gap-40 lg:gap-48">
         <MasterclassCard
