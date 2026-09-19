@@ -36,6 +36,24 @@
     mode: "0644"
     directory_mode: "0755"
 
+- name: Copy Telegram proxy build context (SOCKS5 sidecar, see README.md)
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../telegram-proxy/"
+    dest: "{{ deploy_path }}/telegram-proxy/"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: "0644"
+    directory_mode: "0755"
+
+- name: Write Telegram tunnel private key
+  ansible.builtin.copy:
+    content: "{{ vault_telegram_tunnel_private_key }}"
+    dest: "{{ deploy_path }}/telegram-tunnel-key"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: "0600"
+  when: telegram_proxy_enabled
+
 - name: Template Caddyfile
   ansible.builtin.template:
     src: Caddyfile.j2

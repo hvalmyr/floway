@@ -169,12 +169,43 @@ NOTIFY_EMAIL_TO=manager@floway.local
 
 Заявка всегда сохраняется в БД независимо от исхода уведомления (см. выше), но если прод-сервер стоит в РФ, прямые запросы к `api.telegram.org` могут таймаутиться/резаться на уровне провайдера/РКН — тогда лид долетит только в админку, а Telegram-уведомление стабильно будет падать в лог `lead notification failed`.
 
-Чинится без смены протокола доставки — заворачиваем HTTP-клиент бота через прокси на не-РФ хосте, задав `TELEGRAM_PROXY_URL` в `.env` (см. `internal/notify/telegram.go`):
+Бэкенд умеет ходить к Telegram через прокси — `TELEGRAM_PROXY_URL` (см. `internal/notify/telegram.go`), пусто по умолчанию (идём напрямую). На проде это автоматизировано через `telegram-proxy` — sidecar-контейнер в `docker-compose.prod.yml`, который держит SOCKS5-туннель (`autossh` + `ssh -D`) до отдельного зарубежного (не-РФ) VPS; включается сам через `COMPOSE_PROFILES`, когда в vault заполнены нужные переменные — руками в `.env`/на сервере ничего трогать не нужно.
 
-- `http://user:pass@host:port` — обычный форвард-прокси (например, `tinyproxy`/`squid`, поднятый на дешёвом зарубежном VPS);
-- `socks5://host:port` — не требует отдельного прокси-софта: `ssh -D 1080 user@foreign-host -N` на самом бэкенде поднимает локальный SOCKS5-туннель, который сюда и указывается (`socks5://127.0.0.1:1080`).
+Настройка:
 
-Пусто (по умолчанию) — идём напрямую, ничего не меняется. Невалидный `TELEGRAM_PROXY_URL` (неразбираемый URL или неподдерживаемая схема) — ошибка при старте бэкенда, а не тихая деградация.
+1. Арендовать любой недорогой VPS вне РФ (Hetzner/Contabo/DigitalOcean и т.п. — тарифный минимум, туннелю почти не нужны ресурсы), IP пример: `203.0.113.10`.
+2. На нём завести отдельного пользователя `tunnel` (не root/deploy — этот ключ отзывается независимо от доступа к самому проду) и **явно разрешить форвардинг** — многие образы по умолчанию его выключают:
+
+   ```bash
+   useradd -m -s /usr/sbin/nologin tunnel
+   # sshd_config парсит директивы по принципу "первое совпадение побеждает" —
+   # если в файле уже есть "AllowTcpForwarding no" выше, добавленная снизу
+   # "yes" ничего не меняет: тоннель поднимется, но будет молча резать
+   # форвардинг (curl через него виснет/рвётся, хотя контейнер "healthy").
+   # Правь существующую строку, не добавляй новую:
+   sed -i 's/^AllowTcpForwarding no/AllowTcpForwarding yes/' /etc/ssh/sshd_config
+   systemctl restart sshd
+   ```
+
+3. Сгенерировать отдельный ключ для туннеля и добавить публичную часть в `authorized_keys` пользователя `tunnel` на новом VPS:
+
+   ```bash
+   ssh-keygen -t ed25519 -f telegram-tunnel-key -N "" -C "floway-telegram-tunnel"
+   ssh-copy-id -i telegram-tunnel-key.pub tunnel@203.0.113.10
+   ```
+
+4. Заполнить в vault (`just vault-edit`): `vault_telegram_tunnel_host` (IP/домен VPS), `vault_telegram_tunnel_user: tunnel`, `vault_telegram_tunnel_private_key` (содержимое `telegram-tunnel-key`, весь файл как есть).
+5. `just deploy` — Ansible положит ключ на прод, включит профиль `telegram-proxy` в `docker-compose.prod.yml`, и backend начнёт стучаться в Telegram через `socks5://telegram-proxy:1080`.
+
+Проверить, что туннель реально пропускает трафик (не только «контейнер healthy» — healthcheck смотрит только на локальный порт, а не на форвардинг):
+
+```bash
+docker compose exec telegram-proxy nc -z 127.0.0.1 1080 && echo tunnel port is up
+# получить прямой ответ от настоящего Telegram через прокси:
+curl -s --socks5 localhost:1080 https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getMe
+```
+
+Пусто в `vault_telegram_tunnel_host` (по умолчанию) — сайдкар не собирается и не стартует, `TELEGRAM_PROXY_URL` пустой, поведение не меняется. Невалидный `TELEGRAM_PROXY_URL` (неразбираемый URL или неподдерживаемая схема — актуально только при ручной правке `.env` в обход Ansible) — ошибка при старте бэкенда, а не тихая деградация.
 
 ## Тесты, линт, форматирование
 

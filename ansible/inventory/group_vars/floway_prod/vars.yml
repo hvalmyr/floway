@@ -43,6 +43,14 @@ ghcr_login_required: false
 # --- Куда деплоим приложение на VPS ---
 deploy_path: /opt/floway
 
+# --- Прокси для Telegram Bot API (см. README.md → «Если прод-VPS в РФ») ---
+# Пусто (по умолчанию) = бэкенд идёт к api.telegram.org напрямую. Заполни
+# vault_telegram_tunnel_host/_user/_private_key в vault.yml, когда появится
+# зарубежный VPS — сайдкар telegram-proxy (docker-compose.prod.yml) включится
+# сам через COMPOSE_PROFILES при следующем `just deploy`.
+telegram_proxy_enabled: "{{ (vault_telegram_tunnel_host | default('')) | length > 0 }}"
+telegram_proxy_url: "{{ 'socks5://telegram-proxy:1080' if telegram_proxy_enabled else '' }}"
+
 # --- Аналитика и подтверждение прав на сайт (необязательно, не секреты) ---
 yandex_metrika_id: "40686419"
 yandex_verification: "5c52a869de8140b1"

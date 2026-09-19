@@ -54,6 +54,22 @@ services:
       - garage_meta:/var/lib/garage/meta
       - garage_data:/var/lib/garage/data
 
+  # SOCKS5 sidecar for backend's TELEGRAM_PROXY_URL — only built/started when
+  # COMPOSE_PROFILES=telegram-proxy (set by Ansible once vault_telegram_tunnel_*
+  # are filled in). See README.md → «Если прод-VPS в РФ: прокси для api.telegram.org».
+  telegram-proxy:
+    build:
+      context: ./telegram-proxy
+    restart: unless-stopped
+    profiles: ["telegram-proxy"]
+    environment:
+      TUNNEL_HOST: ${TELEGRAM_TUNNEL_HOST}
+      TUNNEL_USER: ${TELEGRAM_TUNNEL_USER}
+      TUNNEL_PORT: ${TELEGRAM_TUNNEL_PORT:-22}
+    volumes:
+      - ./telegram-tunnel-key:/keys/tunnel_key:ro
+      - telegram_tunnel_known_hosts:/data
+
   backend:
     image: ${BACKEND_IMAGE}:${IMAGE_TAG:-latest}
     restart: unless-stopped
@@ -71,6 +87,9 @@ services:
       NOTIFY_EMAIL_TO: ${NOTIFY_EMAIL_TO}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+      # Empty (default) = direct to api.telegram.org. socks5://telegram-proxy:1080
+      # once the sidecar above is enabled — see internal/notify/telegram.go.
+      TELEGRAM_PROXY_URL: ${TELEGRAM_PROXY_URL:-}
       GARAGE_ENDPOINT: http://garage:3900
       GARAGE_REGION: garage
       GARAGE_ACCESS_KEY: ${GARAGE_ACCESS_KEY}
@@ -154,3 +173,4 @@ volumes:
   caddy_data:
   caddy_config:
   frontend_ipx_cache:
+  telegram_tunnel_known_hosts:

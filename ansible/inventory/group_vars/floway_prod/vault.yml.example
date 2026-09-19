@@ -35,6 +35,17 @@ vault_notify_email_to: ""
 vault_telegram_bot_token: ""
 vault_telegram_chat_id: ""
 
+# SOCKS5-туннель до зарубежного (не-РФ) VPS для api.telegram.org — см.
+# README.md → «Если прод-VPS в РФ». Пусто = напрямую, без туннеля.
+# Отдельный ключ, а не деплойный — можно отозвать, не трогая доступ к проду:
+#   ssh-keygen -t ed25519 -f telegram-tunnel-key -N "" -C "floway-telegram-tunnel"
+# Публичную часть — в authorized_keys пользователя vault_telegram_tunnel_user
+# на зарубежном хосте; приватную (весь файл как есть) — сюда.
+vault_telegram_tunnel_host: ""
+vault_telegram_tunnel_user: "tunnel"
+vault_telegram_tunnel_port: "22"
+vault_telegram_tunnel_private_key: ""
+
 # Garage (self-hosted S3-хранилище картинок) — ключи нужны и самому Garage
 # (bootstrap в garage/entrypoint.sh), и бэкенду (S3-клиент), поэтому храним
 # их здесь и подставляем в оба места из одного источника.
