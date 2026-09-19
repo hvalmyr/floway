@@ -104,7 +104,11 @@ func run(logger *slog.Logger) error {
 		leadNotifyChannels = append(leadNotifyChannels, notify.NewEmailNotifier(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPFrom, cfg.FrontendOrigin+"/admin/leads", cfg.SMTPUser, cfg.SMTPPassword, notificationEmailRepo))
 	}
 	if cfg.TelegramBotToken != "" && cfg.TelegramChatID != "" {
-		leadNotifyChannels = append(leadNotifyChannels, notify.NewTelegramNotifier(cfg.TelegramBotToken, cfg.TelegramChatID))
+		telegramNotifier, err := notify.NewTelegramNotifier(cfg.TelegramBotToken, cfg.TelegramChatID, cfg.TelegramProxyURL)
+		if err != nil {
+			return fmt.Errorf("configure telegram notifier: %w", err)
+		}
+		leadNotifyChannels = append(leadNotifyChannels, telegramNotifier)
 	}
 	var leadNotifier service.LeadNotifier
 	if len(leadNotifyChannels) > 0 {

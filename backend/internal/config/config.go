@@ -21,6 +21,7 @@ type Config struct {
 
 	TelegramBotToken string
 	TelegramChatID   string
+	TelegramProxyURL string
 
 	GarageEndpoint  string
 	GarageRegion    string
@@ -48,6 +49,7 @@ func Load() (Config, error) {
 
 		TelegramBotToken: os.Getenv("TELEGRAM_BOT_TOKEN"),
 		TelegramChatID:   os.Getenv("TELEGRAM_CHAT_ID"),
+		TelegramProxyURL: os.Getenv("TELEGRAM_PROXY_URL"),
 
 		GarageEndpoint:  os.Getenv("GARAGE_ENDPOINT"),
 		GarageRegion:    os.Getenv("GARAGE_REGION"),

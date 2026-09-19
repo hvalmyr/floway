@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -55,6 +56,46 @@ func TestTelegramNotifier_NotifyNewLead_ReturnsErrorOnNonOKStatus(t *testing.T) 
 	n := newTelegramNotifierForTest("test-token", "12345", srv.URL, srv.Client())
 
 	err := n.NotifyNewLead(context.Background(), testLead(), "")
+
+	require.Error(t, err)
+}
+
+func TestNewTelegramNotifier_NoProxy_UsesDefaultClient(t *testing.T) {
+	n, err := NewTelegramNotifier("test-token", "12345", "")
+
+	require.NoError(t, err)
+	assert.Same(t, http.DefaultClient, n.client)
+}
+
+func TestNewTelegramNotifier_HTTPProxy_SetsTransportProxy(t *testing.T) {
+	n, err := NewTelegramNotifier("test-token", "12345", "http://proxy.example.com:8080")
+
+	require.NoError(t, err)
+	transport, ok := n.client.Transport.(*http.Transport)
+	require.True(t, ok, "expected *http.Transport")
+	require.NotNil(t, transport.Proxy)
+	proxyURL, err := transport.Proxy(&http.Request{URL: &url.URL{Scheme: "https", Host: "api.telegram.org"}})
+	require.NoError(t, err)
+	assert.Equal(t, "proxy.example.com:8080", proxyURL.Host)
+}
+
+func TestNewTelegramNotifier_Socks5Proxy_SetsDialContext(t *testing.T) {
+	n, err := NewTelegramNotifier("test-token", "12345", "socks5://127.0.0.1:1080")
+
+	require.NoError(t, err)
+	transport, ok := n.client.Transport.(*http.Transport)
+	require.True(t, ok, "expected *http.Transport")
+	assert.NotNil(t, transport.DialContext)
+}
+
+func TestNewTelegramNotifier_UnsupportedProxyScheme_ReturnsError(t *testing.T) {
+	_, err := NewTelegramNotifier("test-token", "12345", "ftp://proxy.example.com")
+
+	require.Error(t, err)
+}
+
+func TestNewTelegramNotifier_InvalidProxyURL_ReturnsError(t *testing.T) {
+	_, err := NewTelegramNotifier("test-token", "12345", "://not-a-url")
 
 	require.Error(t, err)
 }
