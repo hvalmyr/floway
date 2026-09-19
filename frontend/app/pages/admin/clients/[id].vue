@@ -202,7 +202,13 @@ async function onDeleteClient() {
             <div class="flex flex-wrap items-center justify-between gap-2">
               <span class="font-medium">{{ LEAD_STATUS_LABELS[request.status] }}</span>
               <span class="text-xs text-[var(--color-text-muted)]">
-                {{ new Date(request.createdAt).toLocaleString("ru-RU") }}
+                {{ new Date(request.createdAt).toLocaleDateString("ru-RU") }}
+                {{
+                  new Date(request.createdAt).toLocaleTimeString("ru-RU", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                }}
               </span>
             </div>
             <p class="mt-1 text-[var(--color-text-muted)]">

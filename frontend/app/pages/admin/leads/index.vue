@@ -526,7 +526,14 @@ async function onBulkStatusChange(status: string) {
             </button>
           </div>
           <p class="mt-1 text-sm text-[var(--color-text-muted)]">
-            {{ new Date(lastContactAt(lead)).toLocaleDateString("ru-RU") }} ·
+            {{ new Date(lastContactAt(lead)).toLocaleDateString("ru-RU") }}
+            {{
+              new Date(lastContactAt(lead)).toLocaleTimeString("ru-RU", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            }}
+            ·
             {{ formatLeadExcerpt(lead) }} ·
             {{ contactMethodLabels[lead.contactMethod] ?? lead.contactMethod }}
           </p>
