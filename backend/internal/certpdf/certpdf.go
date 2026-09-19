@@ -83,7 +83,7 @@ const (
 	purposeToRecipient = 24.0
 	recipientToQRGap   = 100.0 // fixed regardless of content — see drawPurpose's shrink loop
 	qrToLinkGap        = 24.0
-	bottomMargin       = 60.0
+	bottomMargin       = 100.0 // contact row's ink bottom -> page bottom edge, fixed — see the bottom-anchored cluster in Render
 	headingFontSize    = 60.0
 	numberDateFontSize = 44.0
 	purposeMaxFontSize = 104.0
@@ -193,39 +193,37 @@ func Render(cert model.GiftCertificate, dateLabel string) ([]byte, error) {
 	drawText(pdf, fontBody, marginLeft, numberDateBaseline, numberDateFontSize, cert.Number)
 	drawRightAligned(pdf, fontBody, marginRight, numberDateBaseline, numberDateFontSize, dateLabel)
 
-	// The recipient's name and the QR/contact row's sizes are both fixed by
-	// their own text/column widths regardless of the purpose block, so
-	// they're computed up front — the purpose block's shrink loop below
-	// needs their heights to know how much room it actually has left.
+	// The recipient/QR/contact-row cluster is anchored to the *bottom* of
+	// the page, working upward at fixed gaps from a link-row baseline that
+	// sits exactly bottomMargin above the page's bottom edge — not stacked
+	// downward from the purpose block. That way this cluster's position
+	// never depends on how tall the purpose block above it ends up: the
+	// purpose block is the one thing that shrinks (see drawPurpose) to fit
+	// whatever space is left above it.
 	recipientSize := fitFontSizeToWidth(pdf, fontBody, cert.Recipient, textWidth)
 	rAscent, rDescent := fontMetrics(pdf, fontBody, recipientSize)
 
 	colWidth := (textWidth - 2*columnGutter) / 3
 	linkSize := fitFontSizeToWidth(pdf, fontBody, telegramContact, colWidth*linkFontSizeInset)
 	lAscent, lDescent := fontMetrics(pdf, fontBody, linkSize)
-	qrBlockHeight := colWidth + qrToLinkGap + lAscent + lDescent
 
-	tailHeight := purposeToRecipient + rAscent + rDescent + recipientToQRGap + qrBlockHeight
+	linkBaseline := pageHeight - bottomMargin - lDescent
+	qrTop := linkBaseline - lAscent - qrToLinkGap - colWidth
+	recipientBaseline := qrTop - recipientToQRGap - rDescent
+	recipientTop := recipientBaseline - rAscent
 
 	fl.advance(numberToPurposeGap)
 	purposeValue := purposeValueText(cert.Kind, cert.Value)
-	drawPurpose(fl, pdf, cert.Kind, purposeValue, tailHeight)
+	drawPurpose(fl, pdf, cert.Kind, purposeValue, recipientTop-purposeToRecipient)
 
-	fl.advance(purposeToRecipient)
-	recipientBaseline := fl.place(fontBody, recipientSize)
 	drawText(pdf, fontBody, marginLeft, recipientBaseline, recipientSize, cert.Recipient)
 
-	fl.advance(recipientToQRGap)
-	qrTop := fl.y
 	col1X := marginLeft
 	col2X := marginLeft + colWidth + columnGutter
 	if err := drawQRCodes(pdf, col1X, col2X, qrTop, colWidth); err != nil {
 		return nil, fmt.Errorf("render qr codes: %w", err)
 	}
-	fl.advance(colWidth)
 
-	fl.advance(qrToLinkGap)
-	linkBaseline := fl.place(fontBody, linkSize)
 	drawText(pdf, fontBody, col1X, linkBaseline, linkSize, telegramContact)
 	drawText(pdf, fontBody, col2X, linkBaseline, linkSize, websiteContact)
 	drawRightAligned(pdf, fontBody, marginRight, linkBaseline, linkSize, phoneContact)
@@ -273,14 +271,13 @@ func fitFontSizeToWidth(pdf *fpdf.Fpdf, family, text string, targetWidth float64
 // Either segment can wrap onto more than one line on its own (a long
 // course/masterclass title, or the long any_masterclass label "на любой
 // мастер-класс"), and the admin's value is free text of unpredictable
-// length — so the font size shrinks (down to purposeMinFontSize) until
-// tailHeight (everything fixed that follows: recipient, QR codes, contact
-// row) is projected to still fit above bottomMargin, instead of assuming a
-// fixed line count ever fits. This — not a per-certificate hardcoded gap —
-// is what keeps the space before the QR row visually identical across
-// certificates: the gap is always exactly recipientToQRGap, achieved by
-// shrinking the one element with unpredictable length instead.
-func drawPurpose(fl *flow, pdf *fpdf.Fpdf, kind model.GiftCertificateKind, value string, tailHeight float64) {
+// length — so the font size shrinks (down to purposeMinFontSize) until the
+// block's bottom is projected to land at or above maxBottom, instead of
+// assuming a fixed line count ever fits. maxBottom is the recipient's fixed
+// (bottom-anchored) top edge minus purposeToRecipient — everything below
+// the purpose block has an unchanging position regardless of certificate
+// content, so this is the one element that absorbs the variability.
+func drawPurpose(fl *flow, pdf *fpdf.Fpdf, kind model.GiftCertificateKind, value string, maxBottom float64) {
 	label := kindPurposeLabel[kind]
 
 	var lines []string
@@ -301,7 +298,7 @@ func drawPurpose(fl *flow, pdf *fpdf.Fpdf, kind model.GiftCertificateKind, value
 
 		lineHeight := ascent + descent
 		purposeHeight := float64(len(lines)) * lineHeight
-		if fl.y+purposeHeight+tailHeight <= pageHeight-bottomMargin || size <= purposeMinFontSize {
+		if fl.y+purposeHeight <= maxBottom || size <= purposeMinFontSize {
 			break
 		}
 	}
