@@ -43,6 +43,7 @@ const editingGroups: EditingGroup[] = [
       { to: "/admin/page-content/info", label: "Контакты и реквизиты" },
       { to: "/admin/social-links", label: "Соцсети" },
       { to: "/admin/notification-emails", label: "Email для уведомлений о заявках" },
+      { to: "/admin/gift-certificates", label: "Подарочные сертификаты" },
       { to: "/admin/page-content", label: "Все тексты сайта (полный список)" },
       { to: "/admin/content-export", label: "Экспорт / импорт" },
     ],

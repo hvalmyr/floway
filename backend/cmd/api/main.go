@@ -145,6 +145,7 @@ func run(logger *slog.Logger) error {
 		GiftCertificateCarouselPhoto: service.NewGiftCertificateCarouselPhotoService(repository.NewGiftCertificateCarouselPhotoRepository(pool)),
 		ThankYouPage:                 service.NewThankYouPageService(repository.NewThankYouPageRepository(pool)),
 		NotificationEmail:            service.NewNotificationEmailService(notificationEmailRepo),
+		GiftCertificate:              service.NewGiftCertificateService(repository.NewGiftCertificateRepository(pool)),
 		Icon:                         service.NewIconService(repository.NewIconRepository(pool)),
 		ContentExport:                service.NewContentExportService(pool, garageClient),
 

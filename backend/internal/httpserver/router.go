@@ -77,6 +77,7 @@ type Services struct {
 	SocialLink                   *service.SocialLinkService
 	GalleryPhoto                 *service.GalleryPhotoService
 	GiftCertificateCarouselPhoto *service.GiftCertificateCarouselPhotoService
+	GiftCertificate              *service.GiftCertificateService
 	ThankYouPage                 *service.ThankYouPageService
 	NotificationEmail            *service.NotificationEmailService
 	Icon                         *service.IconService
@@ -182,6 +183,7 @@ func NewRouter(services Services) http.Handler {
 			r.Route("/gift-certificate-carousel-photos", newGiftCertificateCarouselPhotoHandler(services.GiftCertificateCarouselPhoto, admin).routes)
 			r.Route("/thank-you-pages/{variant}", newThankYouPageHandler(services.ThankYouPage, admin).routes)
 			r.Route("/notification-emails", newNotificationEmailHandler(services.NotificationEmail, admin).routes)
+			r.Route("/gift-certificates", newGiftCertificateHandler(services.GiftCertificate, admin).routes)
 			r.Route("/leads", newLeadHandler(services.Lead, admin, leadLimiter).routes)
 			r.Route("/clients", newClientHandler(services.Client, admin).routes)
 			r.Route("/tags", newTagHandler(services.Tag, admin).routes)

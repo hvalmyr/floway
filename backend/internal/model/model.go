@@ -337,6 +337,35 @@ type GiftCertificateCarouselPhoto struct {
 	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
 }
 
+// GiftCertificateKind is the admin-picked category for what a gift
+// certificate is redeemable for. The specific value (amount/course title/
+// masterclass title) is free text in GiftCertificate.Value — there's no
+// dependency on the real courses/masterclasses tables, since a certificate
+// can outlive the course it names or be issued for a not-yet-published one.
+type GiftCertificateKind string
+
+const (
+	GiftCertificateKindAmount         GiftCertificateKind = "amount"
+	GiftCertificateKindCourse         GiftCertificateKind = "course"
+	GiftCertificateKindMasterclass    GiftCertificateKind = "masterclass"
+	GiftCertificateKindAnyMasterclass GiftCertificateKind = "any_masterclass"
+)
+
+// GiftCertificate is one issued gift-certificate PDF, tracked so the admin
+// panel can list what's been given out and re-download any of them. Number
+// is auto-generated as #DDMMYYNN (issue date + a 2-digit same-day sequence)
+// by GiftCertificateService.Create — never client-supplied. Immutable once
+// issued — create and delete only, no update route.
+type GiftCertificate struct {
+	ID        int64               `db:"id" json:"id"`
+	Number    string              `db:"number" json:"number"`
+	IssuedAt  time.Time           `db:"issued_at" json:"issuedAt"`
+	Kind      GiftCertificateKind `db:"kind" json:"kind"`
+	Value     string              `db:"value" json:"value"`
+	Recipient string              `db:"recipient" json:"recipient"`
+	CreatedAt time.Time           `db:"created_at" json:"createdAt"`
+}
+
 // NotificationEmail is one recipient address for new-lead email
 // notifications (see internal/notify.EmailNotifier).
 type NotificationEmail struct {
