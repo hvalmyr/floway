@@ -47,7 +47,7 @@ const documentLinks = [
               target="_blank"
               rel="noopener noreferrer"
               :aria-label="channel.label"
-              class="grid size-[44px] place-items-center rounded-full bg-white text-primary hover:opacity-80"
+              class="grid size-[44px] place-items-center rounded-full bg-white text-ink hover:opacity-80"
             >
               <component :is="channel.icon" class="size-[20px]" aria-hidden="true" />
             </a>
@@ -62,7 +62,7 @@ const documentLinks = [
               target="_blank"
               rel="noopener noreferrer"
               :aria-label="social.label"
-              class="grid size-[44px] place-items-center rounded-full bg-white text-primary hover:opacity-80"
+              class="grid size-[44px] place-items-center rounded-full bg-white text-ink hover:opacity-80"
             >
               <component :is="socialIcons[social.label]" class="size-[20px]" aria-hidden="true" />
             </a>
@@ -114,7 +114,7 @@ const documentLinks = [
     </div>
 
     <p class="container py-24 font-body text-body text-white/80">
-      &copy; {{ year }} flo-way — новогоднее оформление
+      &copy; {{ year }} Фловей — новогоднее оформление
     </p>
   </footer>
 </template>
