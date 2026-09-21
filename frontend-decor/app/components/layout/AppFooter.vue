@@ -30,7 +30,7 @@ const documentLinks = [
 </script>
 
 <template>
-  <footer class="mt-auto bg-primary text-white">
+  <footer class="mt-auto bg-ink text-white">
     <div class="container flex flex-col gap-32 py-64">
       <!-- Same size as the desktop header wordmark (AppHeader.vue's centered
       logo) at every breakpoint — not shrunk down on mobile/tablet. -->
