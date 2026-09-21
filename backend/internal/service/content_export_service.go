@@ -103,8 +103,20 @@ func (s *ContentExportService) Export(ctx context.Context) (model.SiteContent, e
 	if out.Teachers, err = queryAll(ctx, s.db, `SELECT id, name, photo, description, sort_order, created_at, updated_at FROM teachers ORDER BY id`, scanTeacher); err != nil {
 		return out, fmt.Errorf("export teachers: %w", err)
 	}
-	if out.GalleryPhotos, err = queryAll(ctx, s.db, `SELECT id, image, sort_order, created_at, updated_at FROM gallery_photos ORDER BY id`, scanGalleryPhoto); err != nil {
+	if out.GalleryPhotos, err = queryAll(ctx, s.db, `SELECT id, image, object_type_id, format, sort_order, created_at, updated_at FROM gallery_photos ORDER BY id`, scanGalleryPhoto); err != nil {
 		return out, fmt.Errorf("export gallery photos: %w", err)
+	}
+	if out.ObjectTypes, err = queryAll(ctx, s.db, `SELECT id, slug, name, visible, sort_order, created_at, updated_at FROM object_types ORDER BY id`, scanObjectType); err != nil {
+		return out, fmt.Errorf("export object types: %w", err)
+	}
+	if out.LandingPages, err = queryAll(ctx, s.db, `SELECT id, object_type_id, slug, h1, meta_title, meta_description, faq_title, faq_description, faq_visible, visible, sort_order, created_at, updated_at FROM landing_pages ORDER BY id`, scanLandingPage); err != nil {
+		return out, fmt.Errorf("export landing pages: %w", err)
+	}
+	if out.LandingPageBlocks, err = queryAll(ctx, s.db, `SELECT id, landing_page_id, image, text, sort_order, created_at, updated_at FROM landing_page_blocks ORDER BY id`, scanLandingPageBlock); err != nil {
+		return out, fmt.Errorf("export landing page blocks: %w", err)
+	}
+	if out.LandingPageFAQItems, err = queryAll(ctx, s.db, `SELECT id, landing_page_id, question, answer, sort_order, created_at, updated_at FROM landing_page_faq_items ORDER BY id`, scanLandingPageFAQItem); err != nil {
+		return out, fmt.Errorf("export landing page faq items: %w", err)
 	}
 	if out.BlogPosts, err = queryAll(ctx, s.db, `SELECT `+exportBlogPostColumns+` FROM blog_posts ORDER BY id`, scanExportBlogPost); err != nil {
 		return out, fmt.Errorf("export blog posts: %w", err)
@@ -200,7 +212,13 @@ func (s *ContentExportService) Import(ctx context.Context, data model.SiteConten
 		// page_faq_settings are never deleted (see importPageContent and
 		// importPageFAQSettings) — page_faq_items needs its own explicit
 		// clear since its parent row survives.
-		for _, table := range []string{"course_sections", "custom_display_styles", "masterclasses", "teachers", "gallery_photos", "blog_posts", "faq_items", "features", "about_items", "social_links", "page_faq_items", "thank_you_page_photos", "thank_you_page_faq_items"} {
+		// object_types cascades to landing_pages, which in turn cascades to
+		// landing_page_blocks/landing_page_faq_items (ON DELETE CASCADE,
+		// migrations 00057/00058) — deleting it alone clears that whole tree,
+		// same reasoning as course_sections above. gallery_photos.object_type_id
+		// is ON DELETE SET NULL, not CASCADE, so it still needs its own
+		// explicit clear (already listed below).
+		for _, table := range []string{"course_sections", "custom_display_styles", "object_types", "masterclasses", "teachers", "gallery_photos", "blog_posts", "faq_items", "features", "about_items", "social_links", "page_faq_items", "thank_you_page_photos", "thank_you_page_faq_items"} {
 			if _, err := tx.Exec(ctx, "DELETE FROM "+table); err != nil {
 				return ImportResult{}, fmt.Errorf("clear %s: %w", table, err)
 			}
@@ -226,6 +244,32 @@ func (s *ContentExportService) Import(ctx context.Context, data model.SiteConten
 		return ImportResult{}, fmt.Errorf("import custom display styles: %w", err)
 	}
 	result.Counts["customDisplayStyles"] = n
+
+	// Must run before landing_pages/gallery_photos below — both reference
+	// this table's ids via object_type_id.
+	n, err = bulkWrite(ctx, tx, "object_types", []string{"id", "slug", "name", "visible", "sort_order"}, data.ObjectTypes, objectTypeArgs, conflictCol)
+	if err != nil {
+		return ImportResult{}, fmt.Errorf("import object types: %w", err)
+	}
+	result.Counts["objectTypes"] = n
+
+	n, err = bulkWrite(ctx, tx, "landing_pages", []string{"id", "object_type_id", "slug", "h1", "meta_title", "meta_description", "faq_title", "faq_description", "faq_visible", "visible", "sort_order"}, data.LandingPages, landingPageArgs, conflictCol)
+	if err != nil {
+		return ImportResult{}, fmt.Errorf("import landing pages: %w", err)
+	}
+	result.Counts["landingPages"] = n
+
+	n, err = bulkWrite(ctx, tx, "landing_page_blocks", []string{"id", "landing_page_id", "image", "text", "sort_order"}, data.LandingPageBlocks, landingPageBlockArgs, conflictCol)
+	if err != nil {
+		return ImportResult{}, fmt.Errorf("import landing page blocks: %w", err)
+	}
+	result.Counts["landingPageBlocks"] = n
+
+	n, err = bulkWrite(ctx, tx, "landing_page_faq_items", []string{"id", "landing_page_id", "question", "answer", "sort_order"}, data.LandingPageFAQItems, landingPageFAQItemArgs, conflictCol)
+	if err != nil {
+		return ImportResult{}, fmt.Errorf("import landing page faq items: %w", err)
+	}
+	result.Counts["landingPageFaqItems"] = n
 
 	n, err = bulkWrite(ctx, tx, "courses", []string{"id", "section_id", "slug", "name", "description", "cover_image", "lesson_count", "time_length", "price", "display_style", "visible", "sort_order", "single_card", "faq_title", "faq_description", "faq_visible", "custom_display_style_id"}, data.Courses, courseArgs, conflictCol)
 	if err != nil {
@@ -269,7 +313,7 @@ func (s *ContentExportService) Import(ctx context.Context, data model.SiteConten
 	}
 	result.Counts["teachers"] = n
 
-	n, err = bulkWrite(ctx, tx, "gallery_photos", []string{"id", "image", "sort_order"}, data.GalleryPhotos, galleryPhotoArgs, conflictCol)
+	n, err = bulkWrite(ctx, tx, "gallery_photos", []string{"id", "image", "object_type_id", "format", "sort_order"}, data.GalleryPhotos, galleryPhotoArgs, conflictCol)
 	if err != nil {
 		return ImportResult{}, fmt.Errorf("import gallery photos: %w", err)
 	}
@@ -320,7 +364,7 @@ func (s *ContentExportService) Import(ctx context.Context, data model.SiteConten
 	// Every id-bearing table above just got explicit ids inserted — bump each
 	// sequence past the highest one, or the next plain admin-panel Create()
 	// (which never specifies an id) will collide with an imported row.
-	for _, table := range []string{"course_sections", "custom_display_styles", "courses", "course_blocks", "lessons", "course_faq_items", "page_faq_items", "masterclasses", "teachers", "gallery_photos", "blog_posts", "faq_items", "features", "about_items", "social_links", "thank_you_page_photos", "thank_you_page_faq_items"} {
+	for _, table := range []string{"course_sections", "custom_display_styles", "object_types", "landing_pages", "landing_page_blocks", "landing_page_faq_items", "courses", "course_blocks", "lessons", "course_faq_items", "page_faq_items", "masterclasses", "teachers", "gallery_photos", "blog_posts", "faq_items", "features", "about_items", "social_links", "thank_you_page_photos", "thank_you_page_faq_items"} {
 		if _, err := tx.Exec(ctx, `SELECT setval(pg_get_serial_sequence($1, 'id'), GREATEST((SELECT COALESCE(MAX(id), 0) FROM `+table+`), 1))`, table); err != nil {
 			return ImportResult{}, fmt.Errorf("reset %s id sequence: %w", table, err)
 		}
@@ -593,11 +637,47 @@ func teacherArgs(m model.Teacher) []any {
 
 func scanGalleryPhoto(row pgx.CollectableRow) (model.GalleryPhoto, error) {
 	var m model.GalleryPhoto
-	err := row.Scan(&m.ID, &m.Image, &m.SortOrder, &m.CreatedAt, &m.UpdatedAt)
+	err := row.Scan(&m.ID, &m.Image, &m.ObjectTypeID, &m.Format, &m.SortOrder, &m.CreatedAt, &m.UpdatedAt)
 	return m, err
 }
 func galleryPhotoArgs(m model.GalleryPhoto) []any {
-	return []any{m.ID, m.Image, m.SortOrder}
+	return []any{m.ID, m.Image, m.ObjectTypeID, m.Format, m.SortOrder}
+}
+
+func scanObjectType(row pgx.CollectableRow) (model.ObjectType, error) {
+	var m model.ObjectType
+	err := row.Scan(&m.ID, &m.Slug, &m.Name, &m.Visible, &m.SortOrder, &m.CreatedAt, &m.UpdatedAt)
+	return m, err
+}
+func objectTypeArgs(m model.ObjectType) []any {
+	return []any{m.ID, m.Slug, m.Name, m.Visible, m.SortOrder}
+}
+
+func scanLandingPage(row pgx.CollectableRow) (model.LandingPage, error) {
+	var m model.LandingPage
+	err := row.Scan(&m.ID, &m.ObjectTypeID, &m.Slug, &m.H1, &m.MetaTitle, &m.MetaDescription, &m.FAQTitle, &m.FAQDescription, &m.FAQVisible, &m.Visible, &m.SortOrder, &m.CreatedAt, &m.UpdatedAt)
+	return m, err
+}
+func landingPageArgs(m model.LandingPage) []any {
+	return []any{m.ID, m.ObjectTypeID, m.Slug, m.H1, m.MetaTitle, m.MetaDescription, m.FAQTitle, m.FAQDescription, m.FAQVisible, m.Visible, m.SortOrder}
+}
+
+func scanLandingPageBlock(row pgx.CollectableRow) (model.LandingPageBlock, error) {
+	var m model.LandingPageBlock
+	err := row.Scan(&m.ID, &m.LandingPageID, &m.Image, &m.Text, &m.SortOrder, &m.CreatedAt, &m.UpdatedAt)
+	return m, err
+}
+func landingPageBlockArgs(m model.LandingPageBlock) []any {
+	return []any{m.ID, m.LandingPageID, m.Image, m.Text, m.SortOrder}
+}
+
+func scanLandingPageFAQItem(row pgx.CollectableRow) (model.LandingPageFAQItem, error) {
+	var m model.LandingPageFAQItem
+	err := row.Scan(&m.ID, &m.LandingPageID, &m.Question, &m.Answer, &m.SortOrder, &m.CreatedAt, &m.UpdatedAt)
+	return m, err
+}
+func landingPageFAQItemArgs(m model.LandingPageFAQItem) []any {
+	return []any{m.ID, m.LandingPageID, m.Question, m.Answer, m.SortOrder}
 }
 
 // exportBlogPostColumns/scanExportBlogPost duplicate

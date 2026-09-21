@@ -300,6 +300,33 @@ func TestLeadService_Create(t *testing.T) {
 		assert.ErrorIs(t, err, service.ErrValidation)
 	})
 
+	t.Run("accepts the decor site's own request type and format", func(t *testing.T) {
+		repo := newFakeLeadRepository()
+		svc := service.NewLeadService(repo, newFakeClientRepository(), nil, nil, nil)
+
+		item := validLead()
+		item.RequestType = model.LeadRequestTypeDecor
+		item.Format = model.LeadFormatSeason
+
+		lead, err := svc.Create(context.Background(), item)
+
+		require.NoError(t, err)
+		assert.Equal(t, model.LeadFormatSeason, lead.Format)
+	})
+
+	t.Run("rejects an invalid format", func(t *testing.T) {
+		repo := newFakeLeadRepository()
+		svc := service.NewLeadService(repo, newFakeClientRepository(), nil, nil, nil)
+
+		item := validLead()
+		item.Format = "unknown"
+
+		_, err := svc.Create(context.Background(), item)
+
+		require.Error(t, err)
+		assert.ErrorIs(t, err, service.ErrValidation)
+	})
+
 	t.Run("forces status to new regardless of input", func(t *testing.T) {
 		repo := newFakeLeadRepository()
 		svc := service.NewLeadService(repo, newFakeClientRepository(), nil, nil, nil)

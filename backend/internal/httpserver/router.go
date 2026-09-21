@@ -67,6 +67,11 @@ type Services struct {
 	CourseFAQ                    *service.CourseFAQService
 	PageFAQ                      *service.PageFAQService
 	CourseCatalog                *service.CourseCatalogService
+	ObjectType                   *service.ObjectTypeService
+	LandingPage                  *service.LandingPageService
+	LandingPageBlock             *service.LandingPageBlockService
+	LandingPageFAQ               *service.LandingPageFAQService
+	LandingPageCatalog           *service.LandingPageCatalogService
 	Lead                         *service.LeadService
 	Client                       *service.ClientService
 	Tag                          *service.TagService
@@ -178,6 +183,13 @@ func NewRouter(services Services) http.Handler {
 			})
 			r.Route("/course-blocks/{blockId}/lessons", newLessonHandler(services.Lesson, admin).routes)
 			r.Route("/page-faq/{page}", newPageFAQHandler(services.PageFAQ, admin).routes)
+			r.Route("/object-types", newObjectTypeHandler(services.ObjectType, admin).routes)
+			landingPageHdl := newLandingPageHandler(services.LandingPage, services.LandingPageCatalog, admin)
+			r.Route("/landing-pages", func(r chi.Router) {
+				landingPageHdl.routes(r)
+				r.Route("/{landingPageId}/blocks", newLandingPageBlockHandler(services.LandingPageBlock, admin).routes)
+				r.Route("/{landingPageId}/faq-items", newLandingPageFAQHandler(services.LandingPageFAQ, admin).routes)
+			})
 			r.Route("/gallery-photos", newGalleryPhotoHandler(services.GalleryPhoto, admin).routes)
 			r.Route("/custom-display-styles", newCustomDisplayStyleHandler(services.CustomDisplayStyle, admin).routes)
 			r.Route("/gift-certificate-carousel-photos", newGiftCertificateCarouselPhotoHandler(services.GiftCertificateCarouselPhoto, admin).routes)

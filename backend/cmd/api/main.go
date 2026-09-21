@@ -71,6 +71,10 @@ func run(logger *slog.Logger) error {
 	courseFAQRepo := repository.NewCourseFAQRepository(pool)
 	pageFAQRepo := repository.NewPageFAQRepository(pool)
 	masterclassRepo := repository.NewMasterclassRepository(pool)
+	objectTypeRepo := repository.NewObjectTypeRepository(pool)
+	landingPageRepo := repository.NewLandingPageRepository(pool)
+	landingPageBlockRepo := repository.NewLandingPageBlockRepository(pool)
+	landingPageFAQRepo := repository.NewLandingPageFAQRepository(pool)
 	leadRepo := repository.NewLeadRepository(pool)
 	clientRepo := repository.NewClientRepository(pool)
 	productTagRepo := repository.NewProductTagRepository(pool)
@@ -130,6 +134,11 @@ func run(logger *slog.Logger) error {
 		CourseFAQ:          service.NewCourseFAQService(courseFAQRepo),
 		PageFAQ:            service.NewPageFAQService(pageFAQRepo),
 		CourseCatalog:      service.NewCourseCatalogService(courseSectionRepo, courseRepo, courseRepo, courseBlockRepo, courseBlockRepo, lessonRepo, courseFAQRepo),
+		ObjectType:         service.NewObjectTypeService(objectTypeRepo),
+		LandingPage:        service.NewLandingPageService(landingPageRepo),
+		LandingPageBlock:   service.NewLandingPageBlockService(landingPageBlockRepo),
+		LandingPageFAQ:     service.NewLandingPageFAQService(landingPageFAQRepo),
+		LandingPageCatalog: service.NewLandingPageCatalogService(landingPageRepo, landingPageRepo, objectTypeRepo, landingPageBlockRepo, landingPageFAQRepo),
 		Lead:               service.NewLeadService(leadRepo, clientRepo, leadNotifier, courseRepo, masterclassRepo),
 		Client: service.NewClientService(
 			clientRepo,

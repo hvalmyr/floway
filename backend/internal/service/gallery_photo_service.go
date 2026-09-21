@@ -30,6 +30,11 @@ func (s *GalleryPhotoService) Create(ctx context.Context, item model.GalleryPhot
 	if item.Image == "" {
 		return model.GalleryPhoto{}, errors.Join(ErrValidation, errors.New("image is required"))
 	}
+	// validLeadFormats also covers GalleryPhoto.Format — same LeadFormat
+	// type, same "" (school photo, untagged) / season / event value set.
+	if _, ok := validLeadFormats[item.Format]; !ok {
+		return model.GalleryPhoto{}, errors.Join(ErrValidation, errors.New("invalid format"))
+	}
 
 	return s.repo.Create(ctx, item)
 }
@@ -40,6 +45,9 @@ func (s *GalleryPhotoService) Update(ctx context.Context, item model.GalleryPhot
 	}
 	if item.Image == "" {
 		return model.GalleryPhoto{}, errors.Join(ErrValidation, errors.New("image is required"))
+	}
+	if _, ok := validLeadFormats[item.Format]; !ok {
+		return model.GalleryPhoto{}, errors.Join(ErrValidation, errors.New("invalid format"))
 	}
 
 	return s.repo.Update(ctx, item)

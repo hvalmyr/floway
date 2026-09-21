@@ -30,6 +30,15 @@ var validLeadRequestTypes = map[model.LeadRequestType]struct{}{
 	model.LeadRequestTypeMasterclass:     {},
 	model.LeadRequestTypeTrialLesson:     {},
 	model.LeadRequestTypeGiftCertificate: {},
+	model.LeadRequestTypeDecor:           {},
+}
+
+// validLeadFormats includes "" (every school lead leaves Format blank) —
+// only decor leads pick season/event.
+var validLeadFormats = map[model.LeadFormat]struct{}{
+	"":                     {},
+	model.LeadFormatSeason: {},
+	model.LeadFormatEvent:  {},
 }
 
 var validLeadStatuses = map[model.LeadStatus]struct{}{
@@ -146,6 +155,12 @@ func (s *LeadService) Create(ctx context.Context, item model.Lead) (model.Lead, 
 	item.Phone = strings.TrimSpace(item.Phone)
 	item.Email = strings.TrimSpace(item.Email)
 	item.RelatedSlug = strings.TrimSpace(item.RelatedSlug)
+	item.UTMSource = strings.TrimSpace(item.UTMSource)
+	item.UTMMedium = strings.TrimSpace(item.UTMMedium)
+	item.UTMCampaign = strings.TrimSpace(item.UTMCampaign)
+	item.UTMContent = strings.TrimSpace(item.UTMContent)
+	item.UTMTerm = strings.TrimSpace(item.UTMTerm)
+	item.YClid = strings.TrimSpace(item.YClid)
 
 	if item.Name == "" || item.Phone == "" {
 		return model.Lead{}, errors.Join(ErrValidation, errors.New("name and phone are required"))
@@ -159,6 +174,9 @@ func (s *LeadService) Create(ctx context.Context, item model.Lead) (model.Lead, 
 	}
 	if _, ok := validLeadRequestTypes[item.RequestType]; !ok {
 		return model.Lead{}, errors.Join(ErrValidation, errors.New("invalid request type"))
+	}
+	if _, ok := validLeadFormats[item.Format]; !ok {
+		return model.Lead{}, errors.Join(ErrValidation, errors.New("invalid format"))
 	}
 
 	// This is a public endpoint: the client never gets to set the status.

@@ -318,13 +318,102 @@ type Teacher struct {
 }
 
 // GalleryPhoto is one slide of the homepage's vertical-photo carousel
-// (between "Преимущества" and "О школе").
+// (between "Преимущества" and "О школе") — the decor site also reuses this
+// table as its portfolio, tagging each photo with ObjectTypeID/Format so its
+// portfolio page can filter (п. 6 ТЗ decor-site); both are nil/blank and
+// unused for the school's own carousel photos.
 type GalleryPhoto struct {
+	ID           int64      `db:"id" json:"id"`
+	Image        string     `db:"image" json:"image"`
+	ObjectTypeID *int64     `db:"object_type_id" json:"objectTypeId,omitempty"`
+	Format       LeadFormat `db:"format" json:"format,omitempty"`
+	SortOrder    int        `db:"sort_order" json:"sortOrder"`
+	CreatedAt    time.Time  `db:"created_at" json:"createdAt"`
+	UpdatedAt    time.Time  `db:"updated_at" json:"updatedAt"`
+}
+
+// ObjectType is one entry in the decor site's shared dictionary of property
+// types ("дом", "офис", "магазин", ...) — the single source LandingPage,
+// Lead, and GalleryPhoto all point at (ObjectTypeID), so renaming or hiding
+// a type updates the landing page, the lead form's dropdown, and the
+// portfolio filter at once. Unused by the school (see п. 4.2 audit doc for
+// why this isn't built on courses/course_sections).
+type ObjectType struct {
 	ID        int64     `db:"id" json:"id"`
-	Image     string    `db:"image" json:"image"`
+	Slug      string    `db:"slug" json:"slug"`
+	Name      string    `db:"name" json:"name"`
+	Visible   bool      `db:"visible" json:"visible"`
 	SortOrder int       `db:"sort_order" json:"sortOrder"`
 	CreatedAt time.Time `db:"created_at" json:"createdAt"`
 	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
+}
+
+// LandingPage is one admin-creatable/copyable/renameable/hideable/
+// deletable page for a single ObjectType (п. 7.5 ТЗ decor-site) — e.g.
+// "оформление дома". FAQTitle/FAQDescription/FAQVisible follow the same
+// inline-fields-on-the-parent-row pattern Course already uses (see Course's
+// doc comment) rather than a separate settings table like page_faq_settings,
+// since that table's fixed CHECK (page IN (...)) doesn't fit a dynamically
+// admin-created set of pages. Unused by the school.
+type LandingPage struct {
+	ID              int64     `db:"id" json:"id"`
+	ObjectTypeID    int64     `db:"object_type_id" json:"objectTypeId"`
+	Slug            string    `db:"slug" json:"slug"`
+	H1              string    `db:"h1" json:"h1"`
+	MetaTitle       string    `db:"meta_title" json:"metaTitle"`
+	MetaDescription string    `db:"meta_description" json:"metaDescription"`
+	FAQTitle        string    `db:"faq_title" json:"faqTitle"`
+	FAQDescription  string    `db:"faq_description" json:"faqDescription"`
+	FAQVisible      bool      `db:"faq_visible" json:"faqVisible"`
+	Visible         bool      `db:"visible" json:"visible"`
+	SortOrder       int       `db:"sort_order" json:"sortOrder"`
+	CreatedAt       time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt       time.Time `db:"updated_at" json:"updatedAt"`
+}
+
+// LandingPageBlock is one repeatable image+text section within a landing
+// page (photo example, format description) — same shape as CourseBlock
+// minus the lesson_count/time_length/price fields, which don't apply here
+// (the decor site never shows prices, see п. 6 ТЗ).
+type LandingPageBlock struct {
+	ID            int64     `db:"id" json:"id"`
+	LandingPageID int64     `db:"landing_page_id" json:"landingPageId"`
+	Image         string    `db:"image" json:"image"`
+	Text          string    `db:"text" json:"text"`
+	SortOrder     int       `db:"sort_order" json:"sortOrder"`
+	CreatedAt     time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt     time.Time `db:"updated_at" json:"updatedAt"`
+}
+
+// LandingPageFAQItem is one Q&A pair in a single landing page's FAQ block —
+// scoped by LandingPageID, same relationship CourseFAQItem has to Course.
+type LandingPageFAQItem struct {
+	ID            int64     `db:"id" json:"id"`
+	LandingPageID int64     `db:"landing_page_id" json:"landingPageId"`
+	Question      string    `db:"question" json:"question"`
+	Answer        string    `db:"answer" json:"answer"`
+	SortOrder     int       `db:"sort_order" json:"sortOrder"`
+	CreatedAt     time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt     time.Time `db:"updated_at" json:"updatedAt"`
+}
+
+// LandingPageWithObjectType is the public homepage/nav shape (GET
+// /api/v1/landing-pages, visible ones) — enough to render a link list
+// without a second per-page object-type round trip.
+type LandingPageWithObjectType struct {
+	LandingPage
+	ObjectType ObjectType `json:"objectType"`
+}
+
+// LandingPageWithDetail is the public single-page shape (GET
+// /api/v1/landing-pages/{slug}/full): the page, its object type, its
+// blocks, and its FAQ items — response-only, not stored directly (mirrors
+// CourseWithBlocks).
+type LandingPageWithDetail struct {
+	LandingPage
+	ObjectType ObjectType           `json:"objectType"`
+	Blocks     []LandingPageBlock   `json:"blocks"`
+	FAQItems   []LandingPageFAQItem `json:"faqItems"`
 }
 
 // GiftCertificateCarouselPhoto is one slide of the gift-certificates page's
@@ -434,6 +523,20 @@ const (
 	LeadRequestTypeMasterclass     LeadRequestType = "masterclass"
 	LeadRequestTypeTrialLesson     LeadRequestType = "trial_lesson"
 	LeadRequestTypeGiftCertificate LeadRequestType = "gift_certificate"
+	// LeadRequestTypeDecor is the decor site's only request type — it has no
+	// courses/masterclasses/gift certificates, just one service (see
+	// ObjectTypeID/Format below for what the visitor actually asked for).
+	LeadRequestTypeDecor LeadRequestType = "decor"
+)
+
+// LeadFormat is the decor site's "на сезон / на праздник" choice — blank for
+// every school lead (RequestType course/masterclass/trial_lesson/
+// gift_certificate never sets it).
+type LeadFormat string
+
+const (
+	LeadFormatSeason LeadFormat = "season"
+	LeadFormatEvent  LeadFormat = "event"
 )
 
 type LeadStatus string
@@ -480,6 +583,22 @@ type Lead struct {
 	// status enum (old "closed" -> closed_won, see migration 00031) and
 	// cleared the moment someone explicitly picks a status for the lead.
 	NeedsStatusReview bool `db:"needs_status_review" json:"needsStatusReview"`
+	// ObjectTypeID/Format are decor-site-only (see LeadRequestTypeDecor) —
+	// nil/blank for every school lead. ON DELETE SET NULL (migration 00059):
+	// removing an object type from the dictionary later must not make old
+	// leads referencing it un-deletable/un-listable.
+	ObjectTypeID *int64     `db:"object_type_id" json:"objectTypeId,omitempty"`
+	Format       LeadFormat `db:"format" json:"format,omitempty"`
+	// UTM*/YClid are ad-tracking params carried straight from the landing
+	// page's query string into the lead (п. 9 ТЗ decor-site) — free text,
+	// never validated against a fixed set, since campaign/content/term names
+	// are the advertiser's own choice, not this app's.
+	UTMSource   string `db:"utm_source" json:"utmSource,omitempty"`
+	UTMMedium   string `db:"utm_medium" json:"utmMedium,omitempty"`
+	UTMCampaign string `db:"utm_campaign" json:"utmCampaign,omitempty"`
+	UTMContent  string `db:"utm_content" json:"utmContent,omitempty"`
+	UTMTerm     string `db:"utm_term" json:"utmTerm,omitempty"`
+	YClid       string `db:"yclid" json:"yclid,omitempty"`
 }
 
 // Client is the deduped customer profile a Lead attaches to — see
@@ -663,6 +782,10 @@ type SiteContent struct {
 	CourseBlocks         []CourseBlock         `json:"courseBlocks"`
 	Lessons              []Lesson              `json:"lessons"`
 	CourseFAQItems       []CourseFAQItem       `json:"courseFaqItems"`
+	ObjectTypes          []ObjectType          `json:"objectTypes"`
+	LandingPages         []LandingPage         `json:"landingPages"`
+	LandingPageBlocks    []LandingPageBlock    `json:"landingPageBlocks"`
+	LandingPageFAQItems  []LandingPageFAQItem  `json:"landingPageFaqItems"`
 	PageFAQSettings      []PageFAQSettings     `json:"pageFaqSettings"`
 	PageFAQItems         []PageFAQItem         `json:"pageFaqItems"`
 	Masterclasses        []Masterclass         `json:"masterclasses"`

@@ -87,6 +87,29 @@ func TestGalleryPhotoService_Create(t *testing.T) {
 		assert.ErrorIs(t, err, service.ErrValidation)
 		assert.Empty(t, repo.items)
 	})
+
+	t.Run("accepts a decor-site photo tagged with an object type and format", func(t *testing.T) {
+		repo := newFakeGalleryPhotoRepository()
+		svc := service.NewGalleryPhotoService(repo)
+		objectTypeID := int64(3)
+
+		item, err := svc.Create(context.Background(), model.GalleryPhoto{
+			Image: "portfolio/1.jpg", ObjectTypeID: &objectTypeID, Format: model.LeadFormatEvent,
+		})
+
+		require.NoError(t, err)
+		assert.Equal(t, model.LeadFormatEvent, item.Format)
+	})
+
+	t.Run("rejects an invalid format", func(t *testing.T) {
+		repo := newFakeGalleryPhotoRepository()
+		svc := service.NewGalleryPhotoService(repo)
+
+		_, err := svc.Create(context.Background(), model.GalleryPhoto{Image: "gallery/1.jpg", Format: "unknown"})
+
+		require.Error(t, err)
+		assert.ErrorIs(t, err, service.ErrValidation)
+	})
 }
 
 func TestGalleryPhotoService_Update(t *testing.T) {

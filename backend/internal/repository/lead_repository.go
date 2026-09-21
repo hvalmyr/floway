@@ -18,13 +18,13 @@ func NewLeadRepository(db *pgxpool.Pool) *LeadRepository {
 	return &LeadRepository{db: db}
 }
 
-const leadColumns = "id, name, phone, email, contact_method, source, request_type, related_id, related_slug, status, created_at, client_id, needs_status_review"
+const leadColumns = "id, name, phone, email, contact_method, source, request_type, related_id, related_slug, status, created_at, client_id, needs_status_review, object_type_id, format, utm_source, utm_medium, utm_campaign, utm_content, utm_term, yclid"
 
 // leadColumnsQualified is the same column list, table-qualified for use in
 // queries that join leads against other tables (course/masterclass name
 // resolution below) — bare column names would otherwise collide with
 // identically-named columns on courses/masterclasses (id, name).
-const leadColumnsQualified = "l.id, l.name, l.phone, l.email, l.contact_method, l.source, l.request_type, l.related_id, l.related_slug, l.status, l.created_at, l.client_id, l.needs_status_review"
+const leadColumnsQualified = "l.id, l.name, l.phone, l.email, l.contact_method, l.source, l.request_type, l.related_id, l.related_slug, l.status, l.created_at, l.client_id, l.needs_status_review, l.object_type_id, l.format, l.utm_source, l.utm_medium, l.utm_campaign, l.utm_content, l.utm_term, l.yclid"
 
 // relatedNameJoin resolves a lead's RelatedSlug to the human-readable
 // course/masterclass title it points at, gated by RequestType since the
@@ -53,6 +53,14 @@ func scanLead(row pgx.Row) (model.Lead, error) {
 		&item.CreatedAt,
 		&item.ClientID,
 		&item.NeedsStatusReview,
+		&item.ObjectTypeID,
+		&item.Format,
+		&item.UTMSource,
+		&item.UTMMedium,
+		&item.UTMCampaign,
+		&item.UTMContent,
+		&item.UTMTerm,
+		&item.YClid,
 	)
 	return item, err
 }
@@ -73,6 +81,14 @@ func scanLeadWithRelatedName(row pgx.Row) (model.Lead, error) {
 		&item.CreatedAt,
 		&item.ClientID,
 		&item.NeedsStatusReview,
+		&item.ObjectTypeID,
+		&item.Format,
+		&item.UTMSource,
+		&item.UTMMedium,
+		&item.UTMCampaign,
+		&item.UTMContent,
+		&item.UTMTerm,
+		&item.YClid,
 		&item.RelatedName,
 	)
 	return item, err
@@ -114,6 +130,7 @@ func (r *LeadRepository) ListWithClient(ctx context.Context) ([]model.LeadListIt
 		SELECT
 			l.id, l.name, l.phone, l.email, l.contact_method, l.source, l.request_type,
 			l.related_id, l.related_slug, l.status, l.created_at, l.client_id, l.needs_status_review,
+			l.object_type_id, l.format, l.utm_source, l.utm_medium, l.utm_campaign, l.utm_content, l.utm_term, l.yclid,
 			COALESCE(crs.name, mc.title, '') AS related_name,
 			c.id, c.name, c.phone, c.phone_normalized, c.email, c.created_at, c.updated_at,
 			COALESCE((
@@ -150,6 +167,7 @@ func (r *LeadRepository) ListWithClient(ctx context.Context) ([]model.LeadListIt
 		if err := rows.Scan(
 			&item.ID, &item.Name, &item.Phone, &item.Email, &item.ContactMethod, &item.Source, &item.RequestType,
 			&item.RelatedID, &item.RelatedSlug, &item.Status, &item.CreatedAt, &item.ClientID, &item.NeedsStatusReview,
+			&item.ObjectTypeID, &item.Format, &item.UTMSource, &item.UTMMedium, &item.UTMCampaign, &item.UTMContent, &item.UTMTerm, &item.YClid,
 			&item.RelatedName,
 			&item.Client.ID, &item.Client.Name, &item.Client.Phone, &item.Client.PhoneNormalized, &item.Client.Email, &item.Client.CreatedAt, &item.Client.UpdatedAt,
 			&productTagsJSON, &clientTypeTagsJSON,
@@ -174,8 +192,8 @@ func (r *LeadRepository) ListWithClient(ctx context.Context) ([]model.LeadListIt
 
 func (r *LeadRepository) Create(ctx context.Context, item model.Lead) (model.Lead, error) {
 	err := r.db.QueryRow(ctx, `
-		INSERT INTO leads (name, phone, email, contact_method, source, request_type, related_id, related_slug, status, client_id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		INSERT INTO leads (name, phone, email, contact_method, source, request_type, related_id, related_slug, status, client_id, object_type_id, format, utm_source, utm_medium, utm_campaign, utm_content, utm_term, yclid)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 		RETURNING id, created_at
 	`,
 		item.Name,
@@ -188,6 +206,14 @@ func (r *LeadRepository) Create(ctx context.Context, item model.Lead) (model.Lea
 		item.RelatedSlug,
 		item.Status,
 		item.ClientID,
+		item.ObjectTypeID,
+		item.Format,
+		item.UTMSource,
+		item.UTMMedium,
+		item.UTMCampaign,
+		item.UTMContent,
+		item.UTMTerm,
+		item.YClid,
 	).Scan(&item.ID, &item.CreatedAt)
 	return item, err
 }

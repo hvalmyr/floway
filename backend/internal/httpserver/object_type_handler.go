@@ -11,30 +11,33 @@ import (
 	"floway-backend/internal/service"
 )
 
-type galleryPhotoHandler struct {
-	svc   *service.GalleryPhotoService
+type objectTypeHandler struct {
+	svc   *service.ObjectTypeService
 	admin func(http.Handler) http.Handler
 }
 
-func newGalleryPhotoHandler(svc *service.GalleryPhotoService, admin func(http.Handler) http.Handler) *galleryPhotoHandler {
-	return &galleryPhotoHandler{svc: svc, admin: admin}
+func newObjectTypeHandler(svc *service.ObjectTypeService, admin func(http.Handler) http.Handler) *objectTypeHandler {
+	return &objectTypeHandler{svc: svc, admin: admin}
 }
 
-func (h *galleryPhotoHandler) routes(r chi.Router) {
+func (h *objectTypeHandler) routes(r chi.Router) {
 	r.Get("/", h.list)
 	r.With(h.admin).Post("/", h.create)
 	r.With(h.admin).Put("/{id}", h.update)
 	r.With(h.admin).Delete("/{id}", h.delete)
 }
 
-type galleryPhotoRequest struct {
-	Image        string           `json:"image"`
-	ObjectTypeID *int64           `json:"objectTypeId,omitempty"`
-	Format       model.LeadFormat `json:"format,omitempty"`
-	SortOrder    int              `json:"sortOrder"`
+type objectTypeRequest struct {
+	Slug      string `json:"slug"`
+	Name      string `json:"name"`
+	Visible   bool   `json:"visible"`
+	SortOrder int    `json:"sortOrder"`
 }
 
-func (h *galleryPhotoHandler) list(w http.ResponseWriter, r *http.Request) {
+// list returns every object type, hidden ones included — the public form/
+// portfolio filter is expected to filter by .visible client-side (same
+// convention as landing pages/features).
+func (h *objectTypeHandler) list(w http.ResponseWriter, r *http.Request) {
 	items, err := h.svc.List(r.Context())
 	if err != nil {
 		writeInternalError(w, r, err)
@@ -43,18 +46,18 @@ func (h *galleryPhotoHandler) list(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, items)
 }
 
-func (h *galleryPhotoHandler) create(w http.ResponseWriter, r *http.Request) {
-	var req galleryPhotoRequest
+func (h *objectTypeHandler) create(w http.ResponseWriter, r *http.Request) {
+	var req objectTypeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, err)
 		return
 	}
 
-	item, err := h.svc.Create(r.Context(), model.GalleryPhoto{
-		Image:        req.Image,
-		ObjectTypeID: req.ObjectTypeID,
-		Format:       req.Format,
-		SortOrder:    req.SortOrder,
+	item, err := h.svc.Create(r.Context(), model.ObjectType{
+		Slug:      req.Slug,
+		Name:      req.Name,
+		Visible:   req.Visible,
+		SortOrder: req.SortOrder,
 	})
 	if err != nil {
 		writeServiceError(w, r, err)
@@ -63,25 +66,25 @@ func (h *galleryPhotoHandler) create(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, item)
 }
 
-func (h *galleryPhotoHandler) update(w http.ResponseWriter, r *http.Request) {
+func (h *objectTypeHandler) update(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err)
 		return
 	}
 
-	var req galleryPhotoRequest
+	var req objectTypeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, err)
 		return
 	}
 
-	item, err := h.svc.Update(r.Context(), model.GalleryPhoto{
-		ID:           id,
-		Image:        req.Image,
-		ObjectTypeID: req.ObjectTypeID,
-		Format:       req.Format,
-		SortOrder:    req.SortOrder,
+	item, err := h.svc.Update(r.Context(), model.ObjectType{
+		ID:        id,
+		Slug:      req.Slug,
+		Name:      req.Name,
+		Visible:   req.Visible,
+		SortOrder: req.SortOrder,
 	})
 	if err != nil {
 		writeServiceError(w, r, err)
@@ -90,7 +93,7 @@ func (h *galleryPhotoHandler) update(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, item)
 }
 
-func (h *galleryPhotoHandler) delete(w http.ResponseWriter, r *http.Request) {
+func (h *objectTypeHandler) delete(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err)

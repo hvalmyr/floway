@@ -43,6 +43,14 @@ type leadCreateRequest struct {
 	RequestType   model.LeadRequestType `json:"requestType"`
 	RelatedID     *int64                `json:"relatedId,omitempty"`
 	RelatedSlug   string                `json:"relatedSlug"`
+	ObjectTypeID  *int64                `json:"objectTypeId,omitempty"`
+	Format        model.LeadFormat      `json:"format,omitempty"`
+	UTMSource     string                `json:"utmSource,omitempty"`
+	UTMMedium     string                `json:"utmMedium,omitempty"`
+	UTMCampaign   string                `json:"utmCampaign,omitempty"`
+	UTMContent    string                `json:"utmContent,omitempty"`
+	UTMTerm       string                `json:"utmTerm,omitempty"`
+	YClid         string                `json:"yclid,omitempty"`
 }
 
 type leadUpdateStatusRequest struct {
@@ -74,6 +82,14 @@ func (h *leadHandler) create(w http.ResponseWriter, r *http.Request) {
 		RequestType:   req.RequestType,
 		RelatedID:     req.RelatedID,
 		RelatedSlug:   req.RelatedSlug,
+		ObjectTypeID:  req.ObjectTypeID,
+		Format:        req.Format,
+		UTMSource:     req.UTMSource,
+		UTMMedium:     req.UTMMedium,
+		UTMCampaign:   req.UTMCampaign,
+		UTMContent:    req.UTMContent,
+		UTMTerm:       req.UTMTerm,
+		YClid:         req.YClid,
 	})
 	if err != nil {
 		writeServiceError(w, r, err)
