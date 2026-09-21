@@ -151,6 +151,80 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run build
 
+  frontend-decor-lint:
+    name: Frontend-decor / lint & format
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend-decor
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun install cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('frontend-decor/bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+
+      - run: bun install --frozen-lockfile
+
+      - name: oxlint
+        run: bun run lint
+
+      - name: oxfmt --check
+        run: bun run format:check
+
+  frontend-decor-test:
+    name: Frontend-decor / test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend-decor
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun install cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('frontend-decor/bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+
+      - run: bun install --frozen-lockfile
+      - run: bun run test
+
+  frontend-decor-build:
+    name: Frontend-decor / build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend-decor
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun install cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('frontend-decor/bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+
   docker-build:
     name: Docker / build & push images
     runs-on: ubuntu-latest
@@ -175,6 +249,7 @@ jobs:
           {
             echo "backend_image=ghcr.io/$owner_lc/floway-backend"
             echo "frontend_image=ghcr.io/$owner_lc/floway-frontend"
+            echo "frontend_decor_image=ghcr.io/$owner_lc/floway-frontend-decor"
             echo "image_tag=sha-$(git rev-parse --short=7 HEAD)"
           } >> "$GITHUB_OUTPUT"
 
@@ -209,6 +284,17 @@ jobs:
             ${{ steps.meta.outputs.frontend_image }}:latest
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,mode=max,scope=frontend
+
+      - name: Build frontend-decor image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./frontend-decor
+          push: ${{ github.ref == 'refs/heads/main' && !inputs.image_tag }}
+          tags: |
+            ${{ steps.meta.outputs.frontend_decor_image }}:${{ steps.meta.outputs.image_tag }}
+            ${{ steps.meta.outputs.frontend_decor_image }}:latest
+          cache-from: type=gha,scope=frontend-decor
+          cache-to: type=gha,mode=max,scope=frontend-decor
 
   deploy:
     name: Deploy / production
@@ -276,6 +362,97 @@ jobs:
             -e image_tag="$IMAGE_TAG"
 
       - name: Смоук-проверка прода
+        run: |
+          for i in $(seq 1 10); do
+            if curl -fsS --max-time 10 "https://$FLOWAY_DOMAIN/healthz" >/dev/null; then
+              echo "OK: https://$FLOWAY_DOMAIN/healthz отвечает (тег $IMAGE_TAG)"
+              exit 0
+            fi
+            echo "Попытка $i/10: /healthz ещё не отвечает, ждём 6 с"
+            sleep 6
+          done
+          echo "::error::/healthz не ответил в течение 60 с после деплоя"
+          exit 1
+
+  deploy-decor:
+    name: Deploy / decor (flo-way.ru)
+    runs-on: ubuntu-latest
+    needs:
+      - backend-lint
+      - backend-test
+      - frontend-decor-lint
+      - frontend-decor-test
+      - frontend-decor-build
+      - docker-build
+    # Тот же гейт, что у deploy: только push в main, не PR.
+    if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+    # Отдельная от deploy-production группа: decor и школьный сайт — разные
+    # deploy_path/compose-проекты на одной VPS, им незачем ждать друг друга
+    # в очереди, только сами себя не обгонять при быстрых повторных пушах.
+    concurrency:
+      group: deploy-decor
+      cancel-in-progress: false
+    environment:
+      name: production-decor
+      url: https://flo-way.ru
+    env:
+      IMAGE_TAG: ${{ inputs.image_tag || needs.docker-build.outputs.image_tag }}
+      FLOWAY_DOMAIN: flo-way.ru
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Установить Ansible
+        run: pipx install ansible-core
+
+      - name: Установить коллекции Ansible
+        run: ansible-galaxy collection install -r ansible/requirements.yml
+
+      - name: Разложить SSH-ключ и known_hosts
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          # Тот же физический хост, что у floway_prod — тот же known_hosts-секрет.
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Проверить готовность decor-секретов
+        id: check
+        run: |
+          # До первого `just vault-edit-decor` этого файла в репозитории нет —
+          # значит DNS/секреты ещё не заведены (см. ansible/README.md), и
+          # реальный деплой decor-сайта пока бессмысленен и небезопасен
+          # (упадёт на .env-шаблоне, как и должен). Пропускаем шаги ниже,
+          # не превращая это в красный CI на каждый пуш в main.
+          if [ -f ansible/inventory/group_vars/floway_decor_prod/vault.yml ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::floway_decor_prod/vault.yml ещё не создан (just vault-edit-decor) — деплой decor-сайта пропущен"
+          fi
+
+      - name: Раскатать decor-сайт (ansible-playbook deploy.yml -e target_group=floway_decor_prod)
+        if: steps.check.outputs.ready == 'true'
+        working-directory: ansible
+        env:
+          ANSIBLE_VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
+          ANSIBLE_FORCE_COLOR: "1"
+        run: |
+          trap 'rm -f .vault_pass' EXIT
+          printf '%s' "$ANSIBLE_VAULT_PASSWORD" > .vault_pass
+          chmod 600 .vault_pass
+          ansible-playbook playbooks/deploy.yml \
+            --vault-password-file .vault_pass \
+            --private-key ~/.ssh/id_ed25519 \
+            -e target_group=floway_decor_prod \
+            -e image_tag="$IMAGE_TAG"
+
+      - name: Смоук-проверка flo-way.ru
+        if: steps.check.outputs.ready == 'true'
         run: |
           for i in $(seq 1 10); do
             if curl -fsS --max-time 10 "https://$FLOWAY_DOMAIN/healthz" >/dev/null; then
