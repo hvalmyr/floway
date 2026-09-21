@@ -22,11 +22,7 @@
 </script>
 
 <template>
-  <section class="relative py-48 sm:py-64 lg:py-80">
-    <IconFirBranch
-      class="pointer-events-none absolute bottom-0 left-0 hidden h-96 w-auto text-primary lg:block"
-      aria-hidden="true"
-    />
+  <section class="py-48 sm:py-64 lg:py-80">
     <div class="container flex flex-col gap-32 lg:flex-row lg:items-stretch lg:gap-64">
       <div class="order-2 flex flex-col items-start gap-24 lg:order-1 lg:w-1/2">
         <h1 class="font-display text-h1 text-ink">

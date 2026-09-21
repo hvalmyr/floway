@@ -34,10 +34,7 @@ const documentLinks = [
     <div class="container flex flex-col gap-32 py-64">
       <!-- Same size as the desktop header wordmark (AppHeader.vue's centered
       logo) at every breakpoint — not shrunk down on mobile/tablet. -->
-      <div class="flex items-center gap-16">
-        <NuxtLink to="/" class="font-display text-h2 text-white">Фловей</NuxtLink>
-        <IconFirBranch class="h-32 w-auto text-white" aria-hidden="true" />
-      </div>
+      <NuxtLink to="/" class="font-display text-h2 text-white">Фловей</NuxtLink>
 
       <div class="grid grid-cols-1 gap-32 md:grid-cols-3">
         <div class="flex flex-col gap-16">
