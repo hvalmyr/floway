@@ -47,8 +47,8 @@ const steps = [
       <div
         v-for="(step, i) in steps"
         :key="step.title"
-        class="flex flex-col gap-8 rounded-md p-24"
-        :class="i % 2 === 1 ? 'border-2 border-primary bg-white' : 'bg-surface'"
+        class="flex flex-col gap-8 rounded-md p-24 backdrop-blur backdrop-saturate-150"
+        :class="i % 2 === 1 ? 'border-2 border-primary bg-white/55' : 'bg-surface/55'"
       >
         <div class="flex items-center gap-16">
           <span class="font-display text-h4 text-primary">{{ i + 1 }}</span>

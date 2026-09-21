@@ -60,7 +60,7 @@ function isActive(to: string) {
     class="sticky top-0 z-40 h-[64px] bg-white/70 backdrop-blur backdrop-saturate-150 lg:h-[88px]"
   >
     <div class="container flex h-full items-center justify-between lg:grid lg:grid-cols-3">
-      <NuxtLink to="/" class="font-display text-h2 text-primary lg:hidden">flo-way</NuxtLink>
+      <NuxtLink to="/" class="font-display text-h2 text-primary lg:hidden">Фловей</NuxtLink>
 
       <nav
         class="hidden items-center gap-32 lg:flex lg:justify-self-start"
@@ -81,7 +81,7 @@ function isActive(to: string) {
         to="/"
         class="hidden font-display text-h2 text-primary lg:block lg:justify-self-center"
       >
-        flo-way
+        Фловей
       </NuxtLink>
 
       <nav

@@ -67,9 +67,9 @@ export default {
       // Ровно 4 цвета по требованию заказчика — никаких оттенков/шейдов.
       // Состояния валидации форм используют primary, не отдельный цвет.
       colors: {
-        primary: "#82B1CC",
+        primary: "#A8BD9C",
         surface: "#F7F5F3",
-        ink: "#41342A",
+        ink: "#442A36",
       },
       fontFamily: {
         display: ["Soyuz Grotesk", "sans-serif"],

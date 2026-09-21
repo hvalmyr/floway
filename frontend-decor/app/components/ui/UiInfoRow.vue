@@ -33,8 +33,10 @@ withDefaults(
 
 <template>
   <div
-    class="grid grid-cols-2 rounded-md lg:grid-flow-col lg:grid-cols-none lg:auto-cols-fr lg:items-center"
-    :class="highlighted ? 'border-2 border-primary bg-white text-primary' : 'bg-surface text-ink'"
+    class="grid grid-cols-2 rounded-md backdrop-blur backdrop-saturate-150 lg:grid-flow-col lg:grid-cols-none lg:auto-cols-fr lg:items-center"
+    :class="
+      highlighted ? 'border-2 border-primary bg-white/55 text-primary' : 'bg-surface/55 text-ink'
+    "
   >
     <div
       v-for="(item, i) in items"

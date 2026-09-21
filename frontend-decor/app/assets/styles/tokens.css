@@ -7,10 +7,10 @@
  */
 :root {
   /* Color — exactly 4, no shades */
-  --color-primary: #82b1cc;
+  --color-primary: #a8bd9c;
   --color-surface: #f7f5f3;
   --color-white: #ffffff;
-  --color-ink: #41342a;
+  --color-ink: #442a36;
 
   /* Typography (local files in public/fonts, see assets/styles/fonts.css) */
   --font-display: "Soyuz Grotesk", sans-serif;

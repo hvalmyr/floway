@@ -30,7 +30,7 @@ function randomBetween(min: number, max: number): number {
 
 const flakes: Flake[] = Array.from({ length: FLAKE_COUNT }, () => ({
   left: `${randomBetween(0, 100)}vw`,
-  size: `${randomBetween(3, 9).toFixed(1)}px`,
+  size: `${randomBetween(1, 3).toFixed(1)}px`,
   duration: `${randomBetween(9, 22).toFixed(1)}s`,
   delay: `-${randomBetween(0, 20).toFixed(1)}s`,
   drift: `${randomBetween(-40, 40).toFixed(0)}px`,

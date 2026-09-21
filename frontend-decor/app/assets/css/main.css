@@ -7,15 +7,13 @@
     scroll-behavior: smooth;
   }
 
-  /* The school's body is deliberately transparent (its fixed WebGL
-     AmbientTreeBackground paints the actual background). SnowBackground.vue
-     is plain transparent DOM, nothing paints behind it — an explicit
-     background here, not "browsers default transparent to white", is what
-     actually keeps the page opaque everywhere a section doesn't paint its
-     own. */
+  /* SnowBackground.vue is plain transparent DOM, nothing paints behind it —
+     an explicit background here, not "browsers default transparent to
+     white", is what actually keeps the page opaque everywhere a section
+     doesn't paint its own (client direction: white page background). */
   body {
     @apply font-body text-ink;
-    background-color: var(--color-surface);
+    background-color: var(--color-white);
   }
 
   h1,
