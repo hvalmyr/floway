@@ -295,6 +295,59 @@ export interface GalleryPhoto {
   id: number;
   image: string;
   sortOrder: number;
+  /** Decor-site-only portfolio tags (п. 6 ТЗ) — absent on the school's own
+   * homepage-carousel photos. */
+  objectTypeId?: number;
+  format?: LeadFormat;
+}
+
+/** Shared dictionary of property types — see docs/decor-site-audit.md §2. */
+export interface ObjectType {
+  id: number;
+  slug: string;
+  name: string;
+  visible: boolean;
+  sortOrder: number;
+}
+
+/** One admin-creatable landing page for a single ObjectType (п. 7.5 ТЗ). */
+export interface LandingPage {
+  id: number;
+  objectTypeId: number;
+  slug: string;
+  h1: string;
+  metaTitle: string;
+  metaDescription: string;
+  faqTitle: string;
+  faqDescription: string;
+  faqVisible: boolean;
+  visible: boolean;
+  sortOrder: number;
+}
+
+export interface LandingPageWithObjectType extends LandingPage {
+  objectType: ObjectType;
+}
+
+export interface LandingPageBlock {
+  id: number;
+  landingPageId: number;
+  image: string;
+  text: string;
+  sortOrder: number;
+}
+
+export interface LandingPageFAQItem {
+  id: number;
+  landingPageId: number;
+  question: string;
+  answer: string;
+  sortOrder: number;
+}
+
+export interface LandingPageWithDetail extends LandingPageWithObjectType {
+  blocks: LandingPageBlock[];
+  faqItems: LandingPageFAQItem[];
 }
 
 /**

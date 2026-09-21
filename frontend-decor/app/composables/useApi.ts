@@ -16,7 +16,10 @@ import type {
   GiftCertificateCarouselPhoto,
   Icon,
   Lead,
+  LandingPageWithDetail,
+  LandingPageWithObjectType,
   Masterclass,
+  ObjectType,
   PageContent,
   PageFaq,
   SocialLink,
@@ -311,6 +314,44 @@ export function useApi() {
     }
   }
 
+  /**
+   * GET /api/v1/object-types — public, no auth. The decor site's shared
+   * dictionary of property types (лид-форма, фильтр портфолио, посадочные
+   * страницы). Includes hidden entries — callers filter by `.visible`
+   * themselves (same convention as landing pages).
+   */
+  async function getObjectTypes(): Promise<ObjectType[]> {
+    try {
+      return await client<ObjectType[]>("/api/v1/object-types");
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/landing-pages/visible — public, no auth. Every visible
+   * landing page with its object type, for the homepage's nav/link list.
+   */
+  async function getLandingPages(): Promise<LandingPageWithObjectType[]> {
+    try {
+      return await client<LandingPageWithObjectType[]>("/api/v1/landing-pages/visible");
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/landing-pages/{slug}/full — public, no auth. One landing
+   * page with its object type, blocks, and FAQ items.
+   */
+  async function getLandingPage(slug: string): Promise<LandingPageWithDetail | null> {
+    try {
+      return await client<LandingPageWithDetail>(`/api/v1/landing-pages/${slug}/full`);
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
   /** POST /api/v1/leads — this route is real and public (see lead_handler.go). */
   async function submitApplication(payload: ApplicationPayload): Promise<Lead> {
     try {
@@ -338,6 +379,9 @@ export function useApi() {
     getSocialLinks,
     getBlogPosts,
     getBlogPost,
+    getObjectTypes,
+    getLandingPages,
+    getLandingPage,
     submitApplication,
   };
 }

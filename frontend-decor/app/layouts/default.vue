@@ -2,15 +2,17 @@
 // Loading screen hides the page (and blocks scroll) until `load` fires (or
 // LOADING_TIMEOUT_MS elapses), so visitors never see hero/portfolio images
 // pop in piecemeal — mirrors frontend/app/layouts/default.vue's own
-// reasoning. The 3D ambient background that file also renders
-// (AmbientTreeBackground.vue) is school-specific and deliberately not
-// copied here — decor's own decorative background (falling snow, п. 5.2
-// ТЗ) lands in Phase 4, built on the same fixed/pointer-events-none/
-// prefers-reduced-motion pattern, not this file.
+// reasoning. The school's 3D ambient background (AmbientTreeBackground.vue)
+// isn't copied here — SnowBackground.vue is decor's own equivalent (п. 5.2
+// ТЗ), simple CSS rather than WebGL, so it doesn't need the same deferred-
+// until-`load` gating; it's still mounted client-only (Lazy+v-if, flipped
+// in onMounted) purely to keep its randomized per-flake styles out of SSR.
 const LOADING_TIMEOUT_MS = 3000;
 const isLoading = ref(true);
+const showSnow = ref(false);
 
 onMounted(() => {
+  showSnow.value = true;
   document.documentElement.classList.add("overflow-hidden");
   let loadingTimeoutId: ReturnType<typeof setTimeout> | undefined;
 
@@ -36,6 +38,7 @@ onMounted(() => {
 <template>
   <div class="flex min-h-screen flex-col">
     <AppLoadingScreen :loading="isLoading" />
+    <LazySnowBackground v-if="showSnow" />
     <AppHeader />
     <main class="flex-1">
       <slot />

@@ -2,60 +2,61 @@
 import { toTypedSchema } from "@vee-validate/zod";
 import { useDebounceFn } from "@vueuse/core";
 import { useForm } from "vee-validate";
-import { applyFormSchema } from "~/lib/validation/applyForm";
-import type { ContactMethod, LeadRequestType, LeadSource } from "~/types/api";
+import { applyFormSchema, applyFormSchemaWithObjectType } from "~/lib/validation/applyForm";
+import type { ContactMethod, LeadFormat, LeadSource, ObjectType } from "~/types/api";
 
 /**
- * Reusable lead-capture form embedded on the home page (trial lesson), a
- * course page, and a masterclass page — same fields everywhere. `context` is
- * sent as the lead's requestType so every submission records where it came
- * from.
+ * Decor site's lead-capture form (single request type — see
+ * model.LeadRequestType.decor on the backend) — embedded on the home page
+ * and every landing page. Mirrors frontend/app/components/sections/
+ * ApplyForm.vue's structure (draft persistence, thank-you redirect,
+ * page_content-editable option labels) but replaces the school's course/
+ * masterclass context selection with the decor-specific fields the TZ
+ * requires (п. 8.1): object type and format, plus UTM/yclid ad-tracking
+ * params captured from the URL (п. 9).
  *
- * `title` stays caller-driven on purpose (not a hardcoded generic string) —
- * the course and masterclass pages each pass their own wording ("...курс"
- * vs "...мастер-класс") so the form reads as being about the specific thing
- * the visitor was just looking at, not a generic contact form. `lead` is an
- * optional one-line subhead under it — empty by default (the trial-lesson
- * embed on the home page already sits under its own section heading and
- * doesn't need a second one), set it per caller where a subhead helps.
+ * `objectTypeId` presets and hides the object-type field when embedded on
+ * that type's own landing page ("на посадочной странице нужный тип выбран
+ * автоматически") — omit it (e.g. on the home page) to show a select
+ * populated from the shared object-types dictionary instead.
  *
  * @example
- * <ApplyForm context="course" :related-id="course.id" :related-slug="course.slug" title="Записаться на курс" />
- * <ApplyForm context="trial_lesson" title="Пробное занятие" bare />
+ * <ApplyForm title="Оставить заявку" />
+ * <ApplyForm :object-type-id="landingPage.objectTypeId" title="Оставить заявку на оформление дома" bare />
  */
 const props = withDefaults(
   defineProps<{
-    context: LeadRequestType;
-    relatedId?: number;
-    /** The course/masterclass slug the visitor was looking at — sent
-     * straight through to the lead so the admin panel can show which one
-     * without cross-referencing relatedId. Leave unset for trial_lesson. */
-    relatedSlug?: string;
+    objectTypeId?: number;
     title?: string;
     lead?: string;
-    /** Drops the white card + its padding, for a caller that already puts
-     * this in its own full-bleed column (the home page's trial-lesson
-     * section) instead of a padded card floating in a layout. */
     bare?: boolean;
   }>(),
-  { title: "Оставить заявку", lead: "", relatedId: undefined, relatedSlug: undefined, bare: false },
+  { title: "Оставить заявку", lead: "", objectTypeId: undefined, bare: false },
 );
 
 const api = useApi();
+const route = useRoute();
 const { text } = await usePageContent();
 
+const objectTypes = ref<ObjectType[]>([]);
+if (!props.objectTypeId) {
+  const { data } = await useAsyncData("apply-form-object-types", () => api.getObjectTypes());
+  objectTypes.value = (data.value ?? []).filter((t) => t.visible);
+}
+
 const { handleSubmit, isSubmitting, values, setValues } = useForm({
-  validationSchema: toTypedSchema(applyFormSchema),
+  validationSchema: toTypedSchema(
+    props.objectTypeId ? applyFormSchema : applyFormSchemaWithObjectType,
+  ),
   initialValues: { name: "", phone: "", email: "", consent: false },
 });
 
-// Persist in-progress input (not `consent` — re-agreeing after a reload is
-// the right default) so a reload or an accidental tab close doesn't throw
-// away what the visitor already typed. Keyed by `context` alone, not
-// relatedSlug/relatedId: those come back in via props on remount, and
-// sharing one draft across e.g. different course pages is a feature, not a
-// bug — the same visitor's name/phone/email don't change per course.
-const draftStorageKey = `apply-form-draft:${props.context}`;
+// Persist in-progress input (not `consent`) so a reload doesn't throw away
+// what the visitor already typed — same reasoning as the school's ApplyForm.
+// Keyed by objectTypeId: a visitor filling in the homepage's generic form
+// (no preset type) gets a separate draft from one already on a specific
+// landing page.
+const draftStorageKey = `apply-form-draft:${props.objectTypeId ?? "any"}`;
 
 function readDraft() {
   if (!import.meta.client) return null;
@@ -72,9 +73,6 @@ function clearDraft() {
   localStorage.removeItem(draftStorageKey);
 }
 
-// Restored after mount (not via `initialValues`) so the client's first
-// render still matches the server-rendered empty form — no hydration
-// mismatch, just a one-frame fill-in once the draft is read.
 onMounted(() => {
   const draft = readDraft();
   if (draft) setValues(draft, false);
@@ -82,10 +80,10 @@ onMounted(() => {
 
 const saveDraft = useDebounceFn(() => {
   if (!import.meta.client) return;
-  const { name, phone, email, contactMethod, source } = values;
+  const { name, phone, email, contactMethod, source, format, objectTypeId } = values;
   localStorage.setItem(
     draftStorageKey,
-    JSON.stringify({ name, phone, email, contactMethod, source }),
+    JSON.stringify({ name, phone, email, contactMethod, source, format, objectTypeId }),
   );
 }, 300);
 
@@ -115,6 +113,24 @@ const sourceOptions = computed(() => [
   { value: "maps", label: text("apply_form_source_maps", "В картах") },
 ]);
 
+const formatOptions = computed(() => [
+  { value: "season", label: text("apply_form_format_season", "На сезон") },
+  { value: "event", label: text("apply_form_format_event", "На праздник") },
+]);
+
+const objectTypeOptions = computed(() =>
+  objectTypes.value.map((t) => ({ value: String(t.id), label: t.name })),
+);
+
+// UTM/yclid — carried straight from the landing page's query string into the
+// lead (п. 9 ТЗ), never shown as form fields, just captured invisibly at
+// submit time.
+const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"] as const;
+function queryParam(key: string): string | undefined {
+  const value = route.query[key];
+  return typeof value === "string" ? value : undefined;
+}
+
 const onSubmit = handleSubmit(async (values) => {
   status.value = "idle";
   submitError.value = "";
@@ -123,20 +139,20 @@ const onSubmit = handleSubmit(async (values) => {
       name: values.name,
       phone: values.phone,
       email: values.email || undefined,
-      // `consent` is deliberately left out here — it's the frontend's own gate
-      // (already enforced by the schema before handleSubmit even calls this),
-      // not something the Lead model has a column for.
       contactMethod: values.contactMethod as ContactMethod,
       source: values.source as LeadSource,
-      requestType: props.context,
-      relatedId: props.relatedId,
-      relatedSlug: props.relatedSlug,
+      requestType: "decor",
+      objectTypeId: props.objectTypeId ?? Number(values.objectTypeId),
+      format: values.format as LeadFormat,
+      utmSource: queryParam("utm_source"),
+      utmMedium: queryParam("utm_medium"),
+      utmCampaign: queryParam("utm_campaign"),
+      utmContent: queryParam("utm_content"),
+      utmTerm: queryParam("utm_term"),
+      yclid: queryParam("yclid"),
     });
     clearDraft();
-    // Navigate away rather than swap in an inline success block — the
-    // thank-you page (see pages/thank-you/[variant].vue) is its own
-    // destination with per-variant copy and a "back to home" way out.
-    await navigateTo(`/thank-you/${props.context}`);
+    await navigateTo("/thank-you/decor");
   } catch (err) {
     status.value = "error";
     submitError.value =
@@ -152,11 +168,6 @@ const onSubmit = handleSubmit(async (values) => {
       <p v-if="lead" class="font-body text-body text-ink">{{ lead }}</p>
     </div>
 
-    <!-- `bare` (the trial-lesson embed) gives every field its own glass
-    panel, same as the rest of the site's white-on-glass containers —
-    vertical padding only, so the panels' edges stay flush with the form's
-    own (no side inset, per the caller's layout). Non-bare callers already
-    sit on a solid white card, so the wrapper is a plain unstyled div there. -->
     <form class="flex flex-col gap-16" novalidate @submit="onSubmit">
       <div
         :class="
@@ -195,12 +206,35 @@ const onSubmit = handleSubmit(async (values) => {
           :placeholder="text('apply_form_email_placeholder', 'you@example.com')"
         />
       </div>
-      <!-- has-[...]:z-30 — `backdrop-blur` makes every one of these wrapper
-      divs its own stacking context, so the open dropdown (z-20, absolute,
-      positioned relative to UiSelect's own root INSIDE this wrapper) is
-      confined to it: a later sibling wrapper (its own stacking context)
-      then paints over the whole thing regardless of that internal z-20.
-      Bumping the wrapper itself above its siblings while open fixes it. -->
+      <div
+        v-if="!objectTypeId"
+        :class="
+          bare
+            ? 'rounded-md bg-white/55 px-16 py-16 backdrop-blur backdrop-saturate-150 has-[[aria-expanded=true]]:relative has-[[aria-expanded=true]]:z-30'
+            : ''
+        "
+      >
+        <UiSelect
+          name="objectTypeId"
+          :label="text('apply_form_object_type_label', 'Тип объекта')"
+          required
+          :options="objectTypeOptions"
+        />
+      </div>
+      <div
+        :class="
+          bare
+            ? 'rounded-md bg-white/55 px-16 py-16 backdrop-blur backdrop-saturate-150 has-[[aria-expanded=true]]:relative has-[[aria-expanded=true]]:z-30'
+            : ''
+        "
+      >
+        <UiSelect
+          name="format"
+          :label="text('apply_form_format_label', 'Формат')"
+          required
+          :options="formatOptions"
+        />
+      </div>
       <div
         :class="
           bare
@@ -249,11 +283,7 @@ const onSubmit = handleSubmit(async (values) => {
       </p>
 
       <UiButton type="submit" block :loading="isSubmitting" :disabled="isSubmitting">
-        {{
-          context === "trial_lesson"
-            ? text("apply_form_submit_trial", "Записаться на занятие")
-            : text("apply_form_submit_default", "Отправить заявку")
-        }}
+        {{ text("apply_form_submit_default", "Отправить заявку") }}
       </UiButton>
     </form>
   </div>

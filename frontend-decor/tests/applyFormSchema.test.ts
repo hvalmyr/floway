@@ -8,6 +8,7 @@ const validPayload = {
   consent: true as const,
   contactMethod: "call" as const,
   source: "referral" as const,
+  format: "season" as const,
 };
 
 describe("applyFormSchema", () => {
@@ -62,6 +63,12 @@ describe("applyFormSchema", () => {
 
   it("rejects a missing source", () => {
     const { source: _source, ...rest } = validPayload;
+    const result = applyFormSchema.safeParse(rest);
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a missing format", () => {
+    const { format: _format, ...rest } = validPayload;
     const result = applyFormSchema.safeParse(rest);
     expect(result.success).toBe(false);
   });
