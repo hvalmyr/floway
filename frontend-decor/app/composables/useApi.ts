@@ -1,0 +1,343 @@
+import { FetchError } from "ofetch";
+import { mockGetMasterClasses } from "~/mocks/masterclasses";
+import type {
+  AboutItem,
+  ApiError,
+  ApplicationPayload,
+  BlogPost,
+  CourseSectionWithCourses,
+  CourseWithBlocks,
+  CustomDisplayStyle,
+  FAQItem,
+  FaqPage,
+  Feature,
+  FeaturePage,
+  GalleryPhoto,
+  GiftCertificateCarouselPhoto,
+  Icon,
+  Lead,
+  Masterclass,
+  PageContent,
+  PageFaq,
+  SocialLink,
+  Teacher,
+  ThankYouPage,
+  ThankYouPageVariant,
+} from "~/types/api";
+
+function toApiError(err: unknown): ApiError {
+  if (err instanceof FetchError) {
+    return {
+      message:
+        (err.data as { message?: string } | undefined)?.message ??
+        "Не удалось выполнить запрос к серверу",
+      status: err.statusCode,
+    };
+  }
+  return { message: "Не удалось выполнить запрос к серверу" };
+}
+
+// Server-only cross-request cache for getPageContent() — see its doc
+// comment below for why. Module scope (not inside useApi()) so it survives
+// across the many useApi() calls made per request and across requests
+// within the same long-lived Nitro process.
+let pageContentCache: { data: PageContent[]; expiresAt: number } | null = null;
+let pageContentInFlight: Promise<PageContent[]> | null = null;
+const PAGE_CONTENT_CACHE_MS = 30_000;
+
+/**
+ * Single access point for public-facing (non-admin) API calls. Wraps
+ * useApiClient() with named methods and normalized errors, so components
+ * never touch $fetch or raw error shapes directly.
+ *
+ * All methods hit the real backend by default. Set
+ * NUXT_PUBLIC_USE_MOCKS=true to fall back to app/mocks/* instead — same
+ * shape, no component changes needed — useful for working on layout/markup
+ * without a backend running.
+ *
+ * @example
+ * const api = useApi();
+ * const { data: sections } = await useAsyncData('course-sections', () => api.getCourseSections());
+ */
+export function useApi() {
+  const config = useRuntimeConfig();
+  const client = useApiClient();
+  const useMocks = config.public.useMocks;
+
+  /**
+   * GET /api/v1/course-sections/full — public, no auth. Every course
+   * section with its courses and each course's blocks (no lesson text) —
+   * the homepage courses block. No mocks fallback: no design brief existed
+   * for this shape before it was built.
+   */
+  async function getCourseSections(): Promise<CourseSectionWithCourses[]> {
+    try {
+      return await client<CourseSectionWithCourses[]>("/api/v1/course-sections/full");
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  async function getCourse(slug: string): Promise<CourseWithBlocks | null> {
+    try {
+      return await client<CourseWithBlocks>(`/api/v1/courses/${slug}/full`);
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  async function getMasterClasses(): Promise<Masterclass[]> {
+    if (useMocks) return mockGetMasterClasses();
+    try {
+      return await client<Masterclass[]>("/api/v1/masterclasses");
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/teachers — public, no auth (teacher_handler.go's list route
+   * has no admin middleware). No mocks fallback: there's no design brief for
+   * this data shape (the homepage section was hardcoded name+accent-color
+   * placeholders), same reasoning as blog posts below.
+   */
+  async function getTeachers(): Promise<Teacher[]> {
+    try {
+      return await client<Teacher[]>("/api/v1/teachers");
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/gallery-photos — public, no auth. Slides for the homepage
+   * carousel between "Преимущества" and "О школе", pre-sorted by sortOrder.
+   */
+  async function getGalleryPhotos(): Promise<GalleryPhoto[]> {
+    try {
+      return await client<GalleryPhoto[]>("/api/v1/gallery-photos");
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/custom-display-styles — public, no auth. Admin-defined
+   * bg/text color pairs for courses with a one-off (e.g. seasonal) look,
+   * pre-sorted by sortOrder — see Course.customDisplayStyleId.
+   */
+  async function getCustomDisplayStyles(): Promise<CustomDisplayStyle[]> {
+    try {
+      return await client<CustomDisplayStyle[]>("/api/v1/custom-display-styles");
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/gift-certificate-carousel-photos — public, no auth. Slides
+   * for the carousel right after the hero on the gift-certificates page,
+   * pre-sorted by sortOrder.
+   */
+  async function getGiftCertificateCarouselPhotos(): Promise<GiftCertificateCarouselPhoto[]> {
+    try {
+      return await client<GiftCertificateCarouselPhoto[]>(
+        "/api/v1/gift-certificate-carousel-photos",
+      );
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/faq — public, no auth (faq_handler.go's list route has no
+   * admin middleware). Already sorted by sortOrder on the backend. No mocks
+   * fallback, same reasoning as teachers above.
+   */
+  async function getFAQItems(): Promise<FAQItem[]> {
+    try {
+      return await client<FAQItem[]>("/api/v1/faq");
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/page-content — public, no auth. Generic freeform site copy
+   * (Hero text, legal pages, etc.) — see usePageContent() for the
+   * key-lookup helper components actually use.
+   *
+   * Also awaited by plugins/image-quality.ts as an async plugin, which Nuxt
+   * blocks SSR rendering on for *every* page — so on the server this result
+   * is cached for a few seconds across requests/visitors (module-scope, one
+   * Nitro process serves many requests) instead of round-tripping to the Go
+   * backend on every single page load. A real PageSpeed audit traced a good
+   * chunk of TTFB/FCP to exactly this being an uncached blocking fetch.
+   * Admin edits (useAdminPageContent.ts) go straight to the backend and
+   * don't invalidate this, so a save can take up to PAGE_CONTENT_CACHE_MS to
+   * show on the public site — same "eventual, not instant" trade-off already
+   * made for IPX output in server/middleware/ipx-cache.ts. Client-side calls
+   * aren't cached: a single browser session doesn't repeat this often enough
+   * to matter, and caching would risk one browser tab seeing another tab's
+   * admin edits stick around.
+   */
+  async function getPageContent(): Promise<PageContent[]> {
+    if (!import.meta.server) {
+      try {
+        return await client<PageContent[]>("/api/v1/page-content");
+      } catch (err) {
+        throw toApiError(err);
+      }
+    }
+    const now = Date.now();
+    if (pageContentCache && pageContentCache.expiresAt > now) return pageContentCache.data;
+    if (!pageContentInFlight) {
+      pageContentInFlight = client<PageContent[]>("/api/v1/page-content")
+        .then((data) => {
+          pageContentCache = { data, expiresAt: Date.now() + PAGE_CONTENT_CACHE_MS };
+          return data;
+        })
+        .finally(() => {
+          pageContentInFlight = null;
+        });
+    }
+    try {
+      return await pageContentInFlight;
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/features?page=home|masterclasses — public, no auth.
+   * Icon+title+description cards (feature_handler.go's list route has no
+   * admin middleware). Already sorted by sortOrder on the backend.
+   */
+  async function getFeatures(page: FeaturePage): Promise<Feature[]> {
+    try {
+      return await client<Feature[]>("/api/v1/features", { query: { page } });
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/page-faq/{page} — public, no auth. Title/description/
+   * visible plus the Q&A items for a page-scoped FAQ block (masterclasses,
+   * gift certificate) — see page_faq_handler.go. Distinct from getFAQItems()
+   * (the flat, unscoped homepage FAQ) and from CourseWithBlocks.faqItems
+   * (embedded in getCourse() instead of its own endpoint).
+   */
+  async function getPageFaq(page: FaqPage): Promise<PageFaq | null> {
+    try {
+      return await client<PageFaq>(`/api/v1/page-faq/${page}`);
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/thank-you-pages/{variant} — public, no auth. Content
+   * ApplyForm.vue navigates to after a successful submission — title/
+   * subtitle/description, show-* flags, and its photos/faqItems, all in one
+   * response (thank_you_page_handler.go's get route has no admin
+   * middleware).
+   */
+  async function getThankYouPage(variant: ThankYouPageVariant): Promise<ThankYouPage> {
+    try {
+      return await client<ThankYouPage>(`/api/v1/thank-you-pages/${variant}`);
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/about-items — public, no auth. Badge+description cards for
+   * the homepage "О школе" section. Already sorted by sortOrder.
+   */
+  async function getAboutItems(): Promise<AboutItem[]> {
+    try {
+      return await client<AboutItem[]>("/api/v1/about-items");
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/icons — public, no auth (icon_handler.go's list route has
+   * no admin middleware, same as features/gallery-photos). The uploaded
+   * icon library — see the Icon type doc comment for how a Feature/
+   * PageContent icon value references one of these.
+   */
+  async function getIcons(): Promise<Icon[]> {
+    try {
+      return await client<Icon[]>("/api/v1/icons");
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/social-links — public, no auth (social_link_handler.go's
+   * list route has no admin middleware, same as features/about-items).
+   * Already sorted by sortOrder on the backend.
+   */
+  async function getSocialLinks(): Promise<SocialLink[]> {
+    try {
+      return await client<SocialLink[]>("/api/v1/social-links");
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/blog-posts?status=published — draft posts are never
+   * returned (see blog_post_handler.go). No mocks fallback: there's no
+   * design brief for the blog yet, so this always hits the real backend.
+   */
+  async function getBlogPosts(): Promise<BlogPost[]> {
+    try {
+      return await client<BlogPost[]>("/api/v1/blog-posts", { query: { status: "published" } });
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  async function getBlogPost(slug: string): Promise<BlogPost | null> {
+    try {
+      return await client<BlogPost>(`/api/v1/blog-posts/${slug}`);
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /** POST /api/v1/leads — this route is real and public (see lead_handler.go). */
+  async function submitApplication(payload: ApplicationPayload): Promise<Lead> {
+    try {
+      return await client<Lead>("/api/v1/leads", { method: "POST", body: payload });
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  return {
+    getCourseSections,
+    getCourse,
+    getMasterClasses,
+    getTeachers,
+    getGalleryPhotos,
+    getCustomDisplayStyles,
+    getGiftCertificateCarouselPhotos,
+    getFAQItems,
+    getFeatures,
+    getPageFaq,
+    getThankYouPage,
+    getAboutItems,
+    getIcons,
+    getPageContent,
+    getSocialLinks,
+    getBlogPosts,
+    getBlogPost,
+    submitApplication,
+  };
+}

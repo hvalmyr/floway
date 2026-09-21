@@ -1,0 +1,48 @@
+/**
+ * Design tokens for “ФлоВей”, as CSS custom properties.
+ * Palette is intentionally exactly 4 colors, per client direction — no
+ * shades/tints. Mirrored into tailwind.config.ts (colors, radii, spacing,
+ * screens) so both Tailwind utilities and raw `var(--...)` usage stay in
+ * sync — update both files together.
+ */
+:root {
+  /* Color — exactly 4, no shades */
+  --color-primary: #82b1cc;
+  --color-surface: #f7f5f3;
+  --color-white: #ffffff;
+  --color-ink: #41342a;
+
+  /* Typography (local files in public/fonts, see assets/styles/fonts.css) */
+  --font-display: "Soyuz Grotesk", sans-serif;
+  --font-body: "Non Bureau", sans-serif;
+
+  /* Exactly 4 sizes — see the fontSize comment in tailwind.config.ts. */
+  --text-h1: clamp(2.5rem, 1.9rem + 2.8vw, 4.25rem);
+  --text-h2: clamp(1.875rem, 1.5rem + 1.7vw, 2.875rem);
+  --text-h4: clamp(1.25rem, 1.15rem + 0.4vw, 1.5rem);
+  --text-body: clamp(1.0625rem, 1.02rem + 0.2vw, 1.125rem);
+
+  /* Radii */
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --radius-pill: 999px;
+
+  /* Spacing (8pt-ish scale used site-wide, see tailwind.config.ts) */
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-24: 24px;
+  --space-32: 32px;
+  --space-40: 40px;
+  --space-48: 48px;
+  --space-64: 64px;
+  --space-80: 80px;
+  --space-96: 96px;
+  --space-120: 120px;
+  --space-160: 160px;
+
+  /* Layout */
+  --container-max: 1280px;
+}
