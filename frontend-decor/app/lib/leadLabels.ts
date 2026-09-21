@@ -16,9 +16,19 @@ export const sourceLabels: Record<string, string> = {
   maps: "Карты",
 };
 
+// course/masterclass/trial_lesson/gift_certificate are the school's values —
+// kept here (unused by this frontend's own LeadRequestType, which only ever
+// sends "decor") purely so leadFilters.test.ts's copied coverage of
+// formatLeadExcerpt keeps exercising the shared lib function unchanged.
 export const requestTypeLabels: Record<string, string> = {
   course: "Курс",
   masterclass: "Мастер-класс",
   trial_lesson: "Пробный урок",
   gift_certificate: "Подарочный сертификат",
+  decor: "Новогоднее оформление",
+};
+
+export const leadFormatLabels: Record<string, string> = {
+  season: "На сезон",
+  event: "На праздник",
 };

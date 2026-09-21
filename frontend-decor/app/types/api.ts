@@ -391,7 +391,12 @@ export interface ThankYouPage {
 
 export type ContactMethod = "call" | "telegram" | "whatsapp" | "max";
 export type LeadSource = "referral" | "ads" | "internet" | "social" | "maps";
-export type LeadRequestType = "course" | "masterclass" | "trial_lesson" | "gift_certificate";
+// Decor site has one request type — the shared backend keeps the school's
+// four values too (course/masterclass/trial_lesson/gift_certificate), just
+// never sent from this frontend.
+export type LeadRequestType = "decor";
+
+export type LeadFormat = "" | "season" | "event";
 
 /** Thank-you page variants — identical to LeadRequestType, since the page a
  * lead is sent to after ApplyForm.vue submits is keyed by the same
@@ -411,6 +416,16 @@ export interface ApplicationPayload {
    * admin panel show which specific one without cross-referencing
    * relatedId. Blank for trial_lesson (no specific entity). */
   relatedSlug?: string;
+  /** Decor-site-only fields — see model.Lead.ObjectTypeID/Format on the
+   * backend. Always absent/blank on school leads. */
+  objectTypeId?: number;
+  format?: LeadFormat;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmContent?: string;
+  utmTerm?: string;
+  yclid?: string;
 }
 
 /** Mirrors backend/internal/model/model.go's LeadStatus — see app/lib/leadStatus.ts
