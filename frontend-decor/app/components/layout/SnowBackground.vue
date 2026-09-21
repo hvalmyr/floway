@@ -43,7 +43,7 @@ const flakes: Flake[] = Array.from({ length: FLAKE_COUNT }, () => ({
     <span
       v-for="(flake, i) in flakes"
       :key="i"
-      class="snowflake absolute top-[-5vh] block rounded-full bg-white"
+      class="snowflake absolute top-[-5vh] block rounded-full bg-primary"
       :style="{
         left: flake.left,
         width: flake.size,
