@@ -56,3 +56,15 @@ yandex_metrika_id: "40686419"
 yandex_verification: "5c52a869de8140b1"
 # TODO: код подтверждения прав на сайт из Google Search Console
 google_site_verification: ""
+
+# --- Общий Caddy для двух сайтов на одном VPS (см. docs/decor-site-audit.md §5) ---
+# floway_prod — единственная группа, которая рендерит и рестартует Caddy
+# (Caddyfile.j2, tasks/main.yml). floway_decor_prod этот шаг у себя пропускает.
+owns_shared_caddy: true
+# Второй сайт (flo-way.ru, decor-стек) — свой домен, свои backend/frontend
+# контейнеры на общей сети caddy_net (см. docker-compose.decor.prod.yml).
+# backend_addr/frontend_addr — DNS-имена сервисов в сети caddy_net, не URL.
+caddy_extra_sites:
+  - domain: "flo-way.ru"
+    backend_addr: "backend-decor:8080"
+    frontend_addr: "frontend-decor:3000"

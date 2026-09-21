@@ -17,3 +17,19 @@ floway_prod:
       ansible_host: "79.143.29.84"
       ansible_user: deploy
       ansible_python_interpreter: /usr/bin/python3
+
+# decor-сайт (flo-way.ru) — второй независимый стек на ТОМ ЖЕ физическом
+# хосте (см. docs/decor-site-audit.md: ресурсов VPS хватает), другой
+# deploy_path и набор секретов (group_vars/floway_decor_prod/). Собственный
+# host-алиас (не floway-vps повторно) — с одним и тем же алиасом в обеих
+# группах Ansible слил бы их в один host-объект и подмешивал group_vars
+# floway_prod (включая её vault-секреты) в прогон против floway_decor_prod;
+# отдельный алиас с тем же ansible_host держит группы полностью изолированными
+# по переменным, при этом реально это один сервер. Если позже decor
+# переедет на отдельный VPS, здесь меняется только ansible_host.
+floway_decor_prod:
+  hosts:
+    floway-decor-vps:
+      ansible_host: "79.143.29.84"
+      ansible_user: deploy
+      ansible_python_interpreter: /usr/bin/python3

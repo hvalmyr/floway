@@ -1,0 +1,48 @@
+---
+# Скопируй этот файл в vault.yml (рядом, в той же group_vars/floway_decor_prod/)
+# и зашифруй перед первым коммитом:
+#
+#   cp group_vars/floway_decor_prod/vault.yml.example group_vars/floway_decor_prod/vault.yml
+#   $EDITOR group_vars/floway_decor_prod/vault.yml   # впиши реальные значения
+#   ansible-vault encrypt group_vars/floway_decor_prod/vault.yml
+#
+# Полностью отдельные секреты от group_vars/floway_prod/vault.yml — ничего
+# не переиспользуется со школьным сайтом (см. docs/decor-site-audit.md).
+
+# Своя БД — не тот же Postgres-контейнер, что у школы (отдельный проект
+# docker-compose.decor.prod.yml, свой volume).
+vault_postgres_user: floway_decor
+vault_postgres_password: "CHANGE_ME_RANDOM_PASSWORD"
+vault_postgres_db: floway_decor
+
+vault_jwt_secret: "CHANGE_ME_LONG_RANDOM_STRING"
+
+# SMTP — свой NOTIFY_EMAIL_TO хотя бы (заявки decor-сайта не должны
+# приходить в тот же ящик, что и у школы); сам SMTP-relay можно переиспользовать,
+# если это один и тот же провайдер/аккаунт у заказчика.
+vault_smtp_host: ""
+vault_smtp_port: "587"
+vault_smtp_from: "noreply@flo-way.ru"
+vault_smtp_user: ""
+vault_smtp_password: ""
+vault_notify_email_to: ""
+
+# Свой бот и чат — заявки decor-сайта не должны приходить туда же, куда
+# школьные (см. docs/decor-site-audit.md §5, TZ п. 8.3).
+vault_telegram_bot_token: ""
+vault_telegram_chat_id: ""
+
+# Опционально: socks5://telegram-proxy:1080, чтобы переиспользовать общий
+# туннель школьного стека (см. docker-compose.prod.yml → telegram-proxy:
+# networks, и floway_decor_prod/vars.yml → telegram_proxy_url). Пусто =
+# напрямую к api.telegram.org.
+vault_telegram_proxy_url: ""
+
+# Свой Garage-бакет — не тот же контейнер/данные, что у школы.
+vault_garage_access_key: "CHANGE_ME_RANDOM_ACCESS_KEY"
+vault_garage_secret_key: "CHANGE_ME_LONG_RANDOM_SECRET_KEY"
+vault_garage_bucket: floway-decor-uploads
+
+# Нужны только если ghcr_login_required: true в group_vars
+vault_ghcr_username: ""
+vault_ghcr_token: ""

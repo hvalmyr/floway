@@ -12,8 +12,11 @@
 #
 # Повторные деплои — та же команда; -e image_tag=<sha> чтобы задеплоить
 # конкретный тег вместо latest.
+#
+# decor-сайт (тот же хост, другая inventory-группа и deploy_path):
+#   ansible-playbook playbooks/deploy.yml -e target_group=floway_decor_prod --vault-password-file .vault_pass
 - name: Deploy Floway application stack
-  hosts: floway_prod
+  hosts: "{{ target_group | default('floway_prod') }}"
   become: true
   gather_facts: true
   roles:

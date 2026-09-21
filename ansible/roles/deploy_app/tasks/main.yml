@@ -1,4 +1,14 @@
 ---
+# Shared between docker-compose.prod.yml and docker-compose.decor.prod.yml
+# (two independent Compose projects) — created once, idempotently, whichever
+# group deploys first. Neither compose file owns it (both declare it
+# `external: true`), so this never gets removed by either project's own
+# lifecycle (docker_compose_v2 down/prune).
+- name: Ensure the shared Caddy docker network exists
+  community.docker.docker_network:
+    name: caddy_net
+    state: present
+
 - name: Ensure deploy directory exists
   ansible.builtin.file:
     path: "{{ deploy_path }}"
@@ -17,7 +27,7 @@
 
 - name: Copy production docker-compose file
   ansible.builtin.copy:
-    src: "{{ playbook_dir }}/../../docker-compose.prod.yml"
+    src: "{{ playbook_dir }}/../../{{ compose_file | default('docker-compose.prod.yml') }}"
     dest: "{{ deploy_path }}/docker-compose.yml"
     owner: "{{ deploy_user }}"
     group: "{{ deploy_user }}"
@@ -54,6 +64,11 @@
     mode: "0600"
   when: telegram_proxy_enabled
 
+# Only floway_prod (owns_shared_caddy: true) renders/owns the shared
+# Caddyfile — floway_decor_prod's deploy_path has no Caddy container to
+# write it for or restart (see docs/decor-site-audit.md §5). Caddyfile.j2
+# itself already covers both domains via caddy_extra_sites (defined on
+# floway_prod's own vars.yml), so nothing here needs the decor group's vars.
 - name: Template Caddyfile
   ansible.builtin.template:
     src: Caddyfile.j2
@@ -62,6 +77,7 @@
     group: "{{ deploy_user }}"
     mode: "0644"
   notify: restart caddy
+  when: owns_shared_caddy | default(true)
 
 - name: Log in to GHCR
   ansible.builtin.shell: |

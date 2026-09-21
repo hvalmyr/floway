@@ -1,0 +1,136 @@
+# Продакшен-конфигурация decor-сайта (flo-way.ru) — второй независимый
+# стек на том же VPS, что и школа (см. docker-compose.prod.yml), развёрнутый
+# ansible-группой floway_decor_prod. Отдельный Compose-проект: свой Postgres,
+# свой Garage-bucket, свои секреты — ничего не разделяет со школьным стеком
+# кроме самого VPS и сети caddy_net (см. docs/decor-site-audit.md §5).
+#
+# Отличия от docker-compose.prod.yml:
+# - backend/frontend названы backend-decor/frontend-decor, не backend/
+#   frontend — иначе два контейнера с одинаковым именем на общей сети
+#   caddy_net дают недетерминированный DNS;
+# - нет своего сервиса caddy и портов 80/443 — единственный владелец этих
+#   портов на VPS это Caddy школьного стека (docker-compose.prod.yml),
+#   который проксирует сюда через caddy_net (см. Caddyfile.j2,
+#   floway_prod/vars.yml → caddy_extra_sites);
+# - нет своего сервиса telegram-proxy — переиспользует общий сайдкар
+#   школьного стека через ту же сеть caddy_net (см. TELEGRAM_PROXY_URL
+#   ниже), если он включён и FLOWAY_DECOR domain use требует РФ-прокси;
+# - BACKEND_IMAGE — тот же образ, что и у школы (один и тот же Go-бинарь,
+#   второй независимый инстанс, см. TZ п. 4.2); FRONTEND_IMAGE — свой,
+#   собранный из frontend-decor/ (см. .github/workflows/ci.yml, Фаза 6).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    image: ${BACKEND_IMAGE}:${IMAGE_TAG:-latest}
+    entrypoint: ["./goose"]
+    command:
+      - "-dir"
+      - "migrations"
+      - "postgres"
+      - "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
+      - "up"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  garage:
+    build:
+      context: ./garage
+    restart: unless-stopped
+    environment:
+      GARAGE_ACCESS_KEY: ${GARAGE_ACCESS_KEY}
+      GARAGE_SECRET_KEY: ${GARAGE_SECRET_KEY}
+      GARAGE_BUCKET: ${GARAGE_BUCKET}
+    volumes:
+      - garage_meta:/var/lib/garage/meta
+      - garage_data:/var/lib/garage/data
+
+  backend-decor:
+    image: ${BACKEND_IMAGE}:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      HTTP_PORT: 8080
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET}
+      FRONTEND_ORIGIN: https://${FLOWAY_DECOR_DOMAIN}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_FROM: ${SMTP_FROM}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      NOTIFY_EMAIL_TO: ${NOTIFY_EMAIL_TO}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+      # Empty (default) = direct to api.telegram.org. socks5://telegram-proxy:1080
+      # reuses the school stack's own sidecar over caddy_net (see the network
+      # attachment below) — set only if this backend also needs it; the two
+      # stacks' bot tokens/chats stay independent either way.
+      TELEGRAM_PROXY_URL: ${TELEGRAM_PROXY_URL:-}
+      GARAGE_ENDPOINT: http://garage:3900
+      GARAGE_REGION: garage
+      GARAGE_ACCESS_KEY: ${GARAGE_ACCESS_KEY}
+      GARAGE_SECRET_KEY: ${GARAGE_SECRET_KEY}
+      GARAGE_BUCKET: ${GARAGE_BUCKET}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      garage:
+        condition: service_healthy
+    networks:
+      - default
+      - caddy_net
+
+  frontend-decor:
+    image: ${FRONTEND_IMAGE}:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    volumes:
+      - frontend_ipx_cache:/app/.data/cache
+    environment:
+      NUXT_PUBLIC_API_BASE: https://${FLOWAY_DECOR_DOMAIN}
+      # SSR inside the container must go over the docker network directly,
+      # not through the public domain/Caddy — same reasoning as the school's
+      # own docker-compose.prod.yml comment on this exact line.
+      NUXT_API_BASE_INTERNAL: http://backend-decor:8080
+      NUXT_PUBLIC_MEDIA_OPTIMIZE_BASE: http://backend-decor:8080
+      IPX_MAX_AGE: "31536000"
+      IPX_HTTP_MAX_AGE: "31536000"
+      NUXT_PUBLIC_YANDEX_METRIKA_ID: ${NUXT_PUBLIC_YANDEX_METRIKA_ID:-}
+      NUXT_PUBLIC_YANDEX_VERIFICATION: ${NUXT_PUBLIC_YANDEX_VERIFICATION:-}
+      NUXT_PUBLIC_GOOGLE_SITE_VERIFICATION: ${NUXT_PUBLIC_GOOGLE_SITE_VERIFICATION:-}
+    depends_on:
+      backend-decor:
+        condition: service_healthy
+    networks:
+      - default
+      - caddy_net
+
+networks:
+  default: {}
+  # External: created once, idempotently, by deploy_app's own task — shared
+  # with docker-compose.prod.yml, not owned by either project. This stack
+  # never binds 80/443 itself; the school's Caddy reverse-proxies into
+  # backend-decor/frontend-decor over this network instead.
+  caddy_net:
+    external: true
+
+volumes:
+  postgres_data:
+  garage_meta:
+  garage_data:
+  frontend_ipx_cache:

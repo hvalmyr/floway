@@ -57,6 +57,10 @@ services:
   # SOCKS5 sidecar for backend's TELEGRAM_PROXY_URL — only built/started when
   # COMPOSE_PROFILES=telegram-proxy (set by Ansible once vault_telegram_tunnel_*
   # are filled in). See README.md → «Если прод-VPS в РФ: прокси для api.telegram.org».
+  # Also on caddy_net (in addition to this project's own default network) so
+  # the decor stack's independent backend-decor — a different Compose
+  # project, otherwise unable to resolve this container by name — can reach
+  # it too as socks5://telegram-proxy:1080, per docs/decor-site-audit.md §5.
   telegram-proxy:
     build:
       context: ./telegram-proxy
@@ -69,6 +73,9 @@ services:
     volumes:
       - ./telegram-tunnel-key:/keys/tunnel_key:ro
       - telegram_tunnel_known_hosts:/data
+    networks:
+      - default
+      - caddy_net
 
   backend:
     image: ${BACKEND_IMAGE}:${IMAGE_TAG:-latest}
@@ -152,6 +159,13 @@ services:
       backend:
         condition: service_healthy
 
+  # On caddy_net in addition to this project's own default network — the
+  # only owner of 80/443 on this VPS (see docs/decor-site-audit.md §5): the
+  # decor stack (docker-compose.decor.prod.yml, a separate Compose project)
+  # has no Caddy of its own and reaches this one over that shared network
+  # instead. Caddyfile.j2 adds a second site block once
+  # floway_prod/vars.yml's caddy_extra_sites is filled in — this file itself
+  # never needs to change again when a third site joins the same pattern.
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
@@ -165,6 +179,16 @@ services:
     depends_on:
       - frontend
       - backend
+    networks:
+      - default
+      - caddy_net
+
+networks:
+  default: {}
+  # External: created once, idempotently, by deploy_app's own task — shared
+  # with docker-compose.decor.prod.yml, not owned by either project.
+  caddy_net:
+    external: true
 
 volumes:
   postgres_data:

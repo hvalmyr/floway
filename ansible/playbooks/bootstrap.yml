@@ -8,10 +8,16 @@
 # Повторные запуски (после того как deploy_user создан и захардненен SSH):
 #   ansible-playbook playbooks/bootstrap.yml --vault-password-file .vault_pass
 #
+# decor-сайт — тот же физический хост (см. inventory/production.yml), уже
+# забутстрапленный при первом прогоне против floway_prod; повторный
+# bootstrap с -e target_group=floway_decor_prod идемпотентен, но обычно не
+# нужен — только если решено вынести decor на отдельный VPS (см.
+# docs/decor-site-audit.md §6).
+#
 # Роли идут в порядке, где самая рискованная (ssh_hardening) — последняя,
 # и только после того, как deploy_user с рабочим ключом уже создан.
 - name: Bootstrap production VPS
-  hosts: floway_prod
+  hosts: "{{ target_group | default('floway_prod') }}"
   become: true
   gather_facts: true
 

@@ -22,3 +22,24 @@
 		reverse_proxy frontend:3000
 	}
 }
+{% for site in caddy_extra_sites | default([]) %}
+{{ site.domain }} {
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy {{ site.backend_addr }}
+	}
+
+	handle /healthz {
+		reverse_proxy {{ site.backend_addr }}
+	}
+
+	handle /uploads/* {
+		reverse_proxy {{ site.backend_addr }}
+	}
+
+	handle {
+		reverse_proxy {{ site.frontend_addr }}
+	}
+}
+{% endfor %}

@@ -36,6 +36,30 @@ ansible-check:
 vault-edit:
     cd {{ansible_dir}} && ansible-vault edit --vault-password-file .vault_pass inventory/group_vars/floway_prod/vault.yml
 
+# --- decor-сайт (flo-way.ru) — тот же хост, отдельная inventory-группа ---
+
+# Деплой decor-сайта (образы должны быть уже собраны и запушены в GHCR)
+deploy-decor:
+    cd {{ansible_dir}} && ansible-playbook playbooks/deploy.yml --vault-password-file .vault_pass -e target_group=floway_decor_prod
+
+# Деплой конкретного тега образа decor-сайта вместо latest
+deploy-decor-tag tag:
+    cd {{ansible_dir}} && ansible-playbook playbooks/deploy.yml --vault-password-file .vault_pass -e target_group=floway_decor_prod -e image_tag={{tag}}
+
+# Редактировать зашифрованные секреты decor-сайта
+vault-edit-decor:
+    cd {{ansible_dir}} && ansible-vault edit --vault-password-file .vault_pass inventory/group_vars/floway_decor_prod/vault.yml
+
+# Отключить decor-сайт на несезон — контейнеры остановлены, БД/файлы/образы
+# сохраняются (см. TZ п. 4 "Отключение на несезон"). Школьный сайт и общий
+# Caddy не затрагиваются.
+decor-stop:
+    cd {{ansible_dir}} && ansible floway_decor_prod -i inventory/production.yml -m shell -a "docker compose stop chdir=/opt/floway-decor" --vault-password-file .vault_pass
+
+# Включить decor-сайт обратно перед следующим сезоном
+decor-start:
+    cd {{ansible_dir}} && ansible floway_decor_prod -i inventory/production.yml -m shell -a "docker compose start chdir=/opt/floway-decor" --vault-password-file .vault_pass
+
 # --- Локальная разработка (см. README.md за подробностями) ---
 
 dev-up:

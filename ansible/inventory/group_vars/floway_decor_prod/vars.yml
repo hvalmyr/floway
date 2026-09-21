@@ -1,0 +1,64 @@
+---
+# Несекретные переменные для группы floway_decor_prod. Секреты — в
+# group_vars/floway_decor_prod/vault.yml (см. vault.yml.example рядом).
+#
+# Второй независимый деплой того же репозитория (см. docs/decor-site-audit.md)
+# — тот же deploy_user/SSH-хардненинг, что и floway_prod (общий физический
+# хост, бутстрапится один раз против floway_prod; см. ansible/playbooks/
+# bootstrap.yml). Этот файл — только то, что реально отличается для decor.
+
+deploy_user: deploy
+deploy_user_ssh_public_key: |
+  ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICZmi7F5zuJk/pZvi01lbRsyAmt7yKMfRed5LuMDMCcB jazz@cmc
+  ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHYT81b4h6nuW+RhbzMewSUEgKW2KPjLXQrxxNzNuwww zornfeuer@vargasov-arch
+  ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMb5GknF8OTNHV097WHaJQc0OBabBM3raBYeL/l6OOdk github-actions@floway
+
+ssh_port: 22
+enable_http_https_ports: true
+
+enable_swap: true
+swap_size: "2G"
+swap_file_path: /swapfile
+
+# --- Домен и TLS ---
+# TLS/ACME сам по себе решает не Caddy этой группы (у decor своего Caddy
+# нет — см. owns_shared_caddy ниже), домен здесь используется только для
+# FLOWAY_DECOR_DOMAIN в .env (env.j2) и для DNS-подсказки ниже.
+# ВАЖНО: A/AAAA-запись flo-way.ru должна указывать на IP этой VPS ДО
+# первого запуска floway_prod'ного деплоя после того, как caddy_extra_sites
+# заполнен — иначе Caddy не пройдёт ACME HTTP-01 challenge для этого домена.
+floway_decor_domain: "flo-way.ru"
+
+# --- Образы ---
+github_owner: "hvalmyr"
+# Тот же образ, что и у школы — второй независимый инстанс одного и того же
+# бэкенда (см. TZ п. 4.2), не форк и не отдельная сборка.
+backend_image: "ghcr.io/{{ github_owner }}/floway-backend"
+# Свой образ — frontend-decor/ собирается и пушится отдельной джобой CI
+# (см. .github/workflows/ci.yml, Фаза 6 плана).
+frontend_image: "ghcr.io/{{ github_owner }}/floway-frontend-decor"
+image_tag: "latest"
+
+ghcr_login_required: false
+
+# --- Куда деплоим ---
+deploy_path: /opt/floway-decor
+# Свой compose-файл (см. tasks/main.yml → "Copy production docker-compose file").
+compose_file: docker-compose.decor.prod.yml
+
+# --- Общий Caddy (см. docs/decor-site-audit.md §5) ---
+# Эта группа НЕ рендерит и не рестартует Caddyfile — это делает только
+# floway_prod (см. caddy_extra_sites в group_vars/floway_prod/vars.yml).
+owns_shared_caddy: false
+
+# --- Telegram ---
+# decor не поднимает свой SSH-туннель — при необходимости переиспользует
+# общий сайдкар школьного стека через сеть caddy_net (см.
+# docker-compose.prod.yml → telegram-proxy: networks). Пусто = напрямую.
+telegram_proxy_enabled: false
+telegram_proxy_url: "{{ vault_telegram_proxy_url | default('') }}"
+
+# --- Аналитика (см. открытый вопрос №[ ] в ТЗ — свои значения заказчика) ---
+yandex_metrika_id: ""
+yandex_verification: ""
+google_site_verification: ""
