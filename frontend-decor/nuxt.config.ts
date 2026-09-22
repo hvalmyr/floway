@@ -15,6 +15,15 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ["@nuxtjs/tailwindcss", "@nuxt/image"],
 
+  // Primary-colored snowflake favicon (public/favicon.svg) — modern
+  // browsers prefer the SVG link over the implicit /favicon.ico lookup;
+  // favicon.ico stays as-is for the browsers that don't support SVG icons.
+  app: {
+    head: {
+      link: [{ rel: "icon", type: "image/svg+xml", href: "/favicon.svg" }],
+    },
+  },
+
   // tokens.css (CSS custom properties), fonts.css (@font-face for the local
   // brand fonts in public/fonts), then the Tailwind directives.
   css: ["~/assets/styles/tokens.css", "~/assets/styles/fonts.css", "~/assets/css/main.css"],

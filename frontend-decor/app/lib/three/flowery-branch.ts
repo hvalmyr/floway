@@ -5,10 +5,13 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
  * Procedural "minimalist flowery branch" — ported from frontend/'s copy
  * (itself from the Claude Design canvas, project 61bbe33f, file
  * flowery-branch.js), recolored for flo-way.ru's own palette: bark matches
- * decor's accent-2 (#743014), leaf is olive (#9d9167, decor's surface
- * color), petal/accent(material) are a light tint of and decor's primary
- * respectively — client-specified per-material colors, not a single
- * derived-from-one-token scheme like the previous palette swaps.
+ * decor's accent-2 (#743014); leaf and petal are both olive (#9d9167,
+ * decor's surface color) — the client's "leaves" complaint turned out to
+ * mean the flower petals (numerous, from every terminal branch's bloom),
+ * not the sparse actual leaf-shaped mesh, so both got the same olive.
+ * accent(material) — flower centers/bud caps — stays decor's primary
+ * (#993e39) as a small contrasting accent, client-specified per-material
+ * colors rather than a single derived-from-one-token scheme.
  *
  * `seed` drives every random choice below — pass a fixed value for a
  * reproducible tree (2024 is the original design's default) or a random
@@ -41,7 +44,7 @@ export function buildFloweryBranch(seed = 2024): THREE.Group {
     side: THREE.DoubleSide,
   });
   leaf.name = "leaf";
-  const petal = new THREE.MeshStandardMaterial({ color: 0xdbbbba, roughness: 0.4, metalness: 0.0 });
+  const petal = new THREE.MeshStandardMaterial({ color: 0x9d9167, roughness: 0.4, metalness: 0.0 });
   petal.name = "petal";
   const accent = new THREE.MeshStandardMaterial({
     color: 0x993e39,

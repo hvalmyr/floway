@@ -10,8 +10,11 @@
  *
  * Sits at -z-20, one layer behind AmbientTreeBackground's -z-10 — a dense
  * field of small, hard-edged (rounded-none, not rounded-full — client
- * wants a sand/grain look, not soft round snow) ink-colored grains reads
- * as background texture behind the branch rather than foreground weather.
+ * wants a sand/grain look, not soft round snow) cream-colored (accent)
+ * grains reads as background texture behind the branch rather than
+ * foreground weather. Falls very slowly (50-90s per cycle) — delay's
+ * range scales with duration so grains still start out spread across the
+ * whole viewport height on first paint, not bunched near the top.
  *
  * prefers-reduced-motion needs no handling here — the global rule in
  * assets/css/main.css already forces every CSS animation to a single,
@@ -37,8 +40,8 @@ function randomBetween(min: number, max: number): number {
 const flakes: Flake[] = Array.from({ length: FLAKE_COUNT }, () => ({
   left: `${randomBetween(0, 100)}vw`,
   size: `${randomBetween(1, 3).toFixed(1)}px`,
-  duration: `${randomBetween(9, 22).toFixed(1)}s`,
-  delay: `-${randomBetween(0, 20).toFixed(1)}s`,
+  duration: `${randomBetween(50, 90).toFixed(1)}s`,
+  delay: `-${randomBetween(0, 90).toFixed(1)}s`,
   drift: `${randomBetween(-40, 40).toFixed(0)}px`,
   rotation: `${randomBetween(0, 360).toFixed(0)}deg`,
   opacity: randomBetween(0.4, 0.9).toFixed(2),
@@ -50,7 +53,7 @@ const flakes: Flake[] = Array.from({ length: FLAKE_COUNT }, () => ({
     <span
       v-for="(flake, i) in flakes"
       :key="i"
-      class="snowflake absolute top-[-5vh] block rounded-none bg-ink"
+      class="snowflake absolute top-[-5vh] block rounded-none bg-accent"
       :style="{
         left: flake.left,
         width: flake.size,
