@@ -68,11 +68,11 @@ export default {
       // оттенков/шейдов сверх этих значений. Состояния валидации форм
       // используют primary, не отдельный цвет.
       colors: {
-        primary: "#993E39",
+        primary: "#743014",
         surface: "#9D9167",
         ink: "#442D1D",
         accent: "#E8D1A7",
-        "accent-2": "#743014",
+        "accent-2": "#993E39",
       },
       fontFamily: {
         display: ["Soyuz Grotesk", "sans-serif"],
