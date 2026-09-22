@@ -9,9 +9,9 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
  * decor's surface color) — the client's "leaves" complaint turned out to
  * mean the flower petals (numerous, from every terminal branch's bloom),
  * not the sparse actual leaf-shaped mesh, so both got the same olive.
- * accent(material) — flower centers/bud caps — stays decor's primary
- * (#993e39) as a small contrasting accent, client-specified per-material
- * colors rather than a single derived-from-one-token scheme.
+ * accent(material) — flower centers/bud caps — is decor's own accent
+ * color (#e8d1a7, cream), client-specified per-material colors rather
+ * than a single derived-from-one-token scheme.
  *
  * `seed` drives every random choice below — pass a fixed value for a
  * reproducible tree (2024 is the original design's default) or a random
@@ -47,7 +47,7 @@ export function buildFloweryBranch(seed = 2024): THREE.Group {
   const petal = new THREE.MeshStandardMaterial({ color: 0x9d9167, roughness: 0.4, metalness: 0.0 });
   petal.name = "petal";
   const accent = new THREE.MeshStandardMaterial({
-    color: 0x993e39,
+    color: 0xe8d1a7,
     roughness: 0.35,
     metalness: 0.1,
   });
