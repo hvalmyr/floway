@@ -4,11 +4,11 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 /**
  * Procedural "minimalist flowery branch" — ported from frontend/'s copy
  * (itself from the Claude Design canvas, project 61bbe33f, file
- * flowery-branch.js), recolored for flo-way.ru's own palette: bark/leaf use
- * decor's ink (#442d1d) and a darkened variant of it, accent/petal are
- * derived from decor's primary (#993e39) — same tinting relationship the
- * original had to its own primary, just recomputed for each new palette
- * swap instead of hand-picked.
+ * flowery-branch.js), recolored for flo-way.ru's own palette: bark matches
+ * decor's accent-2 (#743014), leaf is olive (#9d9167, decor's surface
+ * color), petal/accent(material) are a light tint of and decor's primary
+ * respectively — client-specified per-material colors, not a single
+ * derived-from-one-token scheme like the previous palette swaps.
  *
  * `seed` drives every random choice below — pass a fixed value for a
  * reproducible tree (2024 is the original design's default) or a random
@@ -29,13 +29,13 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
  */
 export function buildFloweryBranch(seed = 2024): THREE.Group {
   const bark = new THREE.MeshStandardMaterial({
-    color: 0x442d1d,
+    color: 0x743014,
     roughness: 0.85,
     metalness: 0.05,
   });
   bark.name = "bark";
   const leaf = new THREE.MeshStandardMaterial({
-    color: 0x3d2919,
+    color: 0x9d9167,
     roughness: 0.55,
     metalness: 0.0,
     side: THREE.DoubleSide,

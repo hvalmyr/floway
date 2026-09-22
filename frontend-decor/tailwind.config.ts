@@ -72,7 +72,7 @@ export default {
         surface: "#9D9167",
         ink: "#442D1D",
         accent: "#E8D1A7",
-        "accent-2": "#733015",
+        "accent-2": "#743014",
       },
       fontFamily: {
         display: ["Soyuz Grotesk", "sans-serif"],
