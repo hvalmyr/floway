@@ -703,7 +703,7 @@ onMounted(() => {
   const ring = new THREE.Mesh(
     new THREE.RingGeometry(sphere.radius * 0.98, sphere.radius * 1.06, 48),
     new THREE.MeshBasicMaterial({
-      color: 0xa8bd9c,
+      color: 0x993e39,
       transparent: true,
       opacity: 1,
       side: THREE.DoubleSide,

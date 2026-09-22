@@ -5,10 +5,10 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
  * Procedural "minimalist flowery branch" — ported from frontend/'s copy
  * (itself from the Claude Design canvas, project 61bbe33f, file
  * flowery-branch.js), recolored for flo-way.ru's own palette: bark/leaf use
- * decor's ink (#442a36) and a darkened variant of it, accent/petal are
- * derived from decor's primary (#a8bd9c) — same tinting relationship the
- * original had to its own primary (#82b1cc), just carried over to the new
- * hue instead of recomputed from scratch.
+ * decor's ink (#442d1d) and a darkened variant of it, accent/petal are
+ * derived from decor's primary (#993e39) — same tinting relationship the
+ * original had to its own primary, just recomputed for each new palette
+ * swap instead of hand-picked.
  *
  * `seed` drives every random choice below — pass a fixed value for a
  * reproducible tree (2024 is the original design's default) or a random
@@ -29,22 +29,22 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
  */
 export function buildFloweryBranch(seed = 2024): THREE.Group {
   const bark = new THREE.MeshStandardMaterial({
-    color: 0x442a36,
+    color: 0x442d1d,
     roughness: 0.85,
     metalness: 0.05,
   });
   bark.name = "bark";
   const leaf = new THREE.MeshStandardMaterial({
-    color: 0x3d262e,
+    color: 0x3d2919,
     roughness: 0.55,
     metalness: 0.0,
     side: THREE.DoubleSide,
   });
   leaf.name = "leaf";
-  const petal = new THREE.MeshStandardMaterial({ color: 0xe1e8dc, roughness: 0.4, metalness: 0.0 });
+  const petal = new THREE.MeshStandardMaterial({ color: 0xdbbbba, roughness: 0.4, metalness: 0.0 });
   petal.name = "petal";
   const accent = new THREE.MeshStandardMaterial({
-    color: 0xa8bd9c,
+    color: 0x993e39,
     roughness: 0.35,
     metalness: 0.1,
   });

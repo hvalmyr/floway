@@ -1,16 +1,18 @@
 /**
  * Design tokens for “ФлоВей”, as CSS custom properties.
- * Palette is intentionally exactly 4 colors, per client direction — no
- * shades/tints. Mirrored into tailwind.config.ts (colors, radii, spacing,
- * screens) so both Tailwind utilities and raw `var(--...)` usage stay in
- * sync — update both files together.
+ * Palette expanded from 4 to 6 named roles per client direction — no
+ * shades/tints beyond these fixed values. Mirrored into tailwind.config.ts
+ * (colors, radii, spacing, screens) so both Tailwind utilities and raw
+ * `var(--...)` usage stay in sync — update both files together.
  */
 :root {
-  /* Color — exactly 4, no shades */
-  --color-primary: #a8bd9c;
-  --color-surface: #f7f5f3;
+  /* Color — 6 fixed roles, no shades */
+  --color-primary: #993e39;
+  --color-surface: #e8d1a7;
   --color-white: #ffffff;
-  --color-ink: #442a36;
+  --color-ink: #442d1d;
+  --color-accent: #9d9167;
+  --color-accent-2: #733015;
 
   /* Typography (local files in public/fonts, see assets/styles/fonts.css) */
   --font-display: "Soyuz Grotesk", sans-serif;
