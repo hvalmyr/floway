@@ -5,18 +5,16 @@
  * or "icon:<id>") — see AppIcon.vue for how it resolves to a rendered icon.
  *
  * Uses flex-wrap (not CSS grid) so an incomplete last row centers itself
- * automatically. At the lg breakpoint the grid is normally 3 columns, but
- * when that would leave a single dangling card (items.length % 3 === 1) it
- * switches to 2 columns instead, so the leftover card pairs up.
+ * automatically. At the lg breakpoint cards always keep the 3-column width,
+ * even when the last row has only 1 or 2 cards — they stay centered at
+ * their normal size instead of stretching to fill the row.
  *
  * @example
  * <FeatureGrid :items="[{ icon: 'flex-start', title: 'Гибкий старт', description: '...' }]" />
  */
-const props = defineProps<{
+defineProps<{
   items: { icon: string; title: string; description: string }[];
 }>();
-
-const lgTwoColumns = computed(() => props.items.length % 3 === 1);
 </script>
 
 <template>
@@ -24,8 +22,7 @@ const lgTwoColumns = computed(() => props.items.length % 3 === 1);
     <div
       v-for="(item, i) in items"
       :key="i"
-      class="flex w-full flex-col items-center gap-16 rounded-md bg-white p-32 text-center md:w-[calc((100%_-_24px)/2)]"
-      :class="lgTwoColumns ? 'lg:w-[calc((100%_-_32px)/2)]' : 'lg:w-[calc((100%_-_64px)/3)]'"
+      class="flex w-full flex-col items-center gap-16 rounded-md bg-white p-32 text-center md:w-[calc((100%_-_24px)/2)] lg:w-[calc((100%_-_64px)/3)]"
     >
       <!-- Фиксированная высота (а не size-*), т.к. иконки разной ширины должны
       выглядеть одной высоты, а не влезать в одинаковый квадрат. -->
