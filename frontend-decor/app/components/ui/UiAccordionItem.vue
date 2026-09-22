@@ -38,14 +38,14 @@ const open = computed(() => accordion.isOpen(props.id));
       <button
         :id="buttonId"
         type="button"
-        class="flex w-full items-center justify-between gap-16 px-24 py-24 text-left font-display text-h4 text-primary sm:px-32"
+        class="flex w-full items-center justify-between gap-16 px-24 py-24 text-left font-display text-h4 text-accent sm:px-32"
         :aria-expanded="open"
         :aria-controls="panelId"
         @click="accordion.toggle(id)"
       >
         <span>{{ title }}</span>
         <Plus
-          class="size-24 shrink-0 text-primary transition-transform duration-200 motion-reduce:transition-none"
+          class="size-24 shrink-0 text-accent transition-transform duration-200 motion-reduce:transition-none"
           :class="open ? 'rotate-45' : ''"
           aria-hidden="true"
         />

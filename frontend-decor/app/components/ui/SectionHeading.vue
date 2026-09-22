@@ -15,15 +15,21 @@
  *   <template #lead>Никакой воды — только то, что действительно важно перед стартом.</template>
  * </SectionHeading>
  */
-withDefaults(defineProps<{ color?: "primary" | "ink"; onGlass?: boolean }>(), {
+withDefaults(defineProps<{ color?: "primary" | "ink" | "accent"; onGlass?: boolean }>(), {
   color: "ink",
   onGlass: false,
 });
+
+const colorClass = {
+  primary: "text-primary",
+  ink: "text-ink",
+  accent: "text-accent",
+};
 </script>
 
 <template>
   <div class="mx-auto flex w-full flex-col items-center gap-16 text-center">
-    <h2 class="font-display text-h2" :class="color === 'primary' ? 'text-primary' : 'text-ink'">
+    <h2 class="font-display text-h2" :class="colorClass[color]">
       <slot />
     </h2>
     <p

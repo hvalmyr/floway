@@ -207,7 +207,7 @@ const openFaqIds = ref<Array<string | number>>([0]);
 
     <section v-if="faqItems.length" class="py-48 sm:py-64 lg:py-80">
       <div class="container flex flex-col gap-48">
-        <SectionHeading color="primary">
+        <SectionHeading color="accent">
           Частые вопросы
           <template #lead>Отвечаем на самые популярные вопросы.</template>
         </SectionHeading>

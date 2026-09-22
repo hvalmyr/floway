@@ -21,7 +21,7 @@ const openIds = ref<Array<string | number>>(props.items.length ? [props.items[0]
 
 <template>
   <div class="flex flex-col gap-48">
-    <SectionHeading color="primary">
+    <SectionHeading color="accent">
       {{ title }}
       <template v-if="description" #lead>{{ description }}</template>
     </SectionHeading>
