@@ -69,9 +69,9 @@ export default {
       // используют primary, не отдельный цвет.
       colors: {
         primary: "#993E39",
-        surface: "#E8D1A7",
+        surface: "#9D9167",
         ink: "#442D1D",
-        accent: "#9D9167",
+        accent: "#E8D1A7",
         "accent-2": "#733015",
       },
       fontFamily: {

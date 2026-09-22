@@ -8,10 +8,10 @@
 :root {
   /* Color — 6 fixed roles, no shades */
   --color-primary: #993e39;
-  --color-surface: #e8d1a7;
+  --color-surface: #9d9167;
   --color-white: #ffffff;
   --color-ink: #442d1d;
-  --color-accent: #9d9167;
+  --color-accent: #e8d1a7;
   --color-accent-2: #733015;
 
   /* Typography (local files in public/fonts, see assets/styles/fonts.css) */
