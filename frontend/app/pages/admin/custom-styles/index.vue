@@ -45,6 +45,12 @@ function cancelEdit() {
   form.value = emptyForm();
 }
 
+function swapColors() {
+  const { bgColor, textColor } = form.value;
+  form.value.bgColor = textColor;
+  form.value.textColor = bgColor;
+}
+
 async function onSubmit() {
   formError.value = "";
   saving.value = true;
@@ -116,6 +122,15 @@ async function onDelete(id: number) {
           />
           <span class="text-sm text-[var(--color-text-muted)]">{{ form.textColor }}</span>
         </label>
+
+        <button
+          type="button"
+          title="Поменять фон и текст местами"
+          class="flex items-center justify-center gap-2 rounded border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50 sm:col-span-2"
+          @click="swapColors"
+        >
+          ⇄ Поменять цвета местами
+        </button>
 
         <p v-if="formError" class="text-sm text-red-600 sm:col-span-2">{{ formError }}</p>
 
