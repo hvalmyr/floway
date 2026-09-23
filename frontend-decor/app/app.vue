@@ -11,6 +11,17 @@ const { public: publicConfig } = useRuntimeConfig();
 // injects its own inline <script> client-side.
 const nonce = useNonce();
 
+// getRequestURL(event).origin is what sitemap.xml.ts uses server-side for
+// the same reason (the request's own Host header, not config.public.apiBase
+// — the two only coincide in prod); useRequestURL() is its universal
+// (SSR+client) composable equivalent. route.path excludes the query string,
+// which is exactly what makes this useful: ad click-tracking params
+// (Yandex Direct's ?etext=..., ?utm_*) point back at the plain page instead
+// of search engines treating the tagged URL as a separate, duplicate one.
+const route = useRoute();
+const requestUrl = useRequestURL();
+const canonicalHref = computed(() => `${requestUrl.origin}${route.path}`);
+
 useHead({
   htmlAttrs: {
     lang: "ru",
@@ -37,6 +48,7 @@ useHead({
       href: "/fonts/NonBureau-Regular.woff2",
       crossorigin: "anonymous",
     },
+    { rel: "canonical", href: canonicalHref },
   ],
   meta: [
     ...(publicConfig.yandexVerification
