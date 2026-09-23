@@ -50,9 +50,26 @@ export default defineNuxtConfig({
         // local testing against frontend/'s identical setup, not
         // documented anywhere obvious) — both needed or webvisor/hit
         // tracking silently breaks.
+        //
+        // 'strict-dynamic' + the host list: Lighthouse's CSP/XSS audit
+        // specifically flags relying on a host allowlist alone as
+        // bypassable (an open redirect or JSONP endpoint on an allowed
+        // host can smuggle in a script). Our nonce'd bootstrap script
+        // creates Metrika's actual <script src=mc.yandex.ru/...> tag
+        // dynamically without a nonce of its own — 'strict-dynamic'
+        // extends trust from a nonce'd script to whatever THAT script
+        // loads, so browsers that support it (all evergreen ones) ignore
+        // the host list/'unsafe-inline' entirely and trust it via
+        // propagation instead; the host list only still matters as a
+        // fallback for browsers that don't understand 'strict-dynamic'.
+        // 'unsafe-inline' is kept for the same reason (Lighthouse's own
+        // second recommendation) — browsers that honor the nonce ignore
+        // it, so it only helps pre-nonce-support browsers.
         "script-src": [
           "'self'",
           "'nonce-{{nonce}}'",
+          "'strict-dynamic'",
+          "'unsafe-inline'",
           "https://mc.yandex.ru",
           "https://mc.yandex.com",
         ],
