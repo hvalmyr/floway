@@ -130,7 +130,7 @@ function capitalizeName(name: string): string {
 
     <section v-if="galleryPhotos.length" class="py-48 sm:py-64 lg:py-80">
       <div class="container">
-        <LazyPhotoCarousel :photos="galleryPhotos" />
+        <PhotoCarousel :photos="galleryPhotos" />
       </div>
     </section>
 
