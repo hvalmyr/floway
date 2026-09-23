@@ -169,6 +169,18 @@ function goTo(i: number) {
 // jumping at once instead of one clean step — exactly what let fast
 // clicking outrun the row into not-yet-visible cards. The +50ms buffer
 // covers the timer firing a frame or two late.
+//
+// The arrow buttons render this cooldown via `aria-disabled` + an
+// `opacity-40` class instead of the native `disabled` attribute (see the
+// template): a real `disabled` button stops receiving mouse events the
+// instant it's applied, so if the cursor was already resting on the arrow
+// when a click disabled it, the browser reads that as the pointer leaving
+// the region and fires the container's `@mouseleave` — resuming autoplay
+// mid-cooldown. That let autoplay's own `next()` land within the same
+// window as the click that had just fired one, reading as the row jumping
+// two photos at once. Staying non-disabled at the DOM level keeps the
+// cursor "inside" for hover-pause purposes throughout the cooldown; the
+// `navCooldown` check above still blocks the click from doing anything.
 const NAV_COOLDOWN_MS = TRANSITION_MS + 50;
 const navCooldown = ref(false);
 function onArrowClick(action: () => void) {
@@ -576,8 +588,9 @@ onUnmounted(() => {
       <button
         type="button"
         aria-label="Предыдущее фото"
-        class="absolute left-8 top-1/2 grid size-[44px] -translate-y-1/2 place-items-center rounded-full bg-white/90 text-ink shadow-md transition-transform hover:enabled:scale-105 active:enabled:scale-95 disabled:opacity-40"
-        :disabled="navCooldown"
+        class="absolute left-8 top-1/2 grid size-[44px] -translate-y-1/2 place-items-center rounded-full bg-white/90 text-ink shadow-md transition-transform hover:scale-105 active:scale-95"
+        :class="{ 'opacity-40': navCooldown }"
+        :aria-disabled="navCooldown"
         @click="onArrowClick(prev)"
       >
         <ChevronLeft class="size-24" aria-hidden="true" />
@@ -585,8 +598,9 @@ onUnmounted(() => {
       <button
         type="button"
         aria-label="Следующее фото"
-        class="absolute right-8 top-1/2 grid size-[44px] -translate-y-1/2 place-items-center rounded-full bg-white/90 text-ink shadow-md transition-transform hover:enabled:scale-105 active:enabled:scale-95 disabled:opacity-40"
-        :disabled="navCooldown"
+        class="absolute right-8 top-1/2 grid size-[44px] -translate-y-1/2 place-items-center rounded-full bg-white/90 text-ink shadow-md transition-transform hover:scale-105 active:scale-95"
+        :class="{ 'opacity-40': navCooldown }"
+        :aria-disabled="navCooldown"
         @click="onArrowClick(next)"
       >
         <ChevronRight class="size-24" aria-hidden="true" />
