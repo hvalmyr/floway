@@ -42,7 +42,9 @@ const rows = computed(() => {
 </script>
 
 <template>
-  <div class="flex flex-wrap items-start justify-center gap-24 lg:flex-col lg:items-center lg:gap-32">
+  <div
+    class="flex flex-wrap items-start justify-center gap-24 lg:flex-col lg:items-center lg:gap-32"
+  >
     <div
       v-for="(row, r) in rows"
       :key="r"

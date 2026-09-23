@@ -41,7 +41,12 @@ export default defineNuxtConfig({
         // local testing against frontend/'s identical setup, not
         // documented anywhere obvious) — both needed or webvisor/hit
         // tracking silently breaks.
-        "script-src": ["'self'", "'nonce-{{nonce}}'", "https://mc.yandex.ru", "https://mc.yandex.com"],
+        "script-src": [
+          "'self'",
+          "'nonce-{{nonce}}'",
+          "https://mc.yandex.ru",
+          "https://mc.yandex.com",
+        ],
         "script-src-attr": ["'none'"],
         // Vue's :style bindings compile to inline style="..." attributes —
         // style-src-attr has no nonce mechanism for those, so this stays
