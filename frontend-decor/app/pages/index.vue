@@ -71,7 +71,7 @@ const openFaqIds = ref<Array<string | number>>([0]);
         </SectionHeading>
         <div class="flex flex-wrap justify-center gap-24 lg:gap-32">
           <div
-            class="flex w-full flex-col items-center gap-16 rounded-md bg-white p-32 text-center md:w-[calc(50%-12px)] lg:w-[calc(50%-16px)]"
+            class="flex w-full flex-col items-center gap-16 rounded-md bg-white p-32 text-center md:w-[calc((100%_-_24px)/2)] lg:w-[calc((100%_-_64px)/3)]"
           >
             <IconFirBranch class="h-40 w-auto text-primary" />
             <h3 class="font-display text-h4 text-primary">На сезон</h3>
@@ -81,7 +81,7 @@ const openFaqIds = ref<Array<string | number>>([0]);
             </p>
           </div>
           <div
-            class="flex w-full flex-col items-center gap-16 rounded-md bg-white p-32 text-center md:w-[calc(50%-12px)] lg:w-[calc(50%-16px)]"
+            class="flex w-full flex-col items-center gap-16 rounded-md bg-white p-32 text-center md:w-[calc((100%_-_24px)/2)] lg:w-[calc((100%_-_64px)/3)]"
           >
             <IconSnowflake class="h-40 w-auto text-primary" />
             <h3 class="font-display text-h4 text-primary">На праздник</h3>
