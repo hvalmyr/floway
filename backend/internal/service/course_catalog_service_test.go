@@ -204,6 +204,24 @@ func TestCourseCatalogService_GetFullBySlug_CourseWithNoBlocks(t *testing.T) {
 	assert.Equal(t, int64(2), lessons.lastCourseID)
 }
 
+func TestCourseCatalogService_GetFullBySlug_CourseWithNoBlocksKeepsCustomDisplayStyle(t *testing.T) {
+	// syntheticBlock built from a blockless course must carry over
+	// CustomDisplayStyleID too, not just DisplayStyle — otherwise a course
+	// with an admin-defined color pair silently renders with the default
+	// enum style instead.
+	courses := &fakeCourseLookupRepo{courses: map[string]model.Course{
+		"empty": {ID: 2, Slug: "empty", Name: "Empty", Visible: true, CustomDisplayStyleID: ptr64(7)},
+	}}
+	svc := service.NewCourseCatalogService(nil, courses, nil, &fakeCourseBlockListRepo{}, nil, &fakeLessonBatchRepo{}, &fakeCourseFAQListRepo{})
+
+	detail, err := svc.GetFullBySlug(context.Background(), "empty")
+
+	require.NoError(t, err)
+	require.Len(t, detail.Blocks, 1)
+	require.NotNil(t, detail.Blocks[0].CustomDisplayStyleID)
+	assert.Equal(t, int64(7), *detail.Blocks[0].CustomDisplayStyleID)
+}
+
 func TestCourseCatalogService_GetFullBySlug_PropagatesLessonRepoError(t *testing.T) {
 	courses := &fakeCourseLookupRepo{courses: map[string]model.Course{
 		"osnovy": {ID: 1, Slug: "osnovy"},

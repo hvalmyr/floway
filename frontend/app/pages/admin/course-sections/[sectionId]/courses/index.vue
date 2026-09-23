@@ -93,6 +93,25 @@ const previewColors = computed(() => {
   return custom ?? displayStyleColors[form.value.displayStyle];
 });
 
+// Single <select> combining the fixed enum styles and the admin-defined
+// custom ones — form.displayStyle/customDisplayStyleId stay as two separate
+// fields underneath (that's what the API expects), this just presents them
+// as one control instead of two that could otherwise both apply at once.
+const styleSelection = computed<string>({
+  get: () =>
+    form.value.customDisplayStyleId !== null
+      ? `custom:${form.value.customDisplayStyleId}`
+      : form.value.displayStyle,
+  set: (value) => {
+    if (value.startsWith("custom:")) {
+      form.value.customDisplayStyleId = Number(value.slice("custom:".length));
+    } else {
+      form.value.displayStyle = value as DisplayStyle;
+      form.value.customDisplayStyleId = null;
+    }
+  },
+});
+
 await fetchAll();
 customStyles.value = await useApi().getCustomDisplayStyles();
 
@@ -269,19 +288,20 @@ async function onBulkDelete() {
           placeholder="Цена (например, «38 500 ₽»)"
           class="rounded border border-gray-300 px-3 py-2"
         />
-        <select v-model="form.displayStyle" class="rounded border border-gray-300 px-3 py-2">
-          <option v-for="(label, value) in displayStyleLabels" :key="value" :value="value">
-            {{ label }}
-          </option>
-        </select>
         <select
-          v-model="form.customDisplayStyleId"
-          class="rounded border border-gray-300 px-3 py-2"
+          v-model="styleSelection"
+          class="rounded border border-gray-300 px-3 py-2 sm:col-span-2"
         >
-          <option :value="null">— Обычный стиль (см. превью справа) —</option>
-          <option v-for="style in customStyles" :key="style.id" :value="style.id">
-            {{ style.name }}
-          </option>
+          <optgroup label="Стандартные стили">
+            <option v-for="(label, value) in displayStyleLabels" :key="value" :value="value">
+              {{ label }}
+            </option>
+          </optgroup>
+          <optgroup v-if="customStyles.length" label="Особые стили">
+            <option v-for="style in customStyles" :key="style.id" :value="`custom:${style.id}`">
+              {{ style.name }}
+            </option>
+          </optgroup>
         </select>
         <label class="flex items-center gap-2 text-sm">
           <input v-model="form.visible" type="checkbox" class="size-5" />

@@ -87,16 +87,17 @@ func NewCourseCatalogService(
 // block's name as a label when a course actually has more than one.
 func syntheticBlock(course model.Course) model.CourseBlock {
 	return model.CourseBlock{
-		CourseID:     course.ID,
-		Description:  course.Description,
-		BlockCover:   course.CoverImage,
-		LessonCount:  course.LessonCount,
-		TimeLength:   course.TimeLength,
-		Price:        course.Price,
-		DisplayStyle: course.DisplayStyle,
-		Visible:      true,
-		CreatedAt:    course.CreatedAt,
-		UpdatedAt:    course.UpdatedAt,
+		CourseID:             course.ID,
+		Description:          course.Description,
+		BlockCover:           course.CoverImage,
+		LessonCount:          course.LessonCount,
+		TimeLength:           course.TimeLength,
+		Price:                course.Price,
+		DisplayStyle:         course.DisplayStyle,
+		CustomDisplayStyleID: course.CustomDisplayStyleID,
+		Visible:              true,
+		CreatedAt:            course.CreatedAt,
+		UpdatedAt:            course.UpdatedAt,
 	}
 }
 
