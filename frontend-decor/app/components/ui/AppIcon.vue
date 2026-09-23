@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { normalizeClass } from "vue";
 import { featureIconComponent } from "~/constants/feature-icons";
+import { sanitizeSvg } from "~/lib/svgSanitize";
 
 /**
  * Resolves a Feature/PageContent icon value to something renderable —
@@ -35,7 +36,8 @@ const builtinComponent = computed(() => {
 const uploadedSvg = computed(() => {
   if (!props.icon?.startsWith("icon:")) return undefined;
   const id = Number(props.icon.slice("icon:".length));
-  return findIcon(id)?.svg;
+  const svg = findIcon(id)?.svg;
+  return svg ? sanitizeSvg(svg) : undefined;
 });
 
 const hostEl = ref<HTMLElement | null>(null);

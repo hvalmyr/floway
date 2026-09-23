@@ -13,7 +13,105 @@ const mediaOptimizeBase =
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
-  modules: ["@nuxtjs/tailwindcss", "@nuxt/image"],
+  modules: ["@nuxtjs/tailwindcss", "@nuxt/image", "nuxt-security"],
+
+  // CSP only — every other header nuxt-security would set by default
+  // (HSTS, X-Frame-Options, COOP, CORP, COEP, Permissions-Policy, ...) stays
+  // owned by Caddy (see ansible/roles/deploy_app/templates/Caddyfile.j2),
+  // set once for both this app and frontend-decor. CSP moved here instead
+  // because a real per-request nonce (needed to drop 'unsafe-inline' from
+  // script-src) can only be generated and stamped onto the SSR HTML by the
+  // app itself — Caddy has no way to do that. The module's other features
+  // (CORS, rate limiting, request-size limits, XSS body validation) are
+  // disabled below: they're not part of this change and each has its own
+  // failure mode that could break existing behavior (e.g. the request size
+  // limiter rejecting a legitimate admin image upload) without being asked
+  // for.
+  security: {
+    nonce: true,
+    headers: {
+      contentSecurityPolicy: {
+        "default-src": ["'self'"],
+        // 'nonce-{{nonce}}' is the module's own per-request placeholder,
+        // swapped for the real value by its Nitro plugins (see
+        // node_modules/nuxt-security/dist/runtime/nitro/plugins/
+        // 40-cspSsrNonce.js) — the mc.yandex.ru inline loader gets the same
+        // nonce read client-side via useYandexMetrika.ts. Metrika's own
+        // runtime code calls out to mc.yandex.com too (confirmed live in
+        // local testing, not documented anywhere obvious) — both needed or
+        // webvisor/hit tracking silently breaks.
+        "script-src": [
+          "'self'",
+          "'nonce-{{nonce}}'",
+          "https://mc.yandex.ru",
+          "https://mc.yandex.com",
+        ],
+        "script-src-attr": ["'none'"],
+        // Vue's :style bindings compile to inline style="..." attributes —
+        // style-src-attr has no nonce mechanism for those, so this stays
+        // 'unsafe-inline' (Lighthouse's CSP/XSS audit only penalizes
+        // script-src, not style-src).
+        "style-src": ["'self'", "'unsafe-inline'"],
+        "img-src": ["'self'", "https:", "data:"],
+        "font-src": ["'self'"],
+        // wss://mc.yandex.* is webvisor's session-replay socket (init sets
+        // webvisor: true in useYandexMetrika.ts) — also only found by
+        // actually loading the page under this CSP, not documented.
+        "connect-src": [
+          "'self'",
+          "https://mc.yandex.ru",
+          "https://mc.yandex.com",
+          "wss://mc.yandex.ru",
+          "wss://mc.yandex.com",
+        ],
+        // Yandex Maps reviews widget (pages/index.vue) + the CMS-editable
+        // contact map iframe (pages/contacts.vue) — frontend-decor has
+        // neither and gets 'none' instead in its own nuxt.config.ts.
+        // mc.yandex.com is Metrika itself framing something (webvisor-
+        // related, seen live in testing, undocumented).
+        "frame-src": [
+          "'self'",
+          "https://yandex.ru",
+          "https://maps.yandex.ru",
+          "https://mc.yandex.com",
+        ],
+        "frame-ancestors": ["'none'"],
+        "base-uri": ["'self'"],
+        "form-action": ["'self'"],
+        "object-src": ["'none'"],
+        // "vue" is Vue's own built-in passthrough policy (unconditionally
+        // registered by @vue/runtime-dom whenever window.trustedTypes
+        // exists) — v-html sinks sanitize their data before binding
+        // (AppIcon.vue, RichTextContent.vue) rather than through a custom
+        // policy, since Vue doesn't let a binding opt into a different one.
+        // "default" is trusted-types.client.ts's catch-all for imperative
+        // innerHTML writes (AdminRichTextEditor.vue).
+        "trusted-types": ["vue", "default"],
+        "require-trusted-types-for": ["'script'"],
+      },
+      strictTransportSecurity: false,
+      xFrameOptions: false,
+      crossOriginOpenerPolicy: false,
+      crossOriginEmbedderPolicy: false,
+      crossOriginResourcePolicy: false,
+      xContentTypeOptions: false,
+      referrerPolicy: false,
+      originAgentCluster: false,
+      xDNSPrefetchControl: false,
+      xDownloadOptions: false,
+      xPermittedCrossDomainPolicies: false,
+      xXSSProtection: false,
+      permissionsPolicy: false,
+    },
+    requestSizeLimiter: false,
+    rateLimiter: false,
+    xssValidator: false,
+    corsHandler: false,
+    allowedMethodsRestricter: false,
+    sri: false,
+    csrf: false,
+    hidePoweredBy: true,
+  },
 
   // tokens.css (CSS custom properties), fonts.css (@font-face for the local
   // brand fonts in public/fonts), then the Tailwind directives.

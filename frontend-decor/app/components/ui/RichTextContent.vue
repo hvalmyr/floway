@@ -2,9 +2,9 @@
 /**
  * Renders HTML produced by AdminRichTextEditor.vue (blog post content).
  * The source is already sanitized against a fixed tag/attribute whitelist
- * at save time (see richTextSanitize.ts) — same trust boundary as
- * MarkdownContent.vue, which likewise trusts admin-authored source without
- * re-sanitizing on render.
+ * at save time (see richTextSanitize.ts) — re-run here at render time too
+ * (idempotent against already-clean content) so this sink doesn't rely
+ * solely on the save-time check.
  *
  * Clicking any inline image opens it in a fullscreen lightbox over a brown
  * (`bg-ink`) backdrop — same visual language as PhotoCarousel.vue's
@@ -16,9 +16,11 @@
  * <RichTextContent :source="post.content" />
  */
 import { X } from "lucide-vue-next";
-import { nextTick, onUnmounted, ref, watch } from "vue";
+import { computed, nextTick, onUnmounted, ref, watch } from "vue";
+import { sanitizeRichTextHtml } from "~/lib/richTextSanitize";
 
-defineProps<{ source: string }>();
+const props = defineProps<{ source: string }>();
+const sanitizedSource = computed(() => sanitizeRichTextHtml(props.source));
 
 const lightboxSrc = ref<string | null>(null);
 const lightboxAlt = ref("");
@@ -57,7 +59,7 @@ onUnmounted(() => {
   <div
     class="rich-text-content font-body text-body text-ink"
     data-no-orbit
-    v-html="source"
+    v-html="sanitizedSource"
     @click="onContentClick"
   />
 

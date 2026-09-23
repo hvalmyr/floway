@@ -4,6 +4,13 @@
 // соответствующая переменная окружения не задана.
 const { public: publicConfig } = useRuntimeConfig();
 
+// useNonce() only resolves during SSR (it reads the per-request value off
+// the SSR event context — see nuxt-security's composables/nonce.ts), so it
+// has to be read here and stamped into a meta tag rather than called from
+// client-only code. useYandexMetrika.ts reads it back off this tag when it
+// injects its own inline <script> client-side.
+const nonce = useNonce();
+
 useHead({
   htmlAttrs: {
     lang: "ru",
@@ -38,6 +45,7 @@ useHead({
     ...(publicConfig.googleSiteVerification
       ? [{ name: "google-site-verification", content: publicConfig.googleSiteVerification }]
       : []),
+    ...(nonce ? [{ name: "csp-nonce", content: nonce }] : []),
   ],
 });
 </script>

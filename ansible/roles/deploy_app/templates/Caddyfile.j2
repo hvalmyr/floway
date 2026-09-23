@@ -6,20 +6,20 @@
 {{ floway_domain }} {
 	encode zstd gzip
 
-	# Security headers (Lighthouse "Best Practices"). script-src/style-src need
-	# 'unsafe-inline' because Nuxt's SSR hydration payload and the Yandex
-	# Metrika loader (useYandexMetrika.ts) are both inline, with no CSP nonce
-	# wired up — removing it needs nonce support added to Nuxt first.
-	# frame-src allows the Yandex Maps reviews widget (pages/index.vue) and
-	# the CMS-editable contact map iframe (pages/contacts.vue); img-src stays
-	# broad (https:) because admin content fields can hold legacy pasted
-	# external image URLs.
+	# Security headers (Lighthouse "Best Practices"). Content-Security-Policy
+	# is NOT here — frontend/'s nuxt.config.ts (nuxt-security module) sets it
+	# per-request now, with a real nonce instead of 'unsafe-inline' in
+	# script-src, which only the app itself can generate and stamp onto the
+	# SSR HTML. That only covers the frontend: container's own responses;
+	# /api/* and /uploads/* go straight to the backend and get no CSP header
+	# at all now, same as before this change had any practical effect (CSP
+	# on a JSON/file response doesn't do anything — it's only enforced
+	# against the document that received it).
 	header {
 		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "DENY"
 		Cross-Origin-Opener-Policy "same-origin"
-		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://mc.yandex.ru; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self'; connect-src 'self' https://mc.yandex.ru; frame-src 'self' https://yandex.ru https://maps.yandex.ru; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
 	}
 
 	handle /api/* {
@@ -42,15 +42,13 @@
 {{ site.domain }} {
 	encode zstd gzip
 
-	# See the header block on the main domain above for why 'unsafe-inline' is
-	# needed. No frame-src allowance here — unlike the main site, this stack
-	# embeds no iframes.
+	# See the header block on the main domain above — Content-Security-Policy
+	# comes from frontend-decor/'s own nuxt-security config the same way.
 	header {
 		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "DENY"
 		Cross-Origin-Opener-Policy "same-origin"
-		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://mc.yandex.ru; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self'; connect-src 'self' https://mc.yandex.ru; frame-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
 	}
 
 	handle /api/* {

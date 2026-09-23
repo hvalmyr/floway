@@ -17,6 +17,12 @@ export function useYandexMetrika() {
     injected = true;
 
     const script = document.createElement("script");
+    // CSP's script-src only allows 'self' + a per-request nonce (see
+    // nuxt.config.ts) — this inline script needs to carry it, read back off
+    // the meta tag app.vue stamps in from useNonce() during SSR (useNonce()
+    // itself only resolves server-side, not from this client-only code).
+    const nonce = document.querySelector('meta[name="csp-nonce"]')?.getAttribute("content");
+    if (nonce) script.nonce = nonce;
     script.textContent = `
       (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
       m[i].l=1*new Date();

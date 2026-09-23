@@ -106,9 +106,16 @@ export function normalizeLinkUrl(value: string): string | null {
 }
 
 export function sanitizeRichTextHtml(html: string): string {
-  if (typeof document === "undefined") return html;
-  const template = document.createElement("template");
-  template.innerHTML = html;
-  walk(template.content, window.location.origin);
-  return template.innerHTML;
+  if (typeof DOMParser === "undefined") return html;
+  // DOMParser, not <template>.innerHTML — this function backs the "default"
+  // Trusted Types policy (see trusted-types.client.ts), so it can't itself
+  // assign a raw string to .innerHTML without recursing into that same
+  // policy. DOMParser.parseFromString isn't a Trusted Types sink (its
+  // output document is inert, same as <template>.content), so it sidesteps
+  // that without changing behavior for this tag set (no table/list-context
+  // parsing quirks to worry about — ALLOWED_TAGS are all valid direct
+  // children of <body>).
+  const parsed = new DOMParser().parseFromString(html, "text/html");
+  walk(parsed.body, window.location.origin);
+  return parsed.body.innerHTML;
 }
