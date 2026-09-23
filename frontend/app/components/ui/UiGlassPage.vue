@@ -1,7 +1,7 @@
 <script setup lang="ts">
  /**
  * Full-page glass card — white, blurred background so page content stays
- * legible over the animated tree background (AmbientTreeBackground.vue).
+ * legible over the page's surface background and any per-section imagery.
  * For mostly-text pages (legal documents, the blog, the thank-you page)
  * instead of a landing page built from alternating full-bleed sections;
  * those keep their own per-section bg-surface/55 glass panels instead.
