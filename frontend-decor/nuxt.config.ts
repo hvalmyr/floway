@@ -15,6 +15,15 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ["@nuxtjs/tailwindcss", "@nuxt/image", "nuxt-security"],
 
+  // Nuxt serves public/favicon.ico at /favicon.ico regardless, but without
+  // an explicit link tag some browsers (notably Firefox) never issue the
+  // implicit /favicon.ico request, so the tab shows no icon.
+  app: {
+    head: {
+      link: [{ rel: "icon", type: "image/x-icon", href: "/favicon.ico" }],
+    },
+  },
+
   // CSP only — every other header nuxt-security would set by default
   // (HSTS, X-Frame-Options, COOP, CORP, COEP, Permissions-Policy, ...) stays
   // owned by Caddy (see ansible/roles/deploy_app/templates/Caddyfile.j2),
