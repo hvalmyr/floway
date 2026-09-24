@@ -22,6 +22,16 @@ var numericPageContentBounds = map[string][2]int{
 	"image_quality_avif":    {1, 100},
 }
 
+// booleanPageContentKeys lists the page_content keys stored as type
+// 'boolean' — enforced the same ad-hoc, per-key way as
+// numericPageContentBounds above rather than a generic type-driven
+// validator, since site_tree_enabled (migration 00062) is the only one so
+// far. A garbage value would otherwise silently read as "false" via the
+// frontend's `=== "true"` check instead of failing the save outright.
+var booleanPageContentKeys = map[string]bool{
+	"site_tree_enabled": true,
+}
+
 type PageContentRepository interface {
 	List(ctx context.Context) ([]model.PageContent, error)
 	// Update also returns the value the key held before this update, so the
@@ -62,6 +72,16 @@ func (s *PageContentService) Update(ctx context.Context, key, value string) (mod
 			return model.PageContent{}, errors.Join(
 				ErrValidation,
 				fmt.Errorf("%s must be an integer between %d and %d", key, bounds[0], bounds[1]),
+			)
+		}
+	}
+
+	if booleanPageContentKeys[key] {
+		trimmed := strings.TrimSpace(value)
+		if trimmed != "true" && trimmed != "false" {
+			return model.PageContent{}, errors.Join(
+				ErrValidation,
+				fmt.Errorf("%s must be either \"true\" or \"false\"", key),
 			)
 		}
 	}

@@ -9,6 +9,7 @@ useSeoMeta({
 
 const api = useApi();
 const { text } = await usePageContent();
+const { glassClass } = await useTreeMode();
 
 const { data: courseSectionsData } = await useAsyncData("home-course-sections", () =>
   api.getCourseSections(),
@@ -183,9 +184,7 @@ function capitalizeName(name: string): string {
 
         <div class="grid grid-cols-1 gap-32 md:grid-cols-2 md:gap-64">
           <div class="order-2 flex w-full flex-col gap-24 md:order-1">
-            <div
-              class="flex flex-col gap-16 rounded-md bg-white/55 px-16 py-24 backdrop-blur backdrop-saturate-150"
-            >
+            <div class="flex flex-col gap-16 rounded-md px-16 py-24" :class="glassClass">
               <h3 class="font-body text-h4 text-ink">
                 {{ text("trial_heading", "Пробное занятие") }}
               </h3>
@@ -277,8 +276,8 @@ function capitalizeName(name: string): string {
             и вопросов FAQ (text-h4), но шрифт Non Bureau (не Soyuz Grotesk) и
             Medium, а не Bold. -->
             <p
-              class="w-full rounded-md bg-white/55 py-12 text-center font-body text-h4 font-medium backdrop-blur backdrop-saturate-150"
-              :class="index % 2 === 0 ? 'text-primary' : 'text-ink'"
+              class="w-full rounded-md py-12 text-center font-body text-h4 font-medium"
+              :class="[glassClass, index % 2 === 0 ? 'text-primary' : 'text-ink']"
             >
               {{ capitalizeName(teacher.name) }}
             </p>

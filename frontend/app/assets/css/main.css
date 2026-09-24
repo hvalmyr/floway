@@ -7,8 +7,16 @@
     scroll-behavior: smooth;
   }
 
+  /* White by default; transparent when the admin turns the ambient tree
+     back on (html.tree-enabled, set in layouts/default.vue and bare.vue)
+     so the fixed 3D canvas behind it shows through everywhere a section
+     doesn't paint its own background. */
   body {
-    @apply font-body text-ink bg-surface;
+    @apply font-body text-ink bg-white;
+  }
+
+  html.tree-enabled body {
+    background-color: transparent;
   }
 
   h1,

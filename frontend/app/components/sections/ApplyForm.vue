@@ -43,6 +43,7 @@ const props = withDefaults(
 
 const api = useApi();
 const { text } = await usePageContent();
+const { glassClass } = await useTreeMode();
 
 const { handleSubmit, isSubmitting, values, setValues } = useForm({
   validationSchema: toTypedSchema(applyFormSchema),
@@ -158,11 +159,7 @@ const onSubmit = handleSubmit(async (values) => {
     own (no side inset, per the caller's layout). Non-bare callers already
     sit on a solid white card, so the wrapper is a plain unstyled div there. -->
     <form class="flex flex-col gap-16" novalidate @submit="onSubmit">
-      <div
-        :class="
-          bare ? 'rounded-md bg-white/55 px-16 py-16 backdrop-blur backdrop-saturate-150' : ''
-        "
-      >
+      <div :class="bare ? `rounded-md px-16 py-16 ${glassClass}` : ''">
         <UiInput
           name="name"
           :label="text('apply_form_name_label', 'Имя')"
@@ -171,22 +168,14 @@ const onSubmit = handleSubmit(async (values) => {
           :placeholder="text('apply_form_name_placeholder', 'Как вас зовут')"
         />
       </div>
-      <div
-        :class="
-          bare ? 'rounded-md bg-white/55 px-16 py-16 backdrop-blur backdrop-saturate-150' : ''
-        "
-      >
+      <div :class="bare ? `rounded-md px-16 py-16 ${glassClass}` : ''">
         <UiPhoneInput
           name="phone"
           :label="text('apply_form_phone_label', 'Номер телефона')"
           required
         />
       </div>
-      <div
-        :class="
-          bare ? 'rounded-md bg-white/55 px-16 py-16 backdrop-blur backdrop-saturate-150' : ''
-        "
-      >
+      <div :class="bare ? `rounded-md px-16 py-16 ${glassClass}` : ''">
         <UiInput
           name="email"
           :label="text('apply_form_email_label', 'Почта')"
@@ -204,7 +193,7 @@ const onSubmit = handleSubmit(async (values) => {
       <div
         :class="
           bare
-            ? 'rounded-md bg-white/55 px-16 py-16 backdrop-blur backdrop-saturate-150 has-[[aria-expanded=true]]:relative has-[[aria-expanded=true]]:z-30'
+            ? `rounded-md px-16 py-16 has-[[aria-expanded=true]]:relative has-[[aria-expanded=true]]:z-30 ${glassClass}`
             : ''
         "
       >
@@ -218,7 +207,7 @@ const onSubmit = handleSubmit(async (values) => {
       <div
         :class="
           bare
-            ? 'rounded-md bg-white/55 px-16 py-16 backdrop-blur backdrop-saturate-150 has-[[aria-expanded=true]]:relative has-[[aria-expanded=true]]:z-30'
+            ? `rounded-md px-16 py-16 has-[[aria-expanded=true]]:relative has-[[aria-expanded=true]]:z-30 ${glassClass}`
             : ''
         "
       >
@@ -230,7 +219,7 @@ const onSubmit = handleSubmit(async (values) => {
         />
       </div>
 
-      <div class="rounded-md bg-white/55 px-16 py-16 backdrop-blur backdrop-saturate-150">
+      <div class="rounded-md px-16 py-16" :class="glassClass">
         <UiCheckbox name="consent">
           {{ text("apply_form_consent_prefix", "Отправляя форму, вы соглашаетесь с") }}
           <NuxtLink to="/privacy" class="text-primary underline">{{

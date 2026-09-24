@@ -5,7 +5,7 @@ interface PageContentItem {
   key: string;
   label: string;
   value: string;
-  type: "text" | "image" | "icon" | "number";
+  type: "text" | "image" | "icon" | "number" | "boolean";
   updatedAt: string;
 }
 
@@ -57,6 +57,11 @@ function onIconSelected(item: PageContentItem, value: string) {
   save(item);
 }
 
+function onBooleanToggle(item: PageContentItem, event: Event) {
+  item.value = (event.target as HTMLInputElement).checked ? "true" : "false";
+  save(item);
+}
+
 // Not v-model: Vue's v-model auto-casts <input type="number"> to a JS
 // number even without the .number modifier, but item.value (and the PUT
 // body) must stay a string — the backend's Update takes a plain string and
@@ -97,6 +102,15 @@ function onNumberInput(item: PageContentItem, event: Event) {
           :model-value="item.value"
           @update:model-value="(value) => onIconSelected(item, value)"
         />
+        <label v-else-if="item.type === 'boolean'" class="flex items-center gap-2">
+          <input
+            :id="`field-${item.key}`"
+            type="checkbox"
+            :checked="item.value === 'true'"
+            @change="onBooleanToggle(item, $event)"
+          />
+          <span class="text-sm">{{ item.value === "true" ? "Включено" : "Выключено" }}</span>
+        </label>
         <input
           v-else-if="item.type === 'number'"
           :id="`field-${item.key}`"
@@ -110,7 +124,7 @@ function onNumberInput(item: PageContentItem, event: Event) {
         <AdminMarkdownField v-else :id="`field-${item.key}`" v-model="item.value" :rows="3" />
         <div class="mt-2 flex items-center gap-3">
           <button
-            v-if="item.type !== 'image' && item.type !== 'icon'"
+            v-if="item.type !== 'image' && item.type !== 'icon' && item.type !== 'boolean'"
             type="button"
             :disabled="savingKey === item.key"
             class="rounded bg-[var(--color-primary)] px-4 py-2 text-sm text-white disabled:opacity-50"

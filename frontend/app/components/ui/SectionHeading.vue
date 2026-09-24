@@ -5,7 +5,8 @@
  * rule — set explicitly per section via `color`).
  *
  * The lead sits in a glass container so it stays legible over the animated
- * tree background. When the section itself already has that glass fill
+ * tree background (a plain beige card with the tree off — see
+ * useTreeMode.ts). When the section itself already has that glass fill
  * (`bg-surface/55` beige sections), pass `on-glass` to keep the container's
  * shape/spacing but drop its own fill — otherwise glass-on-glass double-tints.
  *
@@ -19,6 +20,8 @@ withDefaults(defineProps<{ color?: "primary" | "ink"; onGlass?: boolean }>(), {
   color: "ink",
   onGlass: false,
 });
+
+const { glassClass } = await useTreeMode();
 </script>
 
 <template>
@@ -29,7 +32,7 @@ withDefaults(defineProps<{ color?: "primary" | "ink"; onGlass?: boolean }>(), {
     <p
       v-if="$slots.lead"
       class="w-full whitespace-pre-line rounded-md px-24 py-16 font-body text-body text-ink lg:w-4/5"
-      :class="onGlass ? '' : 'bg-white/55 backdrop-blur backdrop-saturate-150'"
+      :class="onGlass ? '' : glassClass"
     >
       <slot name="lead" />
     </p>

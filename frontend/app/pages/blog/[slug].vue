@@ -33,6 +33,7 @@ const slug = route.params.slug as string;
 
 const api = useApi();
 const { data: post } = await useAsyncData(`blog-post-${slug}`, () => api.getBlogPost(slug));
+const { glassClass } = await useTreeMode();
 
 if (!post.value) {
   throw createError({ statusCode: 404, statusMessage: "Статья не найдена", fatal: true });
@@ -68,7 +69,8 @@ function formatDate(dateString: string | null) {
     <section class="py-48 sm:py-64 lg:py-80">
       <div class="container flex flex-col gap-32 lg:flex-row lg:items-stretch lg:gap-64">
         <div
-          class="order-2 flex flex-col items-start gap-24 rounded-lg bg-white/55 pt-32 backdrop-blur backdrop-saturate-150 sm:pt-40 lg:order-1 lg:w-1/2 lg:pt-48"
+          class="order-2 flex flex-col items-start gap-24 rounded-lg pt-32 sm:pt-40 lg:order-1 lg:w-1/2 lg:pt-48"
+          :class="glassClass"
         >
           <div class="flex flex-col gap-8">
             <p v-if="post.category" class="font-body text-h4 font-medium text-primary">
@@ -110,9 +112,7 @@ function formatDate(dateString: string | null) {
          metadata about the article, not part of its running text, so they
          don't need to match the narrower prose measure. -->
     <section v-if="post.tags.length" class="container pb-48 sm:pb-64 lg:pb-80">
-      <div
-        class="flex w-full flex-wrap justify-between gap-8 rounded-md bg-white/55 p-16 backdrop-blur backdrop-saturate-150"
-      >
+      <div class="flex w-full flex-wrap justify-between gap-8 rounded-md p-16" :class="glassClass">
         <UiBadge v-for="tag in post.tags" :key="tag">{{ tag }}</UiBadge>
       </div>
     </section>

@@ -212,7 +212,7 @@ export interface Masterclass {
  * usePageContent(). `value` may contain markdown; render it with
  * <MarkdownContent> where the surrounding markup allows block content.
  */
-export type PageContentType = "text" | "image" | "icon" | "number";
+export type PageContentType = "text" | "image" | "icon" | "number" | "boolean";
 
 export interface PageContent {
   key: string;

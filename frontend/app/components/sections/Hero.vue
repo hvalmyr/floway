@@ -1,5 +1,5 @@
 <script setup lang="ts">
- /**
+/**
  * Shared hero layout for all 4 page types: H1 + lead + CTAs on the left,
  * 1:1 photo/video on the right; below `lg` (tablets and phones) it stacks
  * to media → text → CTA instead, via `order` utilities. CTAs always stack
@@ -19,6 +19,7 @@
  *   </template>
  * </Hero>
  */
+const { glassClass } = await useTreeMode();
 </script>
 
 <template>
@@ -30,7 +31,8 @@
         </h1>
         <p
           v-if="$slots.lead"
-          class="w-full whitespace-pre-line rounded-md bg-white/55 px-24 py-16 font-body text-body text-ink backdrop-blur backdrop-saturate-150"
+          class="w-full whitespace-pre-line rounded-md px-24 py-16 font-body text-body text-ink"
+          :class="glassClass"
         >
           <slot name="lead" />
         </p>

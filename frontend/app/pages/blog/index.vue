@@ -16,6 +16,7 @@ useSeoMeta({
 
 const api = useApi();
 const { data: posts, pending, error } = await useAsyncData("blog-posts", () => api.getBlogPosts());
+const { glassClass } = await useTreeMode();
 
 function formatDate(dateString: string | null) {
   if (!dateString) return "";
@@ -34,19 +35,22 @@ function formatDate(dateString: string | null) {
 
       <p
         v-if="pending"
-        class="rounded-md bg-white/55 px-24 py-16 font-body text-body text-ink backdrop-blur backdrop-saturate-150"
+        class="rounded-md px-24 py-16 font-body text-body text-ink"
+        :class="glassClass"
       >
         Загрузка…
       </p>
       <p
         v-else-if="error"
-        class="rounded-md bg-white/55 px-24 py-16 font-body text-body text-ink backdrop-blur backdrop-saturate-150"
+        class="rounded-md px-24 py-16 font-body text-body text-ink"
+        :class="glassClass"
       >
         Не удалось загрузить статьи. Попробуйте позже.
       </p>
       <p
         v-else-if="!posts?.length"
-        class="rounded-md bg-white/55 px-24 py-16 font-body text-body text-ink backdrop-blur backdrop-saturate-150"
+        class="rounded-md px-24 py-16 font-body text-body text-ink"
+        :class="glassClass"
       >
         Пока нет опубликованных статей.
       </p>

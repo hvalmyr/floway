@@ -4,11 +4,20 @@
 // the correct one instead of hand-rolling a trap.
 import { useFocusTrap } from "@vueuse/integrations/useFocusTrap";
 import { Menu, X } from "lucide-vue-next";
-import { nextTick, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 
 const route = useRoute();
 const isOpen = ref(false);
 const panelRef = ref<HTMLElement | null>(null);
+
+// Same glass-over-tree treatment as everywhere else (see useTreeMode.ts),
+// just at the header's own /70 opacity rather than the shared /55 — it
+// needs to stay a bit more opaque than the rest of the page's glass since
+// it's sticky and permanently over whatever section has scrolled under it.
+const { treeEnabled } = await useTreeMode();
+const headerGlassClass = computed(() =>
+  treeEnabled.value ? "bg-white/70 backdrop-blur backdrop-saturate-150" : "bg-surface",
+);
 
 const { activate, deactivate } = useFocusTrap(panelRef, {
   immediate: false,
@@ -60,9 +69,7 @@ function isActive(to: string) {
 </script>
 
 <template>
-  <header
-    class="sticky top-0 z-40 h-[64px] bg-white/70 backdrop-blur backdrop-saturate-150 lg:h-[88px]"
-  >
+  <header class="sticky top-0 z-40 h-[64px] lg:h-[88px]" :class="headerGlassClass">
     <div class="container flex h-full items-center justify-between lg:grid lg:grid-cols-3">
       <NuxtLink to="/" class="font-display text-h2 text-primary lg:hidden">фловей</NuxtLink>
 

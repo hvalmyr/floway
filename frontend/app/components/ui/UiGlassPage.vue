@@ -1,10 +1,11 @@
 <script setup lang="ts">
- /**
+/**
  * Full-page glass card — white, blurred background so page content stays
- * legible over the page's surface background and any per-section imagery.
- * For mostly-text pages (legal documents, the blog, the thank-you page)
- * instead of a landing page built from alternating full-bleed sections;
- * those keep their own per-section bg-surface/55 glass panels instead.
+ * legible over the animated tree background (AmbientTreeBackground.vue),
+ * or a plain beige card with the tree turned off (see useTreeMode.ts). For
+ * mostly-text pages (legal documents, the blog, the thank-you page) instead
+ * of a landing page built from alternating full-bleed sections; those keep
+ * their own per-section bg-surface/55 glass panels instead.
  *
  * Doesn't impose a gap/flex layout on its content — nest your own
  * `flex flex-col gap-*` wrapper inside so each page picks its own spacing
@@ -19,13 +20,12 @@
  *   </div>
  * </UiGlassPage>
  */
+const { glassClass } = await useTreeMode();
 </script>
 
 <template>
   <div class="container py-48 sm:py-64 lg:py-80">
-    <div
-      class="rounded-[30px] bg-white/55 p-24 backdrop-blur backdrop-saturate-150 sm:p-48 lg:p-64"
-    >
+    <div class="rounded-[30px] p-24 sm:p-48 lg:p-64" :class="glassClass">
       <slot />
     </div>
   </div>

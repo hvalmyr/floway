@@ -6,6 +6,7 @@ const slug = route.params.slug as string;
 
 const api = useApi();
 const { text } = await usePageContent();
+const { glassClass } = await useTreeMode();
 const { data: course } = await useAsyncData(`course-${slug}`, () => api.getCourse(slug));
 
 if (!course.value) {
@@ -86,7 +87,8 @@ const openLessonIds = ref<Record<number, Array<string | number>>>(
             </h2>
             <p
               v-if="block.description"
-              class="mx-auto w-full whitespace-pre-line rounded-md bg-white/55 px-24 py-16 font-body text-body text-ink backdrop-blur backdrop-saturate-150 lg:w-4/5"
+              class="mx-auto w-full whitespace-pre-line rounded-md px-24 py-16 font-body text-body text-ink lg:w-4/5"
+              :class="glassClass"
             >
               {{ block.description }}
             </p>

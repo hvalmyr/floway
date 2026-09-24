@@ -12,6 +12,7 @@ useSeoMeta({
 
 const { text } = await usePageContent();
 const { socialLinks } = await useSocialLinks();
+const { glassClass } = await useTreeMode();
 
 const socialIcons: Record<string, Component> = {
   Telegram: IconTelegram,
@@ -34,9 +35,7 @@ const metroStations = computed(() =>
     <!-- Одна колонка на всю ширину — h1 (визуально уменьшен до размера
     остальных заголовков) теперь внутри той же стеклянной карточки, что и
     способы связи, а не отдельной строкой над ней. -->
-    <div
-      class="flex w-full flex-col gap-16 rounded-md bg-white/55 p-24 backdrop-blur backdrop-saturate-150"
-    >
+    <div class="flex w-full flex-col gap-16 rounded-md p-24" :class="glassClass">
       <h1 class="font-display text-h2 text-ink">Контакты</h1>
 
       <p class="font-body text-body text-ink">
@@ -72,9 +71,7 @@ const metroStations = computed(() =>
       </p>
     </div>
 
-    <div
-      class="flex w-full flex-col gap-16 rounded-md bg-white/55 p-24 backdrop-blur backdrop-saturate-150"
-    >
+    <div class="flex w-full flex-col gap-16 rounded-md p-24" :class="glassClass">
       <h2 class="font-display text-h2 text-primary">Адрес</h2>
 
       <p class="font-body text-body text-ink">{{ text("contact_address", contactInfo.address) }}</p>
@@ -97,9 +94,7 @@ const metroStations = computed(() =>
       class="w-full rounded-lg border-0"
     />
 
-    <div
-      class="flex w-full flex-col gap-24 rounded-md bg-white/55 p-24 backdrop-blur backdrop-saturate-150"
-    >
+    <div class="flex w-full flex-col gap-24 rounded-md p-24" :class="glassClass">
       <h2 class="font-display text-h2 text-ink">Соцсети</h2>
       <div class="flex flex-col gap-8">
         <div class="flex gap-16">
