@@ -5,10 +5,11 @@
  * rule — set explicitly per section via `color`).
  *
  * The lead sits in a glass container so it stays legible over the animated
- * tree background (a plain beige card with the tree off — see
- * useTreeMode.ts). When the section itself already has that glass fill
- * (`bg-surface/55` beige sections), pass `on-glass` to keep the container's
- * shape/spacing but drop its own fill — otherwise glass-on-glass double-tints.
+ * tree background — just plain text on the page's white background with
+ * the tree off (see useTreeMode.ts). When the section itself already has
+ * that glass fill (`bg-surface/55` beige sections), pass `on-glass` to keep
+ * the container's shape/spacing but drop its own fill — otherwise
+ * glass-on-glass double-tints.
  *
  * @example
  * <SectionHeading color="primary">

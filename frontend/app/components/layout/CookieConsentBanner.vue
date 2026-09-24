@@ -10,15 +10,6 @@
 const { status, accept } = useCookieConsent();
 const { load: loadYandexMetrika } = useYandexMetrika();
 
-// Same glass-over-tree treatment as everywhere else (see useTreeMode.ts),
-// just at this banner's own /40 + a heavier blur rather than the shared
-// /55 — it needs to read clearly over whatever's directly under it at the
-// bottom of the viewport, not just the ambient tree.
-const { treeEnabled } = await useTreeMode();
-const bannerGlassClass = computed(() =>
-  treeEnabled.value ? "bg-white/40 backdrop-blur-lg backdrop-saturate-150" : "bg-surface",
-);
-
 onMounted(() => {
   if (status.value === "accepted") loadYandexMetrika();
 });
@@ -36,8 +27,7 @@ watch(status, (value) => {
     aria-label="Уведомление об использовании cookie"
   >
     <div
-      class="flex w-full flex-col items-start gap-12 rounded-md border-2 border-ink p-16 lg:flex-row lg:items-center lg:justify-between"
-      :class="bannerGlassClass"
+      class="flex w-full flex-col items-start gap-12 rounded-md border-2 border-ink bg-white/40 p-16 backdrop-blur-lg backdrop-saturate-150 lg:flex-row lg:items-center lg:justify-between"
     >
       <p class="font-body text-body text-ink">
         Мы используем cookie и аналитику. Подробнее — в
