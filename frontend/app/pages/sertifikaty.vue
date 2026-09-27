@@ -6,19 +6,27 @@ useSeoMeta({
 });
 
 const api = useApi();
-const { text } = await usePageContent();
-
-const { data: featuresData } = await useAsyncData("gift-certificate-features", () =>
+// Fired together instead of one `await` per call — these 3 backend
+// endpoints are independent of each other and of page-content, so awaiting
+// them in sequence only added round-trips before SSR could respond.
+const featuresAsync = useAsyncData("gift-certificate-features", () =>
   api.getFeatures("gift_certificate"),
 );
-
-const { data: faq } = await useAsyncData("gift-certificate-faq", () =>
-  api.getPageFaq("gift_certificate"),
-);
-
-const { data: carouselPhotosData } = await useAsyncData("gift-certificate-carousel-photos", () =>
+const faqAsync = useAsyncData("gift-certificate-faq", () => api.getPageFaq("gift_certificate"));
+const carouselPhotosAsync = useAsyncData("gift-certificate-carousel-photos", () =>
   api.getGiftCertificateCarouselPhotos(),
 );
+
+const [{ text }] = await Promise.all([
+  usePageContent(),
+  featuresAsync,
+  faqAsync,
+  carouselPhotosAsync,
+]);
+
+const { data: featuresData } = featuresAsync;
+const { data: faq } = faqAsync;
+const { data: carouselPhotosData } = carouselPhotosAsync;
 const carouselPhotos = computed(
   () => carouselPhotosData.value?.slice().sort((a, b) => a.sortOrder - b.sortOrder) ?? [],
 );

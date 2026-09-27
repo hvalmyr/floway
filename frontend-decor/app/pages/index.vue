@@ -6,21 +6,35 @@ useSeoMeta({
 });
 
 const api = useApi();
-const { text } = await usePageContent();
+// These 5 calls hit independent backend endpoints — firing them together
+// and awaiting via Promise.all instead of one `await` per call avoids a
+// 5-deep sequential chain of round-trips before SSR can send the hero.
+const landingPagesAsync = useAsyncData("home-landing-pages", () => api.getLandingPages());
+const aboutItemsAsync = useAsyncData("home-about-items", () => api.getAboutItems());
+const featuresAsync = useAsyncData("home-features", () => api.getFeatures("home"));
+const galleryPhotosAsync = useAsyncData("home-gallery-photos", () => api.getGalleryPhotos());
+const faqAsync = useAsyncData("home-faq", () => api.getFAQItems());
 
-const { data: landingPagesData } = await useAsyncData("home-landing-pages", () =>
-  api.getLandingPages(),
-);
+const [{ text }] = await Promise.all([
+  usePageContent(),
+  landingPagesAsync,
+  aboutItemsAsync,
+  featuresAsync,
+  galleryPhotosAsync,
+  faqAsync,
+]);
+
+const { data: landingPagesData } = landingPagesAsync;
 const landingPages = computed(
   () => landingPagesData.value?.slice().sort((a, b) => a.sortOrder - b.sortOrder) ?? [],
 );
 
-const { data: aboutItemsData } = await useAsyncData("home-about-items", () => api.getAboutItems());
+const { data: aboutItemsData } = aboutItemsAsync;
 const aboutItems = computed(
   () => aboutItemsData.value?.slice().sort((a, b) => a.sortOrder - b.sortOrder) ?? [],
 );
 
-const { data: featuresData } = await useAsyncData("home-features", () => api.getFeatures("home"));
+const { data: featuresData } = featuresAsync;
 const features = computed(
   () =>
     featuresData.value
@@ -29,14 +43,12 @@ const features = computed(
       .map((f) => ({ icon: f.icon, title: f.title, description: f.description })) ?? [],
 );
 
-const { data: galleryPhotosData } = await useAsyncData("home-gallery-photos", () =>
-  api.getGalleryPhotos(),
-);
+const { data: galleryPhotosData } = galleryPhotosAsync;
 const galleryPhotos = computed(
   () => galleryPhotosData.value?.slice().sort((a, b) => a.sortOrder - b.sortOrder) ?? [],
 );
 
-const { data: faqData } = await useAsyncData("home-faq", () => api.getFAQItems());
+const { data: faqData } = faqAsync;
 const faqItems = computed(() => faqData.value ?? []);
 const openFaqIds = ref<Array<string | number>>([0]);
 </script>

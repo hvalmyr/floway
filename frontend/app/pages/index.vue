@@ -11,14 +11,35 @@ const api = useApi();
 const { text } = await usePageContent();
 const { glassClass } = await useTreeMode();
 
-const { data: courseSectionsData } = await useAsyncData("home-course-sections", () =>
-  api.getCourseSections(),
-);
-const courseSections = computed(() => courseSectionsData.value ?? []);
-
-const { data: customDisplayStylesData } = await useAsyncData("home-custom-display-styles", () =>
+// These 7 calls hit independent backend endpoints, so they're fired
+// together and awaited via Promise.all instead of one `await` per call —
+// awaiting each individually made SSR wait through 7 sequential
+// round-trips before sending any HTML, directly delaying TTFB (and with it
+// the hero image's LCP) on the page that gets the most traffic.
+const courseSectionsAsync = useAsyncData("home-course-sections", () => api.getCourseSections());
+const customDisplayStylesAsync = useAsyncData("home-custom-display-styles", () =>
   api.getCustomDisplayStyles(),
 );
+const featuresAsync = useAsyncData("home-features", () => api.getFeatures("home"));
+const aboutItemsAsync = useAsyncData("home-about-items", () => api.getAboutItems());
+const galleryPhotosAsync = useAsyncData("home-gallery-photos", () => api.getGalleryPhotos());
+const teachersAsync = useAsyncData("home-teachers", () => api.getTeachers());
+const faqAsync = useAsyncData("home-faq", () => api.getFAQItems());
+
+await Promise.all([
+  courseSectionsAsync,
+  customDisplayStylesAsync,
+  featuresAsync,
+  aboutItemsAsync,
+  galleryPhotosAsync,
+  teachersAsync,
+  faqAsync,
+]);
+
+const { data: courseSectionsData } = courseSectionsAsync;
+const courseSections = computed(() => courseSectionsData.value ?? []);
+
+const { data: customDisplayStylesData } = customDisplayStylesAsync;
 const customDisplayStylesById = computed(
   () => new Map((customDisplayStylesData.value ?? []).map((s) => [s.id, s])),
 );
@@ -53,7 +74,7 @@ function sectionCards(section: CourseSectionWithCourses) {
   );
 }
 
-const { data: featuresData } = await useAsyncData("home-features", () => api.getFeatures("home"));
+const { data: featuresData } = featuresAsync;
 const features = computed(
   () =>
     featuresData.value
@@ -62,24 +83,22 @@ const features = computed(
       .map((f) => ({ icon: f.icon, title: f.title, description: f.description })) ?? [],
 );
 
-const { data: aboutItemsData } = await useAsyncData("home-about-items", () => api.getAboutItems());
+const { data: aboutItemsData } = aboutItemsAsync;
 const aboutItems = computed(
   () => aboutItemsData.value?.slice().sort((a, b) => a.sortOrder - b.sortOrder) ?? [],
 );
 
-const { data: galleryPhotosData } = await useAsyncData("home-gallery-photos", () =>
-  api.getGalleryPhotos(),
-);
+const { data: galleryPhotosData } = galleryPhotosAsync;
 const galleryPhotos = computed(
   () => galleryPhotosData.value?.slice().sort((a, b) => a.sortOrder - b.sortOrder) ?? [],
 );
 
-const { data: teachersData } = await useAsyncData("home-teachers", () => api.getTeachers());
+const { data: teachersData } = teachersAsync;
 const teachers = computed(
   () => teachersData.value?.slice().sort((a, b) => a.sortOrder - b.sortOrder) ?? [],
 );
 
-const { data: faqData } = await useAsyncData("home-faq", () => api.getFAQItems());
+const { data: faqData } = faqAsync;
 const faqItems = computed(() => faqData.value ?? []);
 const openFaqIds = ref<Array<string | number>>([0]);
 

@@ -5,9 +5,17 @@ const route = useRoute();
 const slug = route.params.slug as string;
 
 const api = useApi();
-const { text } = await usePageContent();
-const { glassClass } = await useTreeMode();
-const { data: course } = await useAsyncData(`course-${slug}`, () => api.getCourse(slug));
+// The course fetch determines the hero image (this page's LCP element), so
+// it's fired alongside the page-content/tree-mode fetches instead of after
+// them — awaiting each in turn meant SSR waited through 2 sequential
+// backend round-trips before it could even start rendering the hero.
+const courseAsync = useAsyncData(`course-${slug}`, () => api.getCourse(slug));
+const [{ text }, { glassClass }] = await Promise.all([
+  usePageContent(),
+  useTreeMode(),
+  courseAsync,
+]);
+const { data: course } = courseAsync;
 
 if (!course.value) {
   throw createError({ statusCode: 404, statusMessage: "Курс не найден", fatal: true });

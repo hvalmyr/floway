@@ -6,14 +6,16 @@ useSeoMeta({
 
 const api = useApi();
 
-const { data: photosData } = await useAsyncData("portfolio-photos", () => api.getGalleryPhotos());
+const photosAsync = useAsyncData("portfolio-photos", () => api.getGalleryPhotos());
+const objectTypesAsync = useAsyncData("portfolio-object-types", () => api.getObjectTypes());
+await Promise.all([photosAsync, objectTypesAsync]);
+
+const { data: photosData } = photosAsync;
 const photos = computed(
   () => photosData.value?.slice().sort((a, b) => a.sortOrder - b.sortOrder) ?? [],
 );
 
-const { data: objectTypesData } = await useAsyncData("portfolio-object-types", () =>
-  api.getObjectTypes(),
-);
+const { data: objectTypesData } = objectTypesAsync;
 const objectTypes = computed(() => objectTypesData.value?.filter((t) => t.visible) ?? []);
 
 const objectTypeFilter = ref<number | null>(null);

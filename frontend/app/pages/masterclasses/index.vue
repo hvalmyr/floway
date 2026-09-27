@@ -8,18 +8,26 @@ useSeoMeta({
 });
 
 const api = useApi();
-const { text } = await usePageContent();
-const { data: masterclasses } = await useAsyncData("masterclasses-list", () =>
-  api.getMasterClasses(),
-);
-
-const { data: featuresData } = await useAsyncData("masterclasses-features", () =>
+// The hero image comes from page-content alone, but the other 3 fetches are
+// independent of it and of each other — firing them together instead of
+// awaiting one after another avoids a 4-deep sequential chain before SSR
+// can respond.
+const masterclassesAsync = useAsyncData("masterclasses-list", () => api.getMasterClasses());
+const featuresAsync = useAsyncData("masterclasses-features", () =>
   api.getFeatures("masterclasses"),
 );
+const faqAsync = useAsyncData("masterclasses-faq", () => api.getPageFaq("masterclasses"));
 
-const { data: faq } = await useAsyncData("masterclasses-faq", () =>
-  api.getPageFaq("masterclasses"),
-);
+const [{ text }] = await Promise.all([
+  usePageContent(),
+  masterclassesAsync,
+  featuresAsync,
+  faqAsync,
+]);
+
+const { data: masterclasses } = masterclassesAsync;
+const { data: featuresData } = featuresAsync;
+const { data: faq } = faqAsync;
 
 // Set by whichever MasterclassCard's "Записаться" was clicked last — there's
 // one shared ApplyForm below the whole list (not one per card), so this is
