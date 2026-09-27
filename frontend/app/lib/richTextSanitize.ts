@@ -105,17 +105,26 @@ export function normalizeLinkUrl(value: string): string | null {
   return normalizeUrl(value, window.location.origin);
 }
 
+// Guards against DOMParser.parseFromString(html, "text/html") below,
+// which (unlike <template>.innerHTML) IS itself a Trusted Types sink in
+// Chromium: with the "default" policy wired to this same function (see
+// trusted-types.client.ts), an unguarded call recurses forever —
+// parseFromString triggers the policy's createHTML, which calls this
+// function again, which calls parseFromString again, .... The reentrant
+// call only needs to hand back a same-origin string for that one
+// createHTML round-trip; the actual walk/sanitize still happens exactly
+// once, in the outermost call, once parseFromString returns.
+let sanitizing = false;
+
 export function sanitizeRichTextHtml(html: string): string {
   if (typeof DOMParser === "undefined") return html;
-  // DOMParser, not <template>.innerHTML — this function backs the "default"
-  // Trusted Types policy (see trusted-types.client.ts), so it can't itself
-  // assign a raw string to .innerHTML without recursing into that same
-  // policy. DOMParser.parseFromString isn't a Trusted Types sink (its
-  // output document is inert, same as <template>.content), so it sidesteps
-  // that without changing behavior for this tag set (no table/list-context
-  // parsing quirks to worry about — ALLOWED_TAGS are all valid direct
-  // children of <body>).
-  const parsed = new DOMParser().parseFromString(html, "text/html");
-  walk(parsed.body, window.location.origin);
-  return parsed.body.innerHTML;
+  if (sanitizing) return html;
+  sanitizing = true;
+  try {
+    const parsed = new DOMParser().parseFromString(html, "text/html");
+    walk(parsed.body, window.location.origin);
+    return parsed.body.innerHTML;
+  } finally {
+    sanitizing = false;
+  }
 }
