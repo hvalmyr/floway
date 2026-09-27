@@ -232,9 +232,36 @@ export default defineNuxtConfig({
     // its comment above). Static and stable across every deploy of this
     // repo's docker-compose setup, unlike the public domain.
     domains: [new URL(mediaOptimizeBase).host, "backend:8080", "localhost:8080"],
+    // @nuxt/image's own default screens (sm:640, matching stock Tailwind)
+    // don't match this project's actual breakpoints (tailwind.config.ts:
+    // sm:480) — a `sizes="...sm:50vw..."` prop (CourseCard, MasterclassCard,
+    // blog cards, ...) was resolving its "sm" bucket's upper bound to 639px
+    // instead of 479px, so every viewport from 480-639px (a very common
+    // phone width) had the CourseCard grid already laid out 2-up but still
+    // requested the full "100vw" image variant meant for single-column —
+    // confirmed live via PageSpeed Insights on kursfloristiki.ru mobile
+    // (CourseCard covers served ~800px wide for a ~550px rendered box).
+    // md/lg already coincided with the defaults so only sm needed fixing,
+    // but the rest are listed too so this stays exhaustive if either
+    // config ever changes.
+    screens: { sm: 480, md: 768, lg: 1024, xl: 1280 },
   },
 
   typescript: {
     strict: true,
+  },
+
+  vite: {
+    build: {
+      // Vite's default per-chunk CSS splitting turns MarkdownContent.vue's
+      // and PhotoCarousel.vue's styles into their own tiny (<1KB) files,
+      // each a separate render-blocking <link> — on a slow connection each
+      // one costs a full round-trip regardless of its size (~600ms
+      // combined, confirmed via PageSpeed Insights). The whole site's CSS
+      // is under 10KB total, so bundling it into entry.css alone removes
+      // those extra round-trips without meaningfully growing what pages
+      // that don't use those components have to download.
+      cssCodeSplit: false,
+    },
   },
 });
