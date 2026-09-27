@@ -131,12 +131,33 @@ const customStyle = computed(() =>
         !(blockLabel || lessonCount || timeLength || price) && 'mt-auto',
       ]"
     >
+      <!--
+        These 3 bucket values are the card's own container-relative width
+        MINUS this card's `p-32` padding (32px each side, from UiCard) and
+        half the row gap (`gap-24`/`lg:gap-32` on the flex-wrap parent in
+        index.vue) — not the raw `w-full`/`sm:w-[calc(50%-12px)]`/
+        `lg:w-[calc(33.333%-22px)]` card width itself. The previous
+        "100vw sm:50vw lg:400px" ignored that padding entirely, so the
+        browser always picked the largest srcset candidate (real-world
+        confirmed via PageSpeed Insights: an 800px-wide avif for a card
+        rendering its cover at ~550px on mobile — ~40% wasted bytes per
+        image, worse than that on desktop where the true width tops out
+        around 300px, nowhere near 400px).
+          <480 (single column):  100vw − 32 (container pad) − 64 (card pad)
+                                  ≈ 70-80% of viewport → 80vw
+          480-1023 (2 columns):  50% of container − 12 (half gap) − 64
+                                  (card pad) ≈ 29-39% of viewport at the
+                                  container/padding extremes → 40vw
+          ≥1024 (3 columns):     33.33% of container − 22 (2/3 gap) − 64
+                                  (card pad) tops out at ~298px once the
+                                  container hits its 1280px cap → 300px
+      -->
       <UiContentImage
         v-if="coverImage"
         :src="resolveOptimizedMediaUrl(coverImage)"
         :alt="name"
         class="size-full rounded-sm object-cover"
-        sizes="400:100vw sm:50vw lg:400px"
+        sizes="400:80vw sm:40vw lg:300px"
       />
       <div v-else class="size-full rounded-sm border-2 border-current" />
     </component>
