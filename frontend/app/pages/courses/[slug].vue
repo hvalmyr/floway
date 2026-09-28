@@ -128,7 +128,7 @@ const openLessonIds = ref<Record<number, Array<string | number>>>(
     >
       <div class="container">
         <div class="mx-auto max-w-[720px]">
-          <ApplyForm
+          <LazyApplyForm
             context="course"
             :related-id="course.id"
             :related-slug="course.slug"

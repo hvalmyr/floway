@@ -219,7 +219,7 @@ function capitalizeName(name: string): string {
                 "
               />
             </div>
-            <ApplyForm context="trial_lesson" title="" bare class="w-full" />
+            <LazyApplyForm context="trial_lesson" title="" bare class="w-full" />
           </div>
           <!-- TODO: заменить на видео с пробным уроком, когда оно будет готово (пока фото). -->
           <!-- Портретное 9:16, растянуто до ширины колонки — но не выше 80%

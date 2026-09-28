@@ -19,9 +19,18 @@ import type { ContactMethod, LeadRequestType, LeadSource } from "~/types/api";
  * embed on the home page already sits under its own section heading and
  * doesn't need a second one), set it per caller where a subhead helps.
  *
+ * Always mounted as <LazyApplyForm> at its call sites (never plain
+ * <ApplyForm>) — vee-validate/zod/libphonenumber-js pull in a genuinely
+ * heavy chunk (confirmed live via PageSpeed Insights: ~270KB, the single
+ * biggest contributor to desktop TBT) for a form that's below the fold on
+ * every page that has it. Nuxt's Lazy* wrapper only defers the client
+ * hydration chunk, not SSR — the form still renders fully in the initial
+ * HTML either way, so this costs nothing but a slightly later interactive
+ * moment for a form nobody's reached yet.
+ *
  * @example
- * <ApplyForm context="course" :related-id="course.id" :related-slug="course.slug" title="Записаться на курс" />
- * <ApplyForm context="trial_lesson" title="Пробное занятие" bare />
+ * <LazyApplyForm context="course" :related-id="course.id" :related-slug="course.slug" title="Записаться на курс" />
+ * <LazyApplyForm context="trial_lesson" title="Пробное занятие" bare />
  */
 const props = withDefaults(
   defineProps<{

@@ -100,7 +100,7 @@ const features = computed(
     >
       <div class="container">
         <div class="mx-auto max-w-[720px]">
-          <ApplyForm
+          <LazyApplyForm
             context="masterclass"
             :related-slug="selectedSlug"
             :title="text('masterclasses_apply_form_title', 'Оставить заявку на мастер-класс')"

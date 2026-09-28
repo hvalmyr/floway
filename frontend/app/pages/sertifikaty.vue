@@ -93,7 +93,7 @@ const advantages = computed(
     >
       <div class="container">
         <div class="mx-auto max-w-[720px]">
-          <ApplyForm
+          <LazyApplyForm
             context="gift_certificate"
             :title="
               text('gift_certificate_apply_form_title', 'Оставить заявку на подарочный сертификат')
