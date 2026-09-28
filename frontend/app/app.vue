@@ -26,20 +26,24 @@ useHead({
   htmlAttrs: {
     lang: "ru",
   },
-  // Preloads only the two font files the hero/header need for first paint
-  // (headings + body text, both above the fold) — deliberately NOT every
-  // font the page's DOM matches somewhere. That was tried (preloading
-  // NonBureau-Light/Medium/Bold too, for badges/form labels further down
-  // the page) to close a ~1.1s font critical-path chain PageSpeed flagged;
-  // confirmed live it backfired — those extra fonts are fetched at the
-  // browser's "Highest" priority (same as these two), competing with the
-  // hero image's own fetch (only "High" priority even with
-  // fetchpriority="high") for the same bandwidth, and desktop LCP measurably
-  // got WORSE (resource load delay alone exceeded the *previous total* LCP).
-  // font-display: swap (see fonts.css) already means below-the-fold text
-  // never blocks on its font either way — worst case with only these two
-  // preloaded is a brief fallback-face flash on text nobody's scrolled to
-  // yet, which is strictly cheaper than delaying the LCP image.
+  // The two fonts the hero/header need for first paint (headings + body
+  // text, both above the fold) preload at the browser's default priority
+  // for `as="font"` (effectively "Highest") — they're on the critical path,
+  // they should win any contention.
+  //
+  // NonBureau-Light/Medium/Bold (badges, form labels — all further down the
+  // page) are a different case: PageSpeed flags them as a ~1.1s critical-
+  // path chain because nothing preloads them, but a first attempt at fixing
+  // that (preloading them at the same default "Highest" priority as the two
+  // above) backfired — confirmed live, it competed with the hero image's
+  // own fetch for bandwidth and made desktop LCP measurably worse. The
+  // actual problem was never "not preloaded", it was "preloaded too
+  // aggressively" — `fetchpriority="low"` keeps the early-discovery win
+  // (the browser's preload scanner starts the request immediately instead
+  // of waiting to reach these fonts' rules during CSSOM matching) while
+  // scheduling it behind anything more urgent, so it no longer competes
+  // with the hero image. font-display: swap (fonts.css) already means none
+  // of this ever blocks render either way.
   link: [
     {
       rel: "preload",
@@ -54,6 +58,30 @@ useHead({
       type: "font/woff2",
       href: "/fonts/NonBureau-Regular.woff2",
       crossorigin: "anonymous",
+    },
+    {
+      rel: "preload",
+      as: "font",
+      type: "font/woff2",
+      href: "/fonts/NonBureau-Light.woff2",
+      crossorigin: "anonymous",
+      fetchpriority: "low",
+    },
+    {
+      rel: "preload",
+      as: "font",
+      type: "font/woff2",
+      href: "/fonts/NonBureau-Medium.woff2",
+      crossorigin: "anonymous",
+      fetchpriority: "low",
+    },
+    {
+      rel: "preload",
+      as: "font",
+      type: "font/woff2",
+      href: "/fonts/NonBureau-Bold.woff2",
+      crossorigin: "anonymous",
+      fetchpriority: "low",
     },
     { rel: "canonical", href: canonicalHref },
   ],
