@@ -15,6 +15,22 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ["@nuxtjs/tailwindcss", "@nuxt/image", "nuxt-security"],
 
+  // Every box on this site is sized by Tailwind utility classes alone — no
+  // native width/height/aspect-ratio attributes anywhere — so the page has
+  // *zero* layout structure until its CSS applies. A first attempt at fixing
+  // the render-blocking stylesheet <link> deferred it with a preload+swap
+  // instead of blocking on it; confirmed live via PageSpeed Insights that
+  // this let the hero image (and everything below it) paint unsized, then
+  // jump to its real size the instant the deferred CSS finally applied —
+  // CLS went from 0 to 1.258. `inlineStyles` embeds the CSS as a <style>
+  // tag instead, applied synchronously during HTML parsing like a normal
+  // blocking stylesheet (no flash, no shift) but without the network
+  // round-trip a <link> costs (confirmed in the built output: it does NOT
+  // also drop the external <link> — see
+  // server/plugins/strip-duplicate-css-link.ts, which removes that
+  // now-redundant <link> outright).
+  features: { inlineStyles: true },
+
   // CSP only — every other header nuxt-security would set by default
   // (HSTS, X-Frame-Options, COOP, CORP, COEP, Permissions-Policy, ...) stays
   // owned by Caddy (see ansible/roles/deploy_app/templates/Caddyfile.j2),
@@ -62,21 +78,6 @@ export default defineNuxtConfig({
           "'unsafe-inline'",
           "https://mc.yandex.ru",
           "https://mc.yandex.com",
-          // Static swap script for the deferred stylesheet <link> (see
-          // server/plugins/defer-css.ts) — a fixed hash instead of the
-          // per-request nonce because nuxt-security's own render:html hook
-          // unconditionally re-stamps a nonce onto every <script> tag it
-          // finds (no "already has one" guard, unlike its <link> handling);
-          // adding a second nonce ourselves produced a literal
-          // `nonce="x" nonce="x"` duplicate that Chrome's CSP check
-          // silently treated as no nonce at all, blocking the script even
-          // though `script.nonce` still read the right value (confirmed
-          // live). A hash source is checked independently of nonce, so it
-          // passes regardless of what nuxt-security does to the tag
-          // afterward — the exact script text must stay byte-for-byte
-          // identical to defer-css.ts's template or this hash stops
-          // matching.
-          "'sha256-LClkmdPyhfpBExyf0OZQUkjpl8oeLCBHvuIh12lG2F8='",
         ],
         "script-src-attr": ["'none'"],
         // Vue's :style bindings compile to inline style="..." attributes —
