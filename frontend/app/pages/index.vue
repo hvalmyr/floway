@@ -320,6 +320,7 @@ function capitalizeName(name: string): string {
           <iframe
             src="https://yandex.ru/maps-reviews-widget/83657275642?comments"
             title="Отзывы о школе «Фловей» на Яндекс Картах"
+            loading="lazy"
             style="
               width: 100%;
               height: 100%;

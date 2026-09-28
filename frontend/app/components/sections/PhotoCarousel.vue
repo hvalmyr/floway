@@ -31,6 +31,20 @@ import type { GalleryPhoto } from "~/types/api";
  * first slide is exact for all of them, and it stays correct if the height
  * class ever grows responsive breakpoints again without duplicating them
  * into JS.
+ *
+ * The actual `<img>` for each slide doesn't render until that first
+ * measurement lands (see `thumbSizesPx`'s `0` initial value and the `v-if`
+ * in the template) — SSR has no viewport to measure against, and eager-
+ * loaded images start fetching the instant the browser parses their tag,
+ * before hydration's `measureStep()` gets a chance to correct a guessed
+ * width. An SSR-guessed `sizes` was confirmed live to cost real bytes:
+ * a default guess of `300px` had browsers requesting (and, because
+ * `sizes`/`srcset` changing post-load can trigger a *second* fetch, often
+ * fetching twice) a 2x/600px-wide image where the real measured box only
+ * ever needed 260-520px. The `<button>` slide itself sizes from CSS alone
+ * (`aspect-[3/4] h-[40vh]`, independent of its image content), so
+ * `measureStep`'s `getBoundingClientRect()` read is correct even with no
+ * `<img>` inside it yet — nothing here is circular.
  * The track offset (`offsetPx`) centers the active slide in the visible
  * viewport rather than pinning it to the left edge, so neighbors crop
  * evenly on both sides instead of only the trailing one being cut off.
@@ -89,7 +103,7 @@ const DRAG_CLICK_THRESHOLD_PX = 6;
 // viewport height requests its own distinct IPX-cached width, so the IPX
 // result cache (server/middleware/ipx-cache.ts) almost never gets reused
 // across visitors.
-const thumbSizesPx = ref(300);
+const thumbSizesPx = ref(0);
 // Matches the track's `duration-500` class, plus a small buffer so the
 // snap-back never fires before the (possibly reduced-motion-skipped) CSS
 // transition has actually finished.
@@ -574,12 +588,14 @@ onUnmounted(() => {
           @click="openLightbox(i % photos.length)"
         >
           <UiContentImage
+            v-if="thumbSizesPx > 0"
             :src="thumbUrl(photo)"
             :sizes="`${thumbSizesPx}px`"
             alt=""
             draggable="false"
             class="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
           />
+          <div v-else class="size-full bg-surface" />
         </button>
       </div>
     </div>

@@ -91,6 +91,7 @@ const metroStations = computed(() =>
       width="100%"
       height="607"
       frameborder="0"
+      loading="lazy"
       class="w-full rounded-lg border-0"
     />
 

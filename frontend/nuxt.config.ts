@@ -62,6 +62,21 @@ export default defineNuxtConfig({
           "'unsafe-inline'",
           "https://mc.yandex.ru",
           "https://mc.yandex.com",
+          // Static swap script for the deferred stylesheet <link> (see
+          // server/plugins/defer-css.ts) — a fixed hash instead of the
+          // per-request nonce because nuxt-security's own render:html hook
+          // unconditionally re-stamps a nonce onto every <script> tag it
+          // finds (no "already has one" guard, unlike its <link> handling);
+          // adding a second nonce ourselves produced a literal
+          // `nonce="x" nonce="x"` duplicate that Chrome's CSP check
+          // silently treated as no nonce at all, blocking the script even
+          // though `script.nonce` still read the right value (confirmed
+          // live). A hash source is checked independently of nonce, so it
+          // passes regardless of what nuxt-security does to the tag
+          // afterward — the exact script text must stay byte-for-byte
+          // identical to defer-css.ts's template or this hash stops
+          // matching.
+          "'sha256-LClkmdPyhfpBExyf0OZQUkjpl8oeLCBHvuIh12lG2F8='",
         ],
         "script-src-attr": ["'none'"],
         // Vue's :style bindings compile to inline style="..." attributes —
@@ -159,6 +174,7 @@ export default defineNuxtConfig({
     // this cache expiring.
     "/fonts/**": { headers: { "cache-control": "public, max-age=31536000, immutable" } },
     "/sounds/**": { headers: { "cache-control": "public, max-age=31536000, immutable" } },
+    "/favicon.ico": { headers: { "cache-control": "public, max-age=31536000, immutable" } },
   },
 
   runtimeConfig: {
