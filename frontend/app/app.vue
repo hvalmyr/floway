@@ -26,21 +26,20 @@ useHead({
   htmlAttrs: {
     lang: "ru",
   },
-  // Preloads every self-hosted font file the initial SSR HTML actually
-  // matches somewhere in the DOM (not just the hero's own headings/body
-  // text) so the browser starts fetching all of them immediately instead
-  // of discovering each one only once it parses the @font-face rules
-  // (fonts.css, now inlined — see nuxt.config.ts's features.inlineStyles).
-  // Used to be just SoyuzGrotesk-Bold + NonBureau-Regular on the theory
-  // that only the hero needed fonts fast; a real PageSpeed audit showed
-  // the other three NonBureau weights (badges, form labels, ... —
-  // rendered lower on the page but still part of the same SSR payload)
-  // showing up as a ~1.1s critical-path chain instead, because the
-  // browser doesn't need visibility to discover a matched @font-face, only
-  // a DOM match, and the whole page's DOM is already there from SSR.
-  // font-display: swap (see fonts.css) already avoids a render block
-  // either way — this only shortens how long matched text shows in the
-  // fallback face.
+  // Preloads only the two font files the hero/header need for first paint
+  // (headings + body text, both above the fold) — deliberately NOT every
+  // font the page's DOM matches somewhere. That was tried (preloading
+  // NonBureau-Light/Medium/Bold too, for badges/form labels further down
+  // the page) to close a ~1.1s font critical-path chain PageSpeed flagged;
+  // confirmed live it backfired — those extra fonts are fetched at the
+  // browser's "Highest" priority (same as these two), competing with the
+  // hero image's own fetch (only "High" priority even with
+  // fetchpriority="high") for the same bandwidth, and desktop LCP measurably
+  // got WORSE (resource load delay alone exceeded the *previous total* LCP).
+  // font-display: swap (see fonts.css) already means below-the-fold text
+  // never blocks on its font either way — worst case with only these two
+  // preloaded is a brief fallback-face flash on text nobody's scrolled to
+  // yet, which is strictly cheaper than delaying the LCP image.
   link: [
     {
       rel: "preload",
@@ -54,27 +53,6 @@ useHead({
       as: "font",
       type: "font/woff2",
       href: "/fonts/NonBureau-Regular.woff2",
-      crossorigin: "anonymous",
-    },
-    {
-      rel: "preload",
-      as: "font",
-      type: "font/woff2",
-      href: "/fonts/NonBureau-Light.woff2",
-      crossorigin: "anonymous",
-    },
-    {
-      rel: "preload",
-      as: "font",
-      type: "font/woff2",
-      href: "/fonts/NonBureau-Medium.woff2",
-      crossorigin: "anonymous",
-    },
-    {
-      rel: "preload",
-      as: "font",
-      type: "font/woff2",
-      href: "/fonts/NonBureau-Bold.woff2",
       crossorigin: "anonymous",
     },
     { rel: "canonical", href: canonicalHref },
