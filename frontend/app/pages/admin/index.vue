@@ -25,11 +25,13 @@ const editingGroups: EditingGroup[] = [
       { to: "/admin/thank-you-page", label: "Страница благодарности" },
       { to: "/admin/page-content/apply-form-titles", label: "Заголовки формы заявки" },
       { to: "/admin/icons", label: "Библиотека иконок" },
+      { to: "/admin/site-buttons", label: "Кнопки сайта" },
     ],
   },
   {
     title: "Главная",
     links: [
+      { to: "/admin/page-content/home-sections", label: "Порядок и видимость секций" },
       { to: "/admin/page-content/home", label: "Пробное занятие" },
       { to: "/admin/teachers", label: "Преподаватели" },
       { to: "/admin/about-items", label: "О школе" },

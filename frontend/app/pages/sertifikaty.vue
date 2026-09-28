@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { SiteButtonVariant } from "~/types/api";
+
 useSeoMeta({
   title: "Подарочный мастер-класс — Фловей",
   description:
@@ -16,12 +18,14 @@ const faqAsync = useAsyncData("gift-certificate-faq", () => api.getPageFaq("gift
 const carouselPhotosAsync = useAsyncData("gift-certificate-carousel-photos", () =>
   api.getGiftCertificateCarouselPhotos(),
 );
+const siteButtonsAsync = useAsyncData("site-buttons", () => api.getSiteButtons());
 
 const [{ text }] = await Promise.all([
   usePageContent(),
   featuresAsync,
   faqAsync,
   carouselPhotosAsync,
+  siteButtonsAsync,
 ]);
 
 const { data: featuresData } = featuresAsync;
@@ -37,6 +41,29 @@ const advantages = computed(
       ?.slice()
       .sort((a, b) => a.sortOrder - b.sortOrder)
       .map((f) => ({ icon: f.icon, title: f.title, description: f.description })) ?? [],
+);
+
+// Static Hero CTA buttons — text/style/link editable at /admin/site-buttons.
+const { data: siteButtonsData } = siteButtonsAsync;
+const siteButtonsByKey = computed(
+  () => new Map((siteButtonsData.value ?? []).map((b) => [b.key, b])),
+);
+function siteButton(
+  key: string,
+  fallback: { text: string; variant: SiteButtonVariant; url: string },
+) {
+  const found = siteButtonsByKey.value.get(key);
+  return found ? { text: found.text, variant: found.variant, url: found.url } : fallback;
+}
+const applyButton = computed(() =>
+  siteButton("sertifikaty_apply", { text: "Оставить заявку", variant: "primary", url: "#apply" }),
+);
+const masterclassesButton = computed(() =>
+  siteButton("sertifikaty_masterclasses", {
+    text: "Мастер-классы",
+    variant: "outline",
+    url: "/masterclasses",
+  }),
 );
 </script>
 
@@ -55,8 +82,12 @@ const advantages = computed(
         }}
       </template>
       <template #actions>
-        <UiButton variant="primary" to="#apply">Оставить заявку</UiButton>
-        <UiButton variant="outline" to="/masterclasses">Мастер-классы</UiButton>
+        <UiButton :variant="applyButton.variant" :to="applyButton.url">{{
+          applyButton.text
+        }}</UiButton>
+        <UiButton :variant="masterclassesButton.variant" :to="masterclassesButton.url">{{
+          masterclassesButton.text
+        }}</UiButton>
       </template>
       <template v-if="text('gift_certificate_hero_image')" #media>
         <UiHeroPicture

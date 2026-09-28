@@ -161,6 +161,8 @@ func run(logger *slog.Logger) error {
 		GiftCertificate:              service.NewGiftCertificateService(repository.NewGiftCertificateRepository(pool)),
 		Icon:                         service.NewIconService(repository.NewIconRepository(pool)),
 		ContentExport:                service.NewContentExportService(pool, garageClient),
+		HomeSection:                  service.NewHomeSectionService(repository.NewHomeSectionRepository(pool)),
+		SiteButton:                   service.NewSiteButtonService(repository.NewSiteButtonRepository(pool)),
 
 		Storage: garageClient,
 		DB:      pool,

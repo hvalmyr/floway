@@ -14,11 +14,13 @@ import type {
   FeaturePage,
   GalleryPhoto,
   GiftCertificateCarouselPhoto,
+  HomeSection,
   Icon,
   Lead,
   Masterclass,
   PageContent,
   PageFaq,
+  SiteButton,
   SocialLink,
   Teacher,
   ThankYouPage,
@@ -311,6 +313,34 @@ export function useApi() {
     }
   }
 
+  /**
+   * GET /api/v1/home-sections — public, no auth. Order/visibility of the
+   * homepage's blocks below Hero (home_section_handler.go's list route has
+   * no admin middleware) — see useSiteHomeSections() for the composable
+   * pages/index.vue actually renders from.
+   */
+  async function getHomeSections(): Promise<HomeSection[]> {
+    try {
+      return await client<HomeSection[]>("/api/v1/home-sections");
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/site-buttons — public, no auth. Text/style/link for the
+   * site's static standalone CTA buttons (site_button_handler.go's list
+   * route has no admin middleware) — see useSiteButtons() for the
+   * key-lookup helper components use.
+   */
+  async function getSiteButtons(): Promise<SiteButton[]> {
+    try {
+      return await client<SiteButton[]>("/api/v1/site-buttons");
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
   /** POST /api/v1/leads — this route is real and public (see lead_handler.go). */
   async function submitApplication(payload: ApplicationPayload): Promise<Lead> {
     try {
@@ -338,6 +368,8 @@ export function useApi() {
     getSocialLinks,
     getBlogPosts,
     getBlogPost,
+    getHomeSections,
+    getSiteButtons,
     submitApplication,
   };
 }

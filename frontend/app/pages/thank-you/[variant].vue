@@ -35,6 +35,12 @@ useSeoMeta({ title: () => `${page.value?.title ?? "Спасибо за заяв�
 
 const { contactChannels } = await useContactChannels();
 const { socialLinks } = await useSocialLinks();
+const { button } = await useSiteButtons();
+
+// Static "back to home" button — text/style/link editable at /admin/site-buttons.
+const homeButton = computed(() =>
+  button("thank_you_home", { text: "Вернуться на главную", variant: "primary", url: "/" }),
+);
 
 const carouselPhotos = computed(
   () => page.value?.photos.slice().sort((a, b) => a.sortOrder - b.sortOrder) ?? [],
@@ -70,7 +76,9 @@ const faqItems = computed(
             >
               {{ page.blogLinkText || "Читать блог" }}
             </UiButton>
-            <UiButton variant="primary" to="/">Вернуться на главную</UiButton>
+            <UiButton :variant="homeButton.variant" :to="homeButton.url">{{
+              homeButton.text
+            }}</UiButton>
           </div>
         </div>
         <div class="order-1 lg:order-2 lg:w-1/2">

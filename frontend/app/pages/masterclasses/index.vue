@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { masterclassDisplayStyleCycle } from "~/constants/display-style-colors";
+import type { SiteButtonVariant } from "~/types/api";
 
 useSeoMeta({
   title: "Мастер-классы по флористике в Москве — Фловей",
@@ -17,17 +18,41 @@ const featuresAsync = useAsyncData("masterclasses-features", () =>
   api.getFeatures("masterclasses"),
 );
 const faqAsync = useAsyncData("masterclasses-faq", () => api.getPageFaq("masterclasses"));
+const siteButtonsAsync = useAsyncData("site-buttons", () => api.getSiteButtons());
 
 const [{ text }] = await Promise.all([
   usePageContent(),
   masterclassesAsync,
   featuresAsync,
   faqAsync,
+  siteButtonsAsync,
 ]);
 
 const { data: masterclasses } = masterclassesAsync;
 const { data: featuresData } = featuresAsync;
 const { data: faq } = faqAsync;
+const { data: siteButtonsData } = siteButtonsAsync;
+function siteButton(
+  key: string,
+  fallback: { text: string; variant: SiteButtonVariant; url: string },
+) {
+  const found = siteButtonsData.value?.find((b) => b.key === key);
+  return found ? { text: found.text, variant: found.variant, url: found.url } : fallback;
+}
+const listButton = computed(() =>
+  siteButton("masterclasses_hero_list", {
+    text: "Мастер-классы",
+    variant: "primary",
+    url: "#masterclasses-list",
+  }),
+);
+const applyButton = computed(() =>
+  siteButton("masterclasses_hero_apply", {
+    text: "Оставить заявку",
+    variant: "outline",
+    url: "#apply",
+  }),
+);
 
 // Set by whichever MasterclassCard's "Записаться" was clicked last — there's
 // one shared ApplyForm below the whole list (not one per card), so this is
@@ -57,8 +82,12 @@ const features = computed(
         }}
       </template>
       <template #actions>
-        <UiButton variant="primary" to="#masterclasses-list">Мастер-классы</UiButton>
-        <UiButton variant="outline" to="#apply">Оставить заявку</UiButton>
+        <UiButton :variant="listButton.variant" :to="listButton.url">{{
+          listButton.text
+        }}</UiButton>
+        <UiButton :variant="applyButton.variant" :to="applyButton.url">{{
+          applyButton.text
+        }}</UiButton>
       </template>
       <template v-if="text('masterclasses_hero_image')" #media>
         <UiHeroPicture :src="resolveOptimizedMediaUrl(text('masterclasses_hero_image'))" alt="" />

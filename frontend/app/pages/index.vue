@@ -1,5 +1,17 @@
 <script setup lang="ts">
-import type { CourseSectionWithCourses } from "~/types/api";
+import type { Component } from "vue";
+import {
+  GiftCertificateMarquee,
+  HomeAboutSection,
+  HomeCoursesSection,
+  HomeFaqSection,
+  HomeFeaturesSection,
+  HomeGallerySection,
+  HomeReviewsSection,
+  HomeTeachersSection,
+  HomeTrialSection,
+} from "#components";
+import type { CourseSectionWithCourses, HomeSectionKey, SiteButtonVariant } from "~/types/api";
 
 useSeoMeta({
   title: "Фловей — школа флористики в Москве",
@@ -11,9 +23,9 @@ const api = useApi();
 const { text } = await usePageContent();
 const { glassClass } = await useTreeMode();
 
-// These 7 calls hit independent backend endpoints, so they're fired
+// These 9 calls hit independent backend endpoints, so they're fired
 // together and awaited via Promise.all instead of one `await` per call —
-// awaiting each individually made SSR wait through 7 sequential
+// awaiting each individually made SSR wait through several sequential
 // round-trips before sending any HTML, directly delaying TTFB (and with it
 // the hero image's LCP) on the page that gets the most traffic.
 const courseSectionsAsync = useAsyncData("home-course-sections", () => api.getCourseSections());
@@ -25,6 +37,8 @@ const aboutItemsAsync = useAsyncData("home-about-items", () => api.getAboutItems
 const galleryPhotosAsync = useAsyncData("home-gallery-photos", () => api.getGalleryPhotos());
 const teachersAsync = useAsyncData("home-teachers", () => api.getTeachers());
 const faqAsync = useAsyncData("home-faq", () => api.getFAQItems());
+const homeSectionsAsync = useAsyncData("home-sections", () => api.getHomeSections());
+const siteButtonsAsync = useAsyncData("site-buttons", () => api.getSiteButtons());
 
 await Promise.all([
   courseSectionsAsync,
@@ -34,6 +48,8 @@ await Promise.all([
   galleryPhotosAsync,
   teachersAsync,
   faqAsync,
+  homeSectionsAsync,
+  siteButtonsAsync,
 ]);
 
 const { data: courseSectionsData } = courseSectionsAsync;
@@ -100,14 +116,68 @@ const teachers = computed(
 
 const { data: faqData } = faqAsync;
 const faqItems = computed(() => faqData.value ?? []);
-const openFaqIds = ref<Array<string | number>>([0]);
 
-function capitalizeName(name: string): string {
-  return name
-    .split(" ")
-    .map((part) => (part ? part[0]!.toUpperCase() + part.slice(1) : part))
-    .join(" ");
+/**
+ * Order/visibility of every homepage block below Hero, admin-managed at
+ * /admin/page-content/home-sections. Hero itself is always shown, first,
+ * and isn't part of home_sections at all.
+ */
+const { data: homeSectionsData } = homeSectionsAsync;
+const visibleHomeSections = computed(() =>
+  (homeSectionsData.value ?? [])
+    .filter((section) => section.visible)
+    .slice()
+    .sort((a, b) => a.sortOrder - b.sortOrder),
+);
+
+const HOME_SECTION_COMPONENTS: Record<HomeSectionKey, Component> = {
+  features: HomeFeaturesSection,
+  gallery: HomeGallerySection,
+  courses: HomeCoursesSection,
+  gift_certificates: GiftCertificateMarquee,
+  trial: HomeTrialSection,
+  about: HomeAboutSection,
+  teachers: HomeTeachersSection,
+  reviews: HomeReviewsSection,
+  faq: HomeFaqSection,
+};
+
+const sectionProps = computed<Record<HomeSectionKey, Record<string, unknown>>>(() => ({
+  features: { text, features: features.value },
+  gallery: { photos: galleryPhotos.value },
+  courses: { courseSections: courseSections.value, sectionCards },
+  gift_certificates: {},
+  trial: { text, glassClass: glassClass.value },
+  about: { aboutItems: aboutItems.value },
+  teachers: { teachers: teachers.value, glassClass: glassClass.value },
+  reviews: {},
+  faq: { faqItems: faqItems.value },
+}));
+
+/**
+ * Text/style/link for the site's static standalone CTA buttons — admin-
+ * managed at /admin/site-buttons. `fallback` renders if a key is somehow
+ * missing (migration not run yet). Fetched in the Promise.all batch above
+ * (not via useSiteButtons()) so it doesn't add a sequential round-trip on
+ * top of the homepage's other 8 parallel calls.
+ */
+const { data: siteButtonsData } = siteButtonsAsync;
+const siteButtonsByKey = computed(
+  () => new Map((siteButtonsData.value ?? []).map((b) => [b.key, b])),
+);
+function siteButton(
+  key: string,
+  fallback: { text: string; variant: SiteButtonVariant; url: string },
+) {
+  const found = siteButtonsByKey.value.get(key);
+  return found ? { text: found.text, variant: found.variant, url: found.url } : fallback;
 }
+const heroCoursesButton = computed(() =>
+  siteButton("home_hero_courses", { text: "Курсы", variant: "primary", url: "/#courses" }),
+);
+const heroTrialButton = computed(() =>
+  siteButton("home_hero_trial", { text: "Пробное занятие", variant: "outline", url: "/#trial" }),
+);
 </script>
 
 <template>
@@ -123,228 +193,23 @@ function capitalizeName(name: string): string {
         }}
       </template>
       <template #actions>
-        <UiButton variant="primary" to="/#courses">Курсы</UiButton>
-        <UiButton variant="outline" to="/#trial">Пробное занятие</UiButton>
+        <UiButton :variant="heroCoursesButton.variant" :to="heroCoursesButton.url">{{
+          heroCoursesButton.text
+        }}</UiButton>
+        <UiButton :variant="heroTrialButton.variant" :to="heroTrialButton.url">{{
+          heroTrialButton.text
+        }}</UiButton>
       </template>
       <template v-if="text('home_hero_image')" #media>
         <UiHeroPicture :src="resolveOptimizedMediaUrl(text('home_hero_image'))" alt="" />
       </template>
     </Hero>
 
-    <section class="bg-surface/55 py-48 backdrop-blur backdrop-saturate-150 sm:py-64 lg:py-80">
-      <div class="container flex flex-col gap-48">
-        <SectionHeading color="primary" on-glass>
-          {{ text("home_features_heading", "Почему стоит учиться в школе «Фловей»?") }}
-          <template #lead>
-            {{
-              text(
-                "home_features_lead",
-                "Мы создали школу, в которой удобно учиться, легко развиваться и получать реальные практические навыки флористики.",
-              )
-            }}
-          </template>
-        </SectionHeading>
-        <FeatureGrid :items="features" />
-      </div>
-    </section>
-
-    <section v-if="galleryPhotos.length" class="py-48 sm:py-64 lg:py-80">
-      <div class="container">
-        <PhotoCarousel :photos="galleryPhotos" />
-      </div>
-    </section>
-
-    <section
-      v-for="(section, sIndex) in courseSections"
-      :id="sIndex === 0 ? 'courses' : undefined"
+    <component
+      :is="HOME_SECTION_COMPONENTS[section.key]"
+      v-for="section in visibleHomeSections"
       :key="section.id"
-      class="py-48 sm:py-64 lg:py-80"
-      :class="sIndex === 0 ? 'scroll-mt-64 lg:scroll-mt-96' : ''"
-    >
-      <div class="container flex flex-col gap-48">
-        <SectionHeading :color="sIndex % 2 === 0 ? 'primary' : 'ink'">
-          {{ section.heading }}
-          <template #lead>{{ section.description }}</template>
-        </SectionHeading>
-        <div class="flex flex-wrap justify-center gap-24 lg:gap-32">
-          <CourseCard
-            v-for="card in sectionCards(section)"
-            :key="card.key"
-            :name="card.name"
-            :display-style="card.displayStyle"
-            :custom-colors="card.customColors"
-            :block-label="card.blockLabel"
-            :lesson-count="card.lessonCount"
-            :time-length="card.timeLength"
-            :price="card.price"
-            :cover-image="card.coverImage"
-            :to="card.to"
-            class="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-22px)]"
-          />
-        </div>
-      </div>
-    </section>
-
-    <GiftCertificateMarquee />
-
-    <section id="trial" class="scroll-mt-64 py-48 sm:py-64 lg:scroll-mt-96 lg:py-80">
-      <div class="container flex flex-col gap-48">
-        <SectionHeading color="primary">
-          {{ text("trial_section_heading", "Попробуйте флористику на практике") }}
-          <template #lead>
-            {{
-              text(
-                "trial_section_description",
-                "Вы научитесь собирать круглый букет в спиральной технике: поймёте принцип работы со спиралью, научитесь уверенно удерживать букет в руках во время сборки и правильно подвязывать букет. Кроме практики, вы сможете познакомиться с нашим педагогом, узнать, как проходят занятия в школе, задать все интересующие вопросы и понять, подходит ли вам обучение.",
-              )
-            }}
-          </template>
-        </SectionHeading>
-
-        <div class="grid grid-cols-1 gap-32 md:grid-cols-2 md:gap-64">
-          <div class="order-2 flex w-full flex-col gap-24 md:order-1">
-            <div class="flex flex-col gap-16 rounded-md px-16 py-24" :class="glassClass">
-              <h3 class="font-body text-h4 text-ink">
-                {{ text("trial_heading", "Пробное занятие") }}
-              </h3>
-              <!-- Single \n (not \n\n) so duration+price render as one tight
-              paragraph with a <br> between them, not two separately-spaced
-              ones — otherwise the gap between them (markdown paragraph
-              margin) was bigger than the gap to the heading above, so
-              duration read as grouped with "Пробное занятие" instead of
-              with the price right under it. -->
-              <MarkdownContent
-                :source="
-                  text('trial_description', 'Продолжительность: 2,5 часа.\nСтоимость: 3 000 ₽.')
-                "
-              />
-            </div>
-            <LazyApplyForm context="trial_lesson" title="" bare class="w-full" hydrate-on-visible />
-          </div>
-          <!-- TODO: заменить на видео с пробным уроком, когда оно будет готово (пока фото). -->
-          <!-- Портретное 9:16, растянуто до ширины колонки — но не выше 80%
-          экрана: max-h ограничивает высоту, а aspect-ratio при этом сжимает
-          и ширину пропорционально, так что соотношение сторон не ломается
-          (стандартное поведение aspect-ratio + max-height у браузера, без
-          JS). mx-auto центрирует, когда из-за max-h ширина не дотягивает до
-          полной колонки. min-h-0 — эта колонка ещё и grid-item, а
-          min-height:auto по умолчанию у grid/flex-item позволяет
-          собственному соотношению сторон загруженного фото (если оно не
-          9:16) перебить aspect-ratio и растянуть блок; см. коммит с
-          разбором в CourseCard.vue. -->
-          <UiContentImage
-            v-if="text('home_trial_image')"
-            :src="resolveOptimizedMediaUrl(text('home_trial_image'))"
-            alt=""
-            class="order-1 mx-auto aspect-[9/16] max-h-[80vh] max-w-full min-h-0 rounded-lg object-cover md:sticky md:top-96 md:order-2"
-            sizes="400:100vw md:50vw"
-          />
-          <div
-            v-else
-            class="order-1 mx-auto aspect-[9/16] max-h-[80vh] max-w-full rounded-lg bg-primary md:sticky md:top-96 md:order-2"
-          />
-        </div>
-      </div>
-    </section>
-
-    <section id="about" class="scroll-mt-64 py-48 sm:py-64 lg:scroll-mt-96 lg:py-80">
-      <div class="container flex flex-col gap-48">
-        <SectionHeading>О школе</SectionHeading>
-        <!-- Бежевая карточка-обёртка вокруг списка (flex-column, не грид);
-        каждый пункт — отдельная белая строка, растянутая на всю ширину
-        обёртки. -->
-        <div class="rounded-lg bg-surface/55 p-24 backdrop-blur backdrop-saturate-150 sm:p-32">
-          <div class="flex flex-col items-start gap-24">
-            <div
-              v-for="item in aboutItems"
-              :key="item.id"
-              class="flex w-full flex-col items-start gap-16 rounded-md bg-white p-32"
-            >
-              <UiBadge>{{ item.badge }}</UiBadge>
-              <p class="whitespace-pre-line font-body text-body text-ink">
-                {{ item.description }}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="py-48 sm:py-64 lg:py-80">
-      <div class="container flex flex-col gap-48">
-        <SectionHeading>Педагоги</SectionHeading>
-        <div class="flex flex-wrap justify-center gap-24">
-          <div
-            v-for="(teacher, index) in teachers"
-            :key="teacher.id"
-            class="flex w-full flex-col items-center gap-16 md:w-[calc((100%-48px)/3)]"
-          >
-            <UiContentImage
-              v-if="teacher.photo"
-              :src="resolveOptimizedMediaUrl(teacher.photo)"
-              :alt="teacher.name"
-              class="aspect-square w-full min-h-0 rounded-lg object-cover"
-              sizes="400:100vw md:33vw"
-            />
-            <div
-              v-else
-              class="aspect-square w-full rounded-lg"
-              :class="index % 2 === 0 ? 'bg-primary' : 'bg-surface'"
-            />
-            <!-- Тот же размер, что и у заголовков преимуществ, текста кнопок
-            и вопросов FAQ (text-h4), но шрифт Non Bureau (не Soyuz Grotesk) и
-            Medium, а не Bold. -->
-            <p
-              class="w-full rounded-md py-12 text-center font-body text-h4 font-medium"
-              :class="[glassClass, index % 2 === 0 ? 'text-primary' : 'text-ink']"
-            >
-              {{ capitalizeName(teacher.name) }}
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="bg-surface/55 py-48 backdrop-blur backdrop-saturate-150 sm:py-64 lg:py-80">
-      <div class="container flex flex-col gap-48">
-        <SectionHeading color="primary" on-glass>
-          Отзывы
-          <template #lead
-            >Смотрите отзывы о школе на Яндекс Картах — заходите оставить свой.</template
-          >
-        </SectionHeading>
-        <!-- Официальный виджет отзывов Яндекс Карт — сам виджет задаёт
-        style width:100%/height:100% (заказчик прислал), поэтому обёртка
-        ниже даёт ему конкретную высоту, внутри которой он растягивается. -->
-        <div class="mx-auto h-[950px] w-full max-w-[400px]">
-          <iframe
-            src="https://yandex.ru/maps-reviews-widget/83657275642?comments"
-            title="Отзывы о школе «Фловей» на Яндекс Картах"
-            loading="lazy"
-            style="
-              width: 100%;
-              height: 100%;
-              border: 1px solid #e6e6e6;
-              border-radius: 8px;
-              box-sizing: border-box;
-            "
-          />
-        </div>
-      </div>
-    </section>
-
-    <section class="py-48 sm:py-64 lg:py-80">
-      <div class="container flex flex-col gap-48">
-        <SectionHeading color="primary">
-          Вопросы и ответы
-          <template #lead>Отвечаем на часто задаваемые вопросы.</template>
-        </SectionHeading>
-        <UiAccordion v-model="openFaqIds">
-          <UiAccordionItem v-for="(item, i) in faqItems" :key="i" :id="i" :title="item.question">
-            <MarkdownContent :source="item.answer" />
-          </UiAccordionItem>
-        </UiAccordion>
-      </div>
-    </section>
+      v-bind="sectionProps[section.key]"
+    />
   </div>
 </template>

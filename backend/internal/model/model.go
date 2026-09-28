@@ -810,3 +810,32 @@ type AdminUser struct {
 	TokenVersion int       `db:"token_version" json:"-"`
 	CreatedAt    time.Time `db:"created_at" json:"createdAt"`
 }
+
+// HomeSection is one of the reorderable/hideable blocks of the homepage
+// below the Hero (Hero itself is always shown, first, and isn't part of
+// this list — see pages/index.vue on the frontend). Rows are seeded by
+// migration 00063 with a fixed Key per block; Key is never created or
+// deleted through the API, only reordered/hidden via Update.
+type HomeSection struct {
+	ID        int64     `db:"id" json:"id"`
+	Key       string    `db:"key" json:"key"`
+	Visible   bool      `db:"visible" json:"visible"`
+	SortOrder int       `db:"sort_order" json:"sortOrder"`
+	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
+}
+
+// SiteButton is one of the site's static, standalone CTA buttons (the ones
+// with a fixed destination, not a per-item link like a course card's "go to
+// course" or a form's submit button) — text, style and target URL are all
+// admin-editable. Rows are seeded by migration 00064 with a fixed Key per
+// button; Key is never created or deleted through the API, only updated.
+type SiteButton struct {
+	Key string `db:"key" json:"key"`
+	// Admin-facing description of where this button appears (e.g. "Главная — Hero — «Курсы»").
+	Label string `db:"label" json:"label"`
+	Text  string `db:"text" json:"text"`
+	// One of UiButton.vue's variants: "primary" or "outline".
+	Variant   string    `db:"variant" json:"variant"`
+	URL       string    `db:"url" json:"url"`
+	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
+}

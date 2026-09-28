@@ -34,10 +34,16 @@ const slug = route.params.slug as string;
 const api = useApi();
 const { data: post } = await useAsyncData(`blog-post-${slug}`, () => api.getBlogPost(slug));
 const { glassClass } = await useTreeMode();
+const { button } = await useSiteButtons();
 
 if (!post.value) {
   throw createError({ statusCode: 404, statusMessage: "Статья не найдена", fatal: true });
 }
+
+// Static "back to blog" button — text/style/link editable at /admin/site-buttons.
+const backButton = computed(() =>
+  button("blog_back", { text: "Ко всем статьям", variant: "outline", url: "/blog" }),
+);
 
 // resolveMediaUrl() reads useRuntimeConfig(), which needs the active Nuxt
 // app context — safe here (still inside <script setup>'s synchronous body),
@@ -83,9 +89,9 @@ function formatDate(dateString: string | null) {
               <span v-if="post.publishedAt">{{ formatDate(post.publishedAt) }}</span>
             </p>
           </div>
-          <UiButton variant="outline" to="/blog" block class="mt-auto">
+          <UiButton :variant="backButton.variant" :to="backButton.url" block class="mt-auto">
             <ArrowLeft class="size-24" aria-hidden="true" />
-            Ко всем статьям
+            {{ backButton.text }}
           </UiButton>
         </div>
         <div class="order-1 lg:order-2 lg:w-1/2">

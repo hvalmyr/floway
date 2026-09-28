@@ -1,19 +1,22 @@
 <script setup lang="ts">
-import type { CourseBlockWithLessons } from "~/types/api";
+import type { CourseBlockWithLessons, SiteButtonVariant } from "~/types/api";
 
 const route = useRoute();
 const slug = route.params.slug as string;
 
 const api = useApi();
 // The course fetch determines the hero image (this page's LCP element), so
-// it's fired alongside the page-content/tree-mode fetches instead of after
-// them — awaiting each in turn meant SSR waited through 2 sequential
-// backend round-trips before it could even start rendering the hero.
+// it's fired alongside the page-content/tree-mode/site-buttons fetches
+// instead of after them — awaiting each in turn meant SSR waited through
+// several sequential backend round-trips before it could even start
+// rendering the hero.
 const courseAsync = useAsyncData(`course-${slug}`, () => api.getCourse(slug));
+const siteButtonsAsync = useAsyncData("site-buttons", () => api.getSiteButtons());
 const [{ text }, { glassClass }] = await Promise.all([
   usePageContent(),
   useTreeMode(),
   courseAsync,
+  siteButtonsAsync,
 ]);
 const { data: course } = courseAsync;
 
@@ -56,6 +59,19 @@ const openLessonIds = ref<Record<number, Array<string | number>>>(
     course.value!.blocks.map((b) => [b.id, b.lessons.length ? [b.lessons[0]!.id] : []]),
   ),
 );
+
+// Static Hero CTA button — text/style/link editable at /admin/site-buttons.
+const { data: siteButtonsData } = siteButtonsAsync;
+function siteButton(
+  key: string,
+  fallback: { text: string; variant: SiteButtonVariant; url: string },
+) {
+  const found = siteButtonsData.value?.find((b) => b.key === key);
+  return found ? { text: found.text, variant: found.variant, url: found.url } : fallback;
+}
+const applyButton = computed(() =>
+  siteButton("course_detail_apply", { text: "Оставить заявку", variant: "primary", url: "#apply" }),
+);
 </script>
 
 <template>
@@ -64,7 +80,9 @@ const openLessonIds = ref<Record<number, Array<string | number>>>(
       <template #title>Курс “{{ course.name }}”</template>
       <template #lead>{{ course.description }}</template>
       <template #actions>
-        <UiButton variant="primary" to="#apply">Оставить заявку</UiButton>
+        <UiButton :variant="applyButton.variant" :to="applyButton.url">{{
+          applyButton.text
+        }}</UiButton>
       </template>
       <template v-if="heroCover" #media>
         <UiHeroPicture :src="resolveOptimizedMediaUrl(heroCover)" :alt="course.name" />

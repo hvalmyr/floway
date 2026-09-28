@@ -87,6 +87,8 @@ type Services struct {
 	NotificationEmail            *service.NotificationEmailService
 	Icon                         *service.IconService
 	ContentExport                *service.ContentExportService
+	HomeSection                  *service.HomeSectionService
+	SiteButton                   *service.SiteButtonService
 
 	Storage *storage.Client
 	// DB is used only by /readyz. Reaching into the pool directly here (not
@@ -204,6 +206,8 @@ func NewRouter(services Services) http.Handler {
 			r.Route("/about-items", newAboutItemHandler(services.AboutItem, admin).routes)
 			r.Route("/social-links", newSocialLinkHandler(services.SocialLink, admin).routes)
 			r.Route("/icons", newIconHandler(services.Icon, admin).routes)
+			r.Route("/home-sections", newHomeSectionHandler(services.HomeSection, admin).routes)
+			r.Route("/site-buttons", newSiteButtonHandler(services.SiteButton, admin).routes)
 		})
 	})
 

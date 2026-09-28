@@ -225,6 +225,50 @@ export interface PageContent {
 export type FeaturePage = "home" | "masterclasses" | "gift_certificate";
 
 /**
+ * Shape returned by GET /api/v1/home-sections (admin: full list; public
+ * homepage: same list, filtered to `visible` and sorted by `sortOrder` on
+ * the frontend — see pages/index.vue). `key` identifies which homepage
+ * block this row controls (Hero itself isn't one of these — it's always
+ * shown, first).
+ */
+export type HomeSectionKey =
+  | "features"
+  | "gallery"
+  | "courses"
+  | "gift_certificates"
+  | "trial"
+  | "about"
+  | "teachers"
+  | "reviews"
+  | "faq";
+
+export interface HomeSection {
+  id: number;
+  key: HomeSectionKey;
+  visible: boolean;
+  sortOrder: number;
+}
+
+/** UiButton.vue's `variant` prop — the only two button styles the site has. */
+export type SiteButtonVariant = "primary" | "outline";
+
+/**
+ * Shape returned by GET /api/v1/site-buttons (public, no auth). One of the
+ * site's static, standalone CTA buttons — text/style/link are all
+ * admin-editable via PUT /api/v1/site-buttons/{key}. See useSiteButtons()
+ * for the key-lookup helper components use, same pattern as
+ * usePageContent()'s `text()`.
+ */
+export interface SiteButton {
+  key: string;
+  label: string;
+  text: string;
+  variant: SiteButtonVariant;
+  url: string;
+  updatedAt: string;
+}
+
+/**
  * An icon value (Feature.icon, a page_content row of type "icon") is either
  * a bare key into FEATURE_ICONS (constants/feature-icons.ts, e.g. "gift")
  * or "icon:<id>" referencing an uploaded Icon below — see AppIcon.vue,
