@@ -134,6 +134,7 @@ const openLessonIds = ref<Record<number, Array<string | number>>>(
             :related-slug="course.slug"
             :title="text('course_apply_form_title', 'Записаться на курс')"
             :lead="text('course_apply_form_lead', '')"
+            hydrate-on-visible
           />
         </div>
       </div>

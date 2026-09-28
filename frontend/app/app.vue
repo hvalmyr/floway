@@ -26,13 +26,21 @@ useHead({
   htmlAttrs: {
     lang: "ru",
   },
-  // Preloads the two font files every page's first paint actually needs
-  // (headings + body text, both above the fold in the header/hero) so the
-  // browser starts fetching them immediately instead of waiting to
-  // discover the @font-face rules in fonts.css after CSSOM is built.
-  // font-display: swap (see fonts.css) already avoids a render block, so
-  // this only shortens how long text shows in the fallback face — not a
-  // correctness fix, just less visible font-swap.
+  // Preloads every self-hosted font file the initial SSR HTML actually
+  // matches somewhere in the DOM (not just the hero's own headings/body
+  // text) so the browser starts fetching all of them immediately instead
+  // of discovering each one only once it parses the @font-face rules
+  // (fonts.css, now inlined — see nuxt.config.ts's features.inlineStyles).
+  // Used to be just SoyuzGrotesk-Bold + NonBureau-Regular on the theory
+  // that only the hero needed fonts fast; a real PageSpeed audit showed
+  // the other three NonBureau weights (badges, form labels, ... —
+  // rendered lower on the page but still part of the same SSR payload)
+  // showing up as a ~1.1s critical-path chain instead, because the
+  // browser doesn't need visibility to discover a matched @font-face, only
+  // a DOM match, and the whole page's DOM is already there from SSR.
+  // font-display: swap (see fonts.css) already avoids a render block
+  // either way — this only shortens how long matched text shows in the
+  // fallback face.
   link: [
     {
       rel: "preload",
@@ -46,6 +54,27 @@ useHead({
       as: "font",
       type: "font/woff2",
       href: "/fonts/NonBureau-Regular.woff2",
+      crossorigin: "anonymous",
+    },
+    {
+      rel: "preload",
+      as: "font",
+      type: "font/woff2",
+      href: "/fonts/NonBureau-Light.woff2",
+      crossorigin: "anonymous",
+    },
+    {
+      rel: "preload",
+      as: "font",
+      type: "font/woff2",
+      href: "/fonts/NonBureau-Medium.woff2",
+      crossorigin: "anonymous",
+    },
+    {
+      rel: "preload",
+      as: "font",
+      type: "font/woff2",
+      href: "/fonts/NonBureau-Bold.woff2",
       crossorigin: "anonymous",
     },
     { rel: "canonical", href: canonicalHref },

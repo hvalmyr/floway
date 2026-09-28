@@ -19,18 +19,23 @@ import type { ContactMethod, LeadRequestType, LeadSource } from "~/types/api";
  * embed on the home page already sits under its own section heading and
  * doesn't need a second one), set it per caller where a subhead helps.
  *
- * Always mounted as <LazyApplyForm> at its call sites (never plain
- * <ApplyForm>) — vee-validate/zod/libphonenumber-js pull in a genuinely
- * heavy chunk (confirmed live via PageSpeed Insights: ~270KB, the single
- * biggest contributor to desktop TBT) for a form that's below the fold on
- * every page that has it. Nuxt's Lazy* wrapper only defers the client
- * hydration chunk, not SSR — the form still renders fully in the initial
- * HTML either way, so this costs nothing but a slightly later interactive
- * moment for a form nobody's reached yet.
+ * Always mounted as <LazyApplyForm ... hydrate-on-visible> at its call
+ * sites (never plain <ApplyForm>, never bare <LazyApplyForm>) —
+ * vee-validate/zod/libphonenumber-js pull in a genuinely heavy chunk
+ * (confirmed live via PageSpeed Insights: ~270KB, the single biggest
+ * contributor to desktop TBT) for a form that's below the fold on every
+ * page that has it. SSR is unaffected either way — the form still renders
+ * fully in the initial HTML — but plain <LazyApplyForm> alone still has
+ * Nuxt emit a `modulepreload` for the chunk right away, which PageSpeed
+ * then flags as unused JS on a page load that never scrolls to it.
+ * `hydrate-on-visible` (Vue's built-in delayed-hydration strategy) goes
+ * further: Nuxt excludes it from that preload list entirely (see
+ * `~lazyHydratedModules` in its renderer), so the chunk isn't even
+ * requested until the form actually scrolls into view.
  *
  * @example
- * <LazyApplyForm context="course" :related-id="course.id" :related-slug="course.slug" title="Записаться на курс" />
- * <LazyApplyForm context="trial_lesson" title="Пробное занятие" bare />
+ * <LazyApplyForm context="course" :related-id="course.id" :related-slug="course.slug" title="Записаться на курс" hydrate-on-visible />
+ * <LazyApplyForm context="trial_lesson" title="Пробное занятие" bare hydrate-on-visible />
  */
 const props = withDefaults(
   defineProps<{

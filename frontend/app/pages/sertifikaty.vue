@@ -101,6 +101,7 @@ const advantages = computed(
             :lead="
               text('gift_certificate_apply_form_lead', 'Свяжемся с вами и оформим сертификат.')
             "
+            hydrate-on-visible
           />
         </div>
       </div>

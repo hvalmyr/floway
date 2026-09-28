@@ -105,6 +105,7 @@ const features = computed(
             :related-slug="selectedSlug"
             :title="text('masterclasses_apply_form_title', 'Оставить заявку на мастер-класс')"
             :lead="text('masterclasses_apply_form_lead', '')"
+            hydrate-on-visible
           />
         </div>
       </div>
