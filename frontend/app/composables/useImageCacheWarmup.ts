@@ -27,7 +27,7 @@ const HERO_SIZES = "400:100vw lg:576px";
 // One entry per distinct sizes= currently passed to UiContentImage
 // (CourseCard, MasterclassCard, index.vue x2, blog/[slug], blog/index).
 const CONTENT_SIZES = [
-  "400:100vw sm:50vw lg:400px",
+  "400:80vw sm:40vw lg:300px",
   "400:100vw lg:38vw",
   "400:100vw md:50vw",
   "400:100vw md:33vw",
