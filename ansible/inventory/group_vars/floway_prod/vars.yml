@@ -56,6 +56,7 @@ yandex_metrika_id: "40686419"
 yandex_verification: "5c52a869de8140b1"
 # TODO: код подтверждения прав на сайт из Google Search Console
 google_site_verification: ""
+pinterest_verification: "e134719b372d8ee15641e25428af3496"
 
 # --- Общий Caddy для двух сайтов на одном VPS (см. docs/decor-site-audit.md §5) ---
 # floway_prod — единственная группа, которая рендерит и рестартует Caddy
