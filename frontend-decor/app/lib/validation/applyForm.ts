@@ -19,17 +19,35 @@ const baseFields = {
   format: z.enum(["season", "event"], {
     required_error: "Пожалуйста, выберите формат",
   }),
+  // Only shown (and required) once `source` is "social" — see
+  // ApplyForm.vue's conditional UiSelect.
+  socialNetwork: z.enum(["telegram", "vk", "pinterest", "instagram", "youtube"]).optional(),
 };
+
+function requireSocialNetwork(
+  data: { source: string; socialNetwork?: string },
+  ctx: z.RefinementCtx,
+) {
+  if (data.source === "social" && !data.socialNetwork) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["socialNetwork"],
+      message: "Пожалуйста, укажите соц. сеть",
+    });
+  }
+}
 
 /** Used when the form has no preset object type (the home page) — the
  * visitor picks one from ApplyForm's own select. */
-export const applyFormSchemaWithObjectType = z.object({
-  ...baseFields,
-  objectTypeId: z.string().min(1, "Пожалуйста, выберите тип объекта"),
-});
+export const applyFormSchemaWithObjectType = z
+  .object({
+    ...baseFields,
+    objectTypeId: z.string().min(1, "Пожалуйста, выберите тип объекта"),
+  })
+  .superRefine(requireSocialNetwork);
 
 /** Used when embedded on a landing page — objectTypeId comes from the page
  * itself (a prop), not a form field, so there's nothing to validate here. */
-export const applyFormSchema = z.object(baseFields);
+export const applyFormSchema = z.object(baseFields).superRefine(requireSocialNetwork);
 
 export type ApplyFormValues = z.infer<typeof applyFormSchemaWithObjectType>;

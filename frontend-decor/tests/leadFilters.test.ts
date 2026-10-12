@@ -322,6 +322,21 @@ describe("formatLeadExcerpt", () => {
     const item = makeItem({ requestType: "trial_lesson", relatedSlug: "", source: "internet" });
     expect(formatLeadExcerpt(item)).toBe("Пробный урок · Интернет");
   });
+
+  it("appends the specific platform for a social-media source", () => {
+    const item = makeItem({
+      requestType: "trial_lesson",
+      relatedSlug: "",
+      source: "social",
+      socialNetwork: "vk",
+    });
+    expect(formatLeadExcerpt(item)).toBe("Пробный урок · Соцсети · ВКонтакте");
+  });
+
+  it("omits the platform segment for a social-media source with none recorded", () => {
+    const item = makeItem({ requestType: "trial_lesson", relatedSlug: "", source: "social" });
+    expect(formatLeadExcerpt(item)).toBe("Пробный урок · Соцсети");
+  });
 });
 
 describe("sortLeads", () => {

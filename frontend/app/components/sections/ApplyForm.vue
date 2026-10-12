@@ -3,7 +3,7 @@ import { toTypedSchema } from "@vee-validate/zod";
 import { useDebounceFn } from "@vueuse/core";
 import { useForm } from "vee-validate";
 import { applyFormSchema } from "~/lib/validation/applyForm";
-import type { ContactMethod, LeadRequestType, LeadSource } from "~/types/api";
+import type { ContactMethod, LeadRequestType, LeadSource, SocialNetwork } from "~/types/api";
 
 /**
  * Reusable lead-capture form embedded on the home page (trial lesson), a
@@ -97,10 +97,10 @@ onMounted(() => {
 
 const saveDraft = useDebounceFn(() => {
   if (!import.meta.client) return;
-  const { name, phone, email, contactMethod, source } = values;
+  const { name, phone, email, contactMethod, source, socialNetwork } = values;
   localStorage.setItem(
     draftStorageKey,
-    JSON.stringify({ name, phone, email, contactMethod, source }),
+    JSON.stringify({ name, phone, email, contactMethod, source, socialNetwork }),
   );
 }, 300);
 
@@ -130,6 +130,17 @@ const sourceOptions = computed(() => [
   { value: "maps", label: text("apply_form_source_maps", "В картах") },
 ]);
 
+const socialNetworkOptions = computed(() => [
+  { value: "telegram", label: text("apply_form_social_network_telegram", "Telegram") },
+  { value: "vk", label: text("apply_form_social_network_vk", "ВКонтакте") },
+  { value: "pinterest", label: text("apply_form_social_network_pinterest", "Pinterest") },
+  {
+    value: "instagram",
+    label: text("apply_form_social_network_instagram", "Запрещённая соц. сеть"),
+  },
+  { value: "youtube", label: text("apply_form_social_network_youtube", "YouTube") },
+]);
+
 const onSubmit = handleSubmit(async (values) => {
   status.value = "idle";
   submitError.value = "";
@@ -143,6 +154,8 @@ const onSubmit = handleSubmit(async (values) => {
       // not something the Lead model has a column for.
       contactMethod: values.contactMethod as ContactMethod,
       source: values.source as LeadSource,
+      socialNetwork:
+        values.source === "social" ? (values.socialNetwork as SocialNetwork) : undefined,
       requestType: props.context,
       relatedId: props.relatedId,
       relatedSlug: props.relatedSlug,
@@ -230,6 +243,21 @@ const onSubmit = handleSubmit(async (values) => {
           :label="text('apply_form_source_label', 'Как вы о нас узнали?')"
           required
           :options="sourceOptions"
+        />
+      </div>
+      <div
+        v-if="values.source === 'social'"
+        :class="
+          bare
+            ? `rounded-md px-16 py-16 has-[[aria-expanded=true]]:relative has-[[aria-expanded=true]]:z-30 ${glassClass}`
+            : ''
+        "
+      >
+        <UiSelect
+          name="socialNetwork"
+          :label="text('apply_form_social_network_label', 'В какой соц. сети?')"
+          required
+          :options="socialNetworkOptions"
         />
       </div>
 

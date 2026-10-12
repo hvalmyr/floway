@@ -516,6 +516,22 @@ const (
 	LeadSourceMaps     LeadSource = "maps"
 )
 
+// SocialNetwork is only meaningful when Source is LeadSourceSocial — which
+// platform the lead found the school through. SocialNetworkInstagram is
+// labeled on the frontend as a disclaimer-safe generic name ("Запрещённая
+// соц. сеть") rather than "Instagram" itself, since Meta is recognized as
+// extremist and banned in Russia — same convention as socialLinks in
+// contact-info.ts.
+type SocialNetwork string
+
+const (
+	SocialNetworkTelegram  SocialNetwork = "telegram"
+	SocialNetworkVK        SocialNetwork = "vk"
+	SocialNetworkPinterest SocialNetwork = "pinterest"
+	SocialNetworkInstagram SocialNetwork = "instagram"
+	SocialNetworkYoutube   SocialNetwork = "youtube"
+)
+
 type LeadRequestType string
 
 const (
@@ -589,6 +605,8 @@ type Lead struct {
 	// leads referencing it un-deletable/un-listable.
 	ObjectTypeID *int64     `db:"object_type_id" json:"objectTypeId,omitempty"`
 	Format       LeadFormat `db:"format" json:"format,omitempty"`
+	// SocialNetwork is blank unless Source is LeadSourceSocial.
+	SocialNetwork SocialNetwork `db:"social_network" json:"socialNetwork,omitempty"`
 	// UTM*/YClid are ad-tracking params carried straight from the landing
 	// page's query string into the lead (п. 9 ТЗ decor-site) — free text,
 	// never validated against a fixed set, since campaign/content/term names

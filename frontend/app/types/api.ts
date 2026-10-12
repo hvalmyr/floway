@@ -435,6 +435,11 @@ export interface ThankYouPage {
 
 export type ContactMethod = "call" | "telegram" | "whatsapp" | "max";
 export type LeadSource = "referral" | "ads" | "internet" | "social" | "maps";
+// Only meaningful when LeadSource is "social" — "instagram" is labeled on
+// the form as "Запрещённая соц. сеть" rather than named outright, since
+// Meta is recognized as extremist and banned in Russia (same convention as
+// socialLinks in constants/contact-info.ts).
+export type SocialNetwork = "telegram" | "vk" | "pinterest" | "instagram" | "youtube";
 export type LeadRequestType = "course" | "masterclass" | "trial_lesson" | "gift_certificate";
 
 /** Thank-you page variants — identical to LeadRequestType, since the page a
@@ -449,6 +454,8 @@ export interface ApplicationPayload {
   email?: string;
   contactMethod: ContactMethod;
   source: LeadSource;
+  /** Required when source is "social", omitted otherwise. */
+  socialNetwork?: SocialNetwork;
   requestType: LeadRequestType;
   relatedId?: number;
   /** The course/masterclass slug the visitor was looking at — lets the

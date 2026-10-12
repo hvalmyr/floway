@@ -25,6 +25,14 @@ var validLeadSources = map[model.LeadSource]struct{}{
 	model.LeadSourceMaps:     {},
 }
 
+var validSocialNetworks = map[model.SocialNetwork]struct{}{
+	model.SocialNetworkTelegram:  {},
+	model.SocialNetworkVK:        {},
+	model.SocialNetworkPinterest: {},
+	model.SocialNetworkInstagram: {},
+	model.SocialNetworkYoutube:   {},
+}
+
 var validLeadRequestTypes = map[model.LeadRequestType]struct{}{
 	model.LeadRequestTypeCourse:          {},
 	model.LeadRequestTypeMasterclass:     {},
@@ -171,6 +179,16 @@ func (s *LeadService) Create(ctx context.Context, item model.Lead) (model.Lead, 
 	}
 	if _, ok := validLeadSources[item.Source]; !ok {
 		return model.Lead{}, errors.Join(ErrValidation, errors.New("invalid source"))
+	}
+	// Only the "found us on social media" source carries a specific
+	// platform — every other source leaves it blank, even if the client
+	// sent one.
+	if item.Source == model.LeadSourceSocial {
+		if _, ok := validSocialNetworks[item.SocialNetwork]; !ok {
+			return model.Lead{}, errors.Join(ErrValidation, errors.New("invalid social network"))
+		}
+	} else {
+		item.SocialNetwork = ""
 	}
 	if _, ok := validLeadRequestTypes[item.RequestType]; !ok {
 		return model.Lead{}, errors.Join(ErrValidation, errors.New("invalid request type"))

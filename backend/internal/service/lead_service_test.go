@@ -327,6 +327,61 @@ func TestLeadService_Create(t *testing.T) {
 		assert.ErrorIs(t, err, service.ErrValidation)
 	})
 
+	t.Run("accepts a social source with a valid social network", func(t *testing.T) {
+		repo := newFakeLeadRepository()
+		svc := service.NewLeadService(repo, newFakeClientRepository(), nil, nil, nil)
+
+		item := validLead()
+		item.Source = model.LeadSourceSocial
+		item.SocialNetwork = model.SocialNetworkVK
+
+		lead, err := svc.Create(context.Background(), item)
+
+		require.NoError(t, err)
+		assert.Equal(t, model.SocialNetworkVK, lead.SocialNetwork)
+	})
+
+	t.Run("rejects a social source with no social network", func(t *testing.T) {
+		repo := newFakeLeadRepository()
+		svc := service.NewLeadService(repo, newFakeClientRepository(), nil, nil, nil)
+
+		item := validLead()
+		item.Source = model.LeadSourceSocial
+
+		_, err := svc.Create(context.Background(), item)
+
+		require.Error(t, err)
+		assert.ErrorIs(t, err, service.ErrValidation)
+	})
+
+	t.Run("rejects a social source with an invalid social network", func(t *testing.T) {
+		repo := newFakeLeadRepository()
+		svc := service.NewLeadService(repo, newFakeClientRepository(), nil, nil, nil)
+
+		item := validLead()
+		item.Source = model.LeadSourceSocial
+		item.SocialNetwork = "myspace"
+
+		_, err := svc.Create(context.Background(), item)
+
+		require.Error(t, err)
+		assert.ErrorIs(t, err, service.ErrValidation)
+	})
+
+	t.Run("discards a social network submitted for a non-social source", func(t *testing.T) {
+		repo := newFakeLeadRepository()
+		svc := service.NewLeadService(repo, newFakeClientRepository(), nil, nil, nil)
+
+		item := validLead()
+		item.Source = model.LeadSourceAds
+		item.SocialNetwork = model.SocialNetworkVK
+
+		lead, err := svc.Create(context.Background(), item)
+
+		require.NoError(t, err)
+		assert.Empty(t, lead.SocialNetwork)
+	})
+
 	t.Run("forces status to new regardless of input", func(t *testing.T) {
 		repo := newFakeLeadRepository()
 		svc := service.NewLeadService(repo, newFakeClientRepository(), nil, nil, nil)

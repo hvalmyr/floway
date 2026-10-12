@@ -16,6 +16,18 @@ export const sourceLabels: Record<string, string> = {
   maps: "Карты",
 };
 
+// Only set on leads whose source is "social" — see sourceLabels above.
+// "instagram" is labeled as a disclaimer-safe generic name rather than
+// "Instagram" itself, since Meta is recognized as extremist and banned in
+// Russia (same convention as socialLinks in constants/contact-info.ts).
+export const socialNetworkLabels: Record<string, string> = {
+  telegram: "Telegram",
+  vk: "ВКонтакте",
+  pinterest: "Pinterest",
+  instagram: "Запрещённая соц. сеть",
+  youtube: "YouTube",
+};
+
 // course/masterclass/trial_lesson/gift_certificate are the school's values —
 // kept here (unused by this frontend's own LeadRequestType, which only ever
 // sends "decor") purely so leadFilters.test.ts's copied coverage of

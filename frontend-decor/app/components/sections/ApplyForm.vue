@@ -3,7 +3,7 @@ import { toTypedSchema } from "@vee-validate/zod";
 import { useDebounceFn } from "@vueuse/core";
 import { useForm } from "vee-validate";
 import { applyFormSchema, applyFormSchemaWithObjectType } from "~/lib/validation/applyForm";
-import type { ContactMethod, LeadFormat, LeadSource, ObjectType } from "~/types/api";
+import type { ContactMethod, LeadFormat, LeadSource, ObjectType, SocialNetwork } from "~/types/api";
 
 /**
  * Decor site's lead-capture form (single request type — see
@@ -80,10 +80,19 @@ onMounted(() => {
 
 const saveDraft = useDebounceFn(() => {
   if (!import.meta.client) return;
-  const { name, phone, email, contactMethod, source, format, objectTypeId } = values;
+  const { name, phone, email, contactMethod, source, socialNetwork, format, objectTypeId } = values;
   localStorage.setItem(
     draftStorageKey,
-    JSON.stringify({ name, phone, email, contactMethod, source, format, objectTypeId }),
+    JSON.stringify({
+      name,
+      phone,
+      email,
+      contactMethod,
+      source,
+      socialNetwork,
+      format,
+      objectTypeId,
+    }),
   );
 }, 300);
 
@@ -111,6 +120,17 @@ const sourceOptions = computed(() => [
   { value: "internet", label: text("apply_form_source_internet", "В интернете") },
   { value: "social", label: text("apply_form_source_social", "В социальных сетях") },
   { value: "maps", label: text("apply_form_source_maps", "В картах") },
+]);
+
+const socialNetworkOptions = computed(() => [
+  { value: "telegram", label: text("apply_form_social_network_telegram", "Telegram") },
+  { value: "vk", label: text("apply_form_social_network_vk", "ВКонтакте") },
+  { value: "pinterest", label: text("apply_form_social_network_pinterest", "Pinterest") },
+  {
+    value: "instagram",
+    label: text("apply_form_social_network_instagram", "Запрещённая соц. сеть"),
+  },
+  { value: "youtube", label: text("apply_form_social_network_youtube", "YouTube") },
 ]);
 
 const formatOptions = computed(() => [
@@ -141,6 +161,8 @@ const onSubmit = handleSubmit(async (values) => {
       email: values.email || undefined,
       contactMethod: values.contactMethod as ContactMethod,
       source: values.source as LeadSource,
+      socialNetwork:
+        values.source === "social" ? (values.socialNetwork as SocialNetwork) : undefined,
       requestType: "decor",
       objectTypeId: props.objectTypeId ?? Number(values.objectTypeId),
       format: values.format as LeadFormat,
@@ -261,6 +283,21 @@ const onSubmit = handleSubmit(async (values) => {
           :label="text('apply_form_source_label', 'Как вы о нас узнали?')"
           required
           :options="sourceOptions"
+        />
+      </div>
+      <div
+        v-if="values.source === 'social'"
+        :class="
+          bare
+            ? 'rounded-md bg-white/55 px-16 py-16 backdrop-blur backdrop-saturate-150 has-[[aria-expanded=true]]:relative has-[[aria-expanded=true]]:z-30'
+            : ''
+        "
+      >
+        <UiSelect
+          name="socialNetwork"
+          :label="text('apply_form_social_network_label', 'В какой соц. сети?')"
+          required
+          :options="socialNetworkOptions"
         />
       </div>
 

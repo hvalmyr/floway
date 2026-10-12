@@ -29,14 +29,27 @@ const baseFields = {
  * Every ApplyForm instance (home page trial lesson, course pages,
  * masterclass pages): name/phone/email/consent + both selects, all required.
  */
-export const applyFormSchema = z.object({
-  ...baseFields,
-  contactMethod: z.enum(["call", "telegram", "whatsapp", "max"], {
-    required_error: "Пожалуйста, выберите способ связи",
-  }),
-  source: z.enum(["referral", "ads", "internet", "social", "maps"], {
-    required_error: "Пожалуйста, укажите, как вы о нас узнали",
-  }),
-});
+export const applyFormSchema = z
+  .object({
+    ...baseFields,
+    contactMethod: z.enum(["call", "telegram", "whatsapp", "max"], {
+      required_error: "Пожалуйста, выберите способ связи",
+    }),
+    source: z.enum(["referral", "ads", "internet", "social", "maps"], {
+      required_error: "Пожалуйста, укажите, как вы о нас узнали",
+    }),
+    // Only shown (and required) once `source` is "social" — see
+    // ApplyForm.vue's conditional UiSelect.
+    socialNetwork: z.enum(["telegram", "vk", "pinterest", "instagram", "youtube"]).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.source === "social" && !data.socialNetwork) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["socialNetwork"],
+        message: "Пожалуйста, укажите соц. сеть",
+      });
+    }
+  });
 
 export type ApplyFormValues = z.infer<typeof applyFormSchema>;

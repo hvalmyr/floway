@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { LEAD_STATUS_LABELS } from "~/lib/leadStatus";
-import { contactMethodLabels, requestTypeLabels, sourceLabels } from "~/lib/leadLabels";
+import {
+  contactMethodLabels,
+  requestTypeLabels,
+  socialNetworkLabels,
+  sourceLabels,
+} from "~/lib/leadLabels";
 import type { ClientDetail } from "~/types/api";
 
 definePageMeta({ layout: "admin", middleware: "admin-auth" });
@@ -216,7 +221,13 @@ async function onDeleteClient() {
               <template v-if="request.relatedName || request.relatedSlug">
                 · {{ request.relatedName || request.relatedSlug }}</template
               >
-              · {{ sourceLabels[request.source] ?? request.source }} ·
+              · {{ sourceLabels[request.source] ?? request.source }}
+              <template v-if="request.source === 'social' && request.socialNetwork">
+                ({{
+                  socialNetworkLabels[request.socialNetwork] ?? request.socialNetwork
+                }})</template
+              >
+              ·
               {{ contactMethodLabels[request.contactMethod] ?? request.contactMethod }}
             </p>
           </div>

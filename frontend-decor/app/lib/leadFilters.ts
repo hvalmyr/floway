@@ -1,5 +1,5 @@
 import type { LeadListItem, LeadStatus } from "~/types/api";
-import { requestTypeLabels, sourceLabels } from "./leadLabels";
+import { requestTypeLabels, socialNetworkLabels, sourceLabels } from "./leadLabels";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -23,6 +23,12 @@ export function formatLeadExcerpt(item: LeadListItem): string {
   const program = item.relatedName || item.relatedSlug;
   if (program) parts.push(program);
   parts.push(sourceLabels[item.source] ?? item.source);
+  // Only "social" leads carry a specific platform — see
+  // socialNetworkLabels for why "instagram" renders as a disclaimer-safe
+  // generic name rather than being named outright.
+  if (item.source === "social" && item.socialNetwork) {
+    parts.push(socialNetworkLabels[item.socialNetwork] ?? item.socialNetwork);
+  }
   return parts.join(" · ");
 }
 

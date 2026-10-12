@@ -40,6 +40,7 @@ type leadCreateRequest struct {
 	Email         string                `json:"email"`
 	ContactMethod model.ContactMethod   `json:"contactMethod"`
 	Source        model.LeadSource      `json:"source"`
+	SocialNetwork model.SocialNetwork   `json:"socialNetwork,omitempty"`
 	RequestType   model.LeadRequestType `json:"requestType"`
 	RelatedID     *int64                `json:"relatedId,omitempty"`
 	RelatedSlug   string                `json:"relatedSlug"`
@@ -79,6 +80,7 @@ func (h *leadHandler) create(w http.ResponseWriter, r *http.Request) {
 		Email:         req.Email,
 		ContactMethod: req.ContactMethod,
 		Source:        req.Source,
+		SocialNetwork: req.SocialNetwork,
 		RequestType:   req.RequestType,
 		RelatedID:     req.RelatedID,
 		RelatedSlug:   req.RelatedSlug,

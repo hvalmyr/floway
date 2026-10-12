@@ -72,4 +72,22 @@ describe("applyFormSchema", () => {
     const result = applyFormSchema.safeParse(rest);
     expect(result.success).toBe(false);
   });
+
+  it("rejects source: social with no socialNetwork", () => {
+    const result = applyFormSchema.safeParse({ ...validPayload, source: "social" });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts source: social with a valid socialNetwork", () => {
+    const result = applyFormSchema.safeParse({
+      ...validPayload,
+      source: "social",
+      socialNetwork: "vk",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("doesn't require socialNetwork for a non-social source", () => {
+    expect(applyFormSchema.safeParse(validPayload).success).toBe(true);
+  });
 });
