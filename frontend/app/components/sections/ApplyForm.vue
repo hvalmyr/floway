@@ -122,23 +122,28 @@ const contactMethodOptions = computed(() => [
   { value: "max", label: text("apply_form_contact_method_max", "Напишите мне в Max") },
 ]);
 
+// The "social" option's chips (which network specifically) expand inline
+// under it inside UiSelect's own popup — see chip-field-name="socialNetwork"
+// below — rather than a second field appearing once the select closes.
 const sourceOptions = computed(() => [
   { value: "referral", label: text("apply_form_source_referral", "По рекомендации") },
   { value: "ads", label: text("apply_form_source_ads", "Реклама") },
   { value: "internet", label: text("apply_form_source_internet", "В интернете") },
-  { value: "social", label: text("apply_form_source_social", "В социальных сетях") },
-  { value: "maps", label: text("apply_form_source_maps", "В картах") },
-]);
-
-const socialNetworkOptions = computed(() => [
-  { value: "telegram", label: text("apply_form_social_network_telegram", "Telegram") },
-  { value: "vk", label: text("apply_form_social_network_vk", "ВКонтакте") },
-  { value: "pinterest", label: text("apply_form_social_network_pinterest", "Pinterest") },
   {
-    value: "instagram",
-    label: text("apply_form_social_network_instagram", "Запрещённая соц. сеть"),
+    value: "social",
+    label: text("apply_form_source_social", "В социальных сетях"),
+    chips: [
+      { value: "telegram", label: text("apply_form_social_network_telegram", "Telegram") },
+      { value: "vk", label: text("apply_form_social_network_vk", "ВКонтакте") },
+      { value: "pinterest", label: text("apply_form_social_network_pinterest", "Pinterest") },
+      { value: "youtube", label: text("apply_form_social_network_youtube", "YouTube") },
+      {
+        value: "instagram",
+        label: text("apply_form_social_network_instagram", "Запрещенограм*"),
+      },
+    ],
   },
-  { value: "youtube", label: text("apply_form_social_network_youtube", "YouTube") },
+  { value: "maps", label: text("apply_form_source_maps", "В картах") },
 ]);
 
 const onSubmit = handleSubmit(async (values) => {
@@ -243,21 +248,7 @@ const onSubmit = handleSubmit(async (values) => {
           :label="text('apply_form_source_label', 'Как вы о нас узнали?')"
           required
           :options="sourceOptions"
-        />
-      </div>
-      <div
-        v-if="values.source === 'social'"
-        :class="
-          bare
-            ? `rounded-md px-16 py-16 has-[[aria-expanded=true]]:relative has-[[aria-expanded=true]]:z-30 ${glassClass}`
-            : ''
-        "
-      >
-        <UiSelect
-          name="socialNetwork"
-          :label="text('apply_form_social_network_label', 'В какой соц. сети?')"
-          required
-          :options="socialNetworkOptions"
+          chip-field-name="socialNetwork"
         />
       </div>
 

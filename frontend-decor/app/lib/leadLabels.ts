@@ -24,7 +24,7 @@ export const socialNetworkLabels: Record<string, string> = {
   telegram: "Telegram",
   vk: "ВКонтакте",
   pinterest: "Pinterest",
-  instagram: "Запрещённая соц. сеть",
+  instagram: "Запрещенограм*",
   youtube: "YouTube",
 };
 
