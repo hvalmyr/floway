@@ -57,6 +57,9 @@ useHead({
     ...(publicConfig.googleSiteVerification
       ? [{ name: "google-site-verification", content: publicConfig.googleSiteVerification }]
       : []),
+    ...(publicConfig.pinterestVerification
+      ? [{ name: "p:domain_verify", content: publicConfig.pinterestVerification }]
+      : []),
     ...(nonce ? [{ name: "csp-nonce", content: nonce }] : []),
   ],
 });

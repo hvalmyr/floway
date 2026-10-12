@@ -211,6 +211,7 @@ export default defineNuxtConfig({
       yandexMetrikaId: process.env.NUXT_PUBLIC_YANDEX_METRIKA_ID || "",
       yandexVerification: process.env.NUXT_PUBLIC_YANDEX_VERIFICATION || "",
       googleSiteVerification: process.env.NUXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "",
+      pinterestVerification: process.env.NUXT_PUBLIC_PINTEREST_VERIFICATION || "",
     },
   },
 
