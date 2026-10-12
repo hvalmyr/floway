@@ -59,6 +59,7 @@ type Services struct {
 	Teacher                      *service.TeacherService
 	BlogPost                     *service.BlogPostService
 	Masterclass                  *service.MasterclassService
+	MasterclassCategory          *service.MasterclassCategoryService
 	CourseSection                *service.CourseSectionService
 	Course                       *service.CourseService
 	CourseBlock                  *service.CourseBlockService
@@ -172,6 +173,7 @@ func NewRouter(services Services) http.Handler {
 			r.Route("/teachers", newTeacherHandler(services.Teacher, admin).routes)
 			r.Route("/blog-posts", newBlogPostHandler(services.BlogPost, services.Tokens, services.AdminUser, admin).routes)
 			r.Route("/masterclasses", newMasterclassHandler(services.Masterclass, admin).routes)
+			r.Route("/masterclass-categories", newMasterclassCategoryHandler(services.MasterclassCategory, admin).routes)
 			courseHdl := newCourseHandler(services.Course, services.CourseCatalog, admin)
 			r.Route("/course-sections", func(r chi.Router) {
 				newCourseSectionHandler(services.CourseSection, services.CourseCatalog, admin).routes(r)

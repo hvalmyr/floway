@@ -42,6 +42,7 @@ type masterclassRequest struct {
 	Price        string                  `json:"price"`
 	CoverImage   string                  `json:"coverImage"`
 	Status       model.MasterclassStatus `json:"status"`
+	CategoryID   *int64                  `json:"categoryId"`
 }
 
 func (h *masterclassHandler) list(w http.ResponseWriter, r *http.Request) {
@@ -81,6 +82,7 @@ func (h *masterclassHandler) create(w http.ResponseWriter, r *http.Request) {
 		Price:        req.Price,
 		CoverImage:   req.CoverImage,
 		Status:       req.Status,
+		CategoryID:   req.CategoryID,
 	})
 	if err != nil {
 		writeServiceError(w, r, err)
@@ -113,6 +115,7 @@ func (h *masterclassHandler) update(w http.ResponseWriter, r *http.Request) {
 		Price:        req.Price,
 		CoverImage:   req.CoverImage,
 		Status:       req.Status,
+		CategoryID:   req.CategoryID,
 	})
 	if err != nil {
 		writeServiceError(w, r, err)

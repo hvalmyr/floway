@@ -18,6 +18,7 @@ import type {
   Icon,
   Lead,
   Masterclass,
+  MasterclassCategory,
   PageContent,
   PageFaq,
   SiteButton,
@@ -92,6 +93,20 @@ export function useApi() {
     if (useMocks) return mockGetMasterClasses();
     try {
       return await client<Masterclass[]>("/api/v1/masterclasses");
+    } catch (err) {
+      throw toApiError(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/masterclass-categories — public, no auth. The tabs shown
+   * above the masterclasses list (masterclass_category_handler.go's list
+   * route has no admin middleware), already sorted by sortOrder. No mocks
+   * fallback: no design brief existed for this shape before it was built.
+   */
+  async function getMasterclassCategories(): Promise<MasterclassCategory[]> {
+    try {
+      return await client<MasterclassCategory[]>("/api/v1/masterclass-categories");
     } catch (err) {
       throw toApiError(err);
     }
@@ -354,6 +369,7 @@ export function useApi() {
     getCourseSections,
     getCourse,
     getMasterClasses,
+    getMasterclassCategories,
     getTeachers,
     getGalleryPhotos,
     getCustomDisplayStyles,

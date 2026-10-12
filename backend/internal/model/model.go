@@ -303,8 +303,25 @@ type Masterclass struct {
 	Price      string            `db:"price" json:"price"`
 	CoverImage string            `db:"cover_image" json:"coverImage"`
 	Status     MasterclassStatus `db:"status" json:"status"`
-	CreatedAt  time.Time         `db:"created_at" json:"createdAt"`
-	UpdatedAt  time.Time         `db:"updated_at" json:"updatedAt"`
+	// CategoryID groups masterclasses into the public page's tabs (see
+	// MasterclassCategory below). Nullable — ON DELETE SET NULL on the FK
+	// means a deleted category never takes its masterclasses down with it.
+	CategoryID *int64    `db:"category_id" json:"categoryId"`
+	CreatedAt  time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt  time.Time `db:"updated_at" json:"updatedAt"`
+}
+
+// MasterclassCategory is an admin-managed tab on the public masterclasses
+// page (e.g. "Основные", "Новогодние") — flat dictionary, same shape as
+// ObjectType minus Visible (every category is its own tab; there's no
+// hidden/draft state to filter out client-side).
+type MasterclassCategory struct {
+	ID        int64     `db:"id" json:"id"`
+	Slug      string    `db:"slug" json:"slug"`
+	Name      string    `db:"name" json:"name"`
+	SortOrder int       `db:"sort_order" json:"sortOrder"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
 }
 
 type Teacher struct {

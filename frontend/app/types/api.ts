@@ -204,6 +204,16 @@ export interface Masterclass {
   price?: string;
   coverImage: string;
   status: MasterclassStatus;
+  /** Which tab (see MasterclassCategory) this masterclass shows under on the public page. */
+  categoryId: number | null;
+}
+
+/** An admin-managed tab on the public masterclasses page (e.g. "Основные", "Новогодние"). */
+export interface MasterclassCategory {
+  id: number;
+  slug: string;
+  name: string;
+  sortOrder: number;
 }
 
 /**

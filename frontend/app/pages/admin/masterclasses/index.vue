@@ -1,6 +1,13 @@
 <script setup lang="ts">
 definePageMeta({ layout: "admin", middleware: "admin-auth" });
 
+interface MasterclassCategory {
+  id: number;
+  slug: string;
+  name: string;
+  sortOrder: number;
+}
+
 interface Masterclass {
   id: number;
   slug: string;
@@ -12,6 +19,7 @@ interface Masterclass {
   price: string;
   coverImage: string;
   status: "active" | "archived";
+  categoryId: number | null;
 }
 
 const emptyForm = (): Omit<Masterclass, "id"> => ({
@@ -24,10 +32,16 @@ const emptyForm = (): Omit<Masterclass, "id"> => ({
   price: "",
   coverImage: "",
   status: "active",
+  categoryId: null,
 });
 
 const { items, loading, error, fetchAll, create, update, remove } =
   useAdminResource<Masterclass>("/api/v1/masterclasses");
+
+const { items: categories, fetchAll: fetchCategories } = useAdminResource<MasterclassCategory>(
+  "/api/v1/masterclass-categories",
+);
+await fetchCategories();
 
 const editingId = ref<number | null>(null);
 const form = ref(emptyForm());
@@ -35,6 +49,10 @@ const saving = ref(false);
 const formError = ref("");
 
 await fetchAll();
+
+// New masterclasses default to the first category (currently "Основные")
+// instead of landing on no category at all.
+form.value.categoryId = categories.value[0]?.id ?? null;
 
 // Auto-fills slug from title for a brand-new masterclass, right up until
 // the user types into the slug field themselves — editing an existing
@@ -60,12 +78,14 @@ function startEdit(masterclass: Masterclass) {
     price: masterclass.price,
     coverImage: masterclass.coverImage,
     status: masterclass.status,
+    categoryId: masterclass.categoryId,
   };
 }
 
 function cancelEdit() {
   editingId.value = null;
   form.value = emptyForm();
+  form.value.categoryId = categories.value[0]?.id ?? null;
   slugTouched.value = false;
 }
 
@@ -103,6 +123,7 @@ async function onDuplicate(masterclass: Masterclass) {
     price: masterclass.price,
     coverImage: masterclass.coverImage,
     status: "archived",
+    categoryId: masterclass.categoryId,
   });
 }
 
@@ -186,6 +207,12 @@ async function onBulkDelete() {
         <option value="active">Активен</option>
         <option value="archived">В архиве</option>
       </select>
+      <select v-model="form.categoryId" class="rounded border border-gray-300 px-3 py-2">
+        <option :value="null">Без категории</option>
+        <option v-for="category in categories" :key="category.id" :value="category.id">
+          {{ category.name }}
+        </option>
+      </select>
 
       <p v-if="formError" class="text-sm text-red-600 sm:col-span-2">{{ formError }}</p>
 
@@ -242,6 +269,7 @@ async function onBulkDelete() {
           <th class="px-4 py-2">Заголовок</th>
           <th class="px-4 py-2">Slug</th>
           <th class="px-4 py-2">Цена</th>
+          <th class="px-4 py-2">Категория</th>
           <th class="px-4 py-2">Статус</th>
           <th class="px-4 py-2" />
         </tr>
@@ -263,6 +291,9 @@ async function onBulkDelete() {
           <td class="px-4 py-2">{{ masterclass.title }}</td>
           <td class="px-4 py-2">{{ masterclass.slug }}</td>
           <td class="px-4 py-2">{{ masterclass.price }}</td>
+          <td class="px-4 py-2">
+            {{ categories.find((c) => c.id === masterclass.categoryId)?.name ?? "—" }}
+          </td>
           <td class="px-4 py-2">{{ masterclass.status === "active" ? "Активен" : "В архиве" }}</td>
           <td class="flex gap-3 px-4 py-2 text-right">
             <button
@@ -283,7 +314,7 @@ async function onBulkDelete() {
           </td>
         </tr>
         <tr v-if="filteredItems.length === 0">
-          <td colspan="6" class="px-4 py-6 text-center text-[var(--color-text-muted)]">
+          <td colspan="7" class="px-4 py-6 text-center text-[var(--color-text-muted)]">
             {{ items.length === 0 ? "Пока пусто" : "Ничего не найдено" }}
           </td>
         </tr>

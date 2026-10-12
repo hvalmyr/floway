@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { masterclassDisplayStyleCycle } from "~/constants/display-style-colors";
-import type { SiteButtonVariant } from "~/types/api";
+import type { Masterclass, SiteButtonVariant } from "~/types/api";
 
 useSeoMeta({
   title: "Мастер-классы по флористике в Москве — Фловей",
@@ -14,6 +14,9 @@ const api = useApi();
 // awaiting one after another avoids a 4-deep sequential chain before SSR
 // can respond.
 const masterclassesAsync = useAsyncData("masterclasses-list", () => api.getMasterClasses());
+const categoriesAsync = useAsyncData("masterclass-categories", () =>
+  api.getMasterclassCategories(),
+);
 const featuresAsync = useAsyncData("masterclasses-features", () =>
   api.getFeatures("masterclasses"),
 );
@@ -23,15 +26,38 @@ const siteButtonsAsync = useAsyncData("site-buttons", () => api.getSiteButtons()
 const [{ text }] = await Promise.all([
   usePageContent(),
   masterclassesAsync,
+  categoriesAsync,
   featuresAsync,
   faqAsync,
   siteButtonsAsync,
 ]);
 
 const { data: masterclasses } = masterclassesAsync;
+const { data: categoriesData } = categoriesAsync;
 const { data: featuresData } = featuresAsync;
 const { data: faq } = faqAsync;
 const { data: siteButtonsData } = siteButtonsAsync;
+
+// Tabs only make sense once there's more than one category to choose
+// between — with zero or one, every masterclass shows in one flat list,
+// same as before categories existed.
+const categories = computed(() => categoriesData.value ?? []);
+const showTabs = computed(() => categories.value.length > 1);
+const activeCategoryId = ref<number | null>(null);
+watchEffect(() => {
+  if (activeCategoryId.value === null) activeCategoryId.value = categories.value[0]?.id ?? null;
+});
+// A masterclass with no category (e.g. one left behind by a deleted
+// category) falls back to the first tab, instead of disappearing from
+// every tab.
+function effectiveCategoryId(masterclass: Masterclass): number | null {
+  return masterclass.categoryId ?? categories.value[0]?.id ?? null;
+}
+const visibleMasterclasses = computed(() => {
+  const all = masterclasses.value ?? [];
+  if (!showTabs.value) return all;
+  return all.filter((mc) => effectiveCategoryId(mc) === activeCategoryId.value);
+});
 function siteButton(
   key: string,
   fallback: { text: string; variant: SiteButtonVariant; url: string },
@@ -113,8 +139,25 @@ const features = computed(
 
     <section id="masterclasses-list" class="scroll-mt-64 py-48 sm:py-64 lg:scroll-mt-96 lg:py-80">
       <div class="container flex flex-col gap-40 lg:gap-48">
+        <div v-if="showTabs" class="flex flex-wrap justify-center gap-12">
+          <button
+            v-for="category in categories"
+            :key="category.id"
+            type="button"
+            class="rounded-pill border-2 px-24 py-8 font-display text-h4 font-bold transition-colors"
+            :class="
+              activeCategoryId === category.id
+                ? 'border-primary bg-primary text-white'
+                : 'border-ink bg-white text-ink'
+            "
+            @click="activeCategoryId = category.id"
+          >
+            {{ category.name }}
+          </button>
+        </div>
+
         <MasterclassCard
-          v-for="(mc, i) in masterclasses"
+          v-for="(mc, i) in visibleMasterclasses"
           :key="mc.id"
           :masterclass="mc"
           :display-style="masterclassDisplayStyleCycle[i % masterclassDisplayStyleCycle.length]"

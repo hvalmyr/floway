@@ -20,6 +20,7 @@ const masterclasses: Masterclass[] = [
     price: "3000₽ или 4500₽",
     coverImage: "",
     status: "active",
+    categoryId: null,
   },
   {
     id: 2,
@@ -33,6 +34,7 @@ const masterclasses: Masterclass[] = [
     price: "5500₽",
     coverImage: "",
     status: "active",
+    categoryId: null,
   },
   {
     id: 3,
@@ -45,6 +47,7 @@ const masterclasses: Masterclass[] = [
     price: "3500₽",
     coverImage: "",
     status: "active",
+    categoryId: null,
   },
   {
     id: 4,
@@ -58,6 +61,7 @@ const masterclasses: Masterclass[] = [
     price: "6000₽",
     coverImage: "",
     status: "active",
+    categoryId: null,
   },
   {
     id: 5,
@@ -70,6 +74,7 @@ const masterclasses: Masterclass[] = [
     price: "6000₽",
     coverImage: "",
     status: "active",
+    categoryId: null,
   },
   {
     id: 6,
@@ -84,6 +89,7 @@ const masterclasses: Masterclass[] = [
     price: "",
     coverImage: "",
     status: "active",
+    categoryId: null,
   },
 ];
 

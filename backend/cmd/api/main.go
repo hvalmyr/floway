@@ -71,6 +71,7 @@ func run(logger *slog.Logger) error {
 	courseFAQRepo := repository.NewCourseFAQRepository(pool)
 	pageFAQRepo := repository.NewPageFAQRepository(pool)
 	masterclassRepo := repository.NewMasterclassRepository(pool)
+	masterclassCategoryRepo := repository.NewMasterclassCategoryRepository(pool)
 	objectTypeRepo := repository.NewObjectTypeRepository(pool)
 	landingPageRepo := repository.NewLandingPageRepository(pool)
 	landingPageBlockRepo := repository.NewLandingPageBlockRepository(pool)
@@ -122,24 +123,25 @@ func run(logger *slog.Logger) error {
 	}
 
 	services := httpserver.Services{
-		FAQ:                service.NewFAQService(repository.NewFAQRepository(pool)),
-		Teacher:            service.NewTeacherService(repository.NewTeacherRepository(pool)),
-		BlogPost:           service.NewBlogPostService(repository.NewBlogPostRepository(pool)),
-		Masterclass:        service.NewMasterclassService(masterclassRepo),
-		CourseSection:      service.NewCourseSectionService(courseSectionRepo),
-		Course:             service.NewCourseService(courseRepo),
-		CourseBlock:        service.NewCourseBlockService(courseBlockRepo),
-		CustomDisplayStyle: service.NewCustomDisplayStyleService(repository.NewCustomDisplayStyleRepository(pool)),
-		Lesson:             service.NewLessonService(lessonRepo),
-		CourseFAQ:          service.NewCourseFAQService(courseFAQRepo),
-		PageFAQ:            service.NewPageFAQService(pageFAQRepo),
-		CourseCatalog:      service.NewCourseCatalogService(courseSectionRepo, courseRepo, courseRepo, courseBlockRepo, courseBlockRepo, lessonRepo, courseFAQRepo),
-		ObjectType:         service.NewObjectTypeService(objectTypeRepo),
-		LandingPage:        service.NewLandingPageService(landingPageRepo),
-		LandingPageBlock:   service.NewLandingPageBlockService(landingPageBlockRepo),
-		LandingPageFAQ:     service.NewLandingPageFAQService(landingPageFAQRepo),
-		LandingPageCatalog: service.NewLandingPageCatalogService(landingPageRepo, landingPageRepo, objectTypeRepo, landingPageBlockRepo, landingPageFAQRepo),
-		Lead:               service.NewLeadService(leadRepo, clientRepo, leadNotifier, courseRepo, masterclassRepo),
+		FAQ:                 service.NewFAQService(repository.NewFAQRepository(pool)),
+		Teacher:             service.NewTeacherService(repository.NewTeacherRepository(pool)),
+		BlogPost:            service.NewBlogPostService(repository.NewBlogPostRepository(pool)),
+		Masterclass:         service.NewMasterclassService(masterclassRepo),
+		MasterclassCategory: service.NewMasterclassCategoryService(masterclassCategoryRepo),
+		CourseSection:       service.NewCourseSectionService(courseSectionRepo),
+		Course:              service.NewCourseService(courseRepo),
+		CourseBlock:         service.NewCourseBlockService(courseBlockRepo),
+		CustomDisplayStyle:  service.NewCustomDisplayStyleService(repository.NewCustomDisplayStyleRepository(pool)),
+		Lesson:              service.NewLessonService(lessonRepo),
+		CourseFAQ:           service.NewCourseFAQService(courseFAQRepo),
+		PageFAQ:             service.NewPageFAQService(pageFAQRepo),
+		CourseCatalog:       service.NewCourseCatalogService(courseSectionRepo, courseRepo, courseRepo, courseBlockRepo, courseBlockRepo, lessonRepo, courseFAQRepo),
+		ObjectType:          service.NewObjectTypeService(objectTypeRepo),
+		LandingPage:         service.NewLandingPageService(landingPageRepo),
+		LandingPageBlock:    service.NewLandingPageBlockService(landingPageBlockRepo),
+		LandingPageFAQ:      service.NewLandingPageFAQService(landingPageFAQRepo),
+		LandingPageCatalog:  service.NewLandingPageCatalogService(landingPageRepo, landingPageRepo, objectTypeRepo, landingPageBlockRepo, landingPageFAQRepo),
+		Lead:                service.NewLeadService(leadRepo, clientRepo, leadNotifier, courseRepo, masterclassRepo),
 		Client: service.NewClientService(
 			clientRepo,
 			leadRepo,
