@@ -59,7 +59,7 @@ const api = useApi();
 const { text } = await usePageContent();
 const { glassClass } = await useTreeMode();
 
-const { handleSubmit, isSubmitting, values, setValues } = useForm({
+const { handleSubmit, values, setValues } = useForm({
   validationSchema: toTypedSchema(applyFormSchema),
   initialValues: { name: "", phone: "", email: "", consent: false },
 });
@@ -108,6 +108,12 @@ watch(values, saveDraft, { deep: true });
 
 const status = ref<"idle" | "error">("idle");
 const submitError = ref("");
+// Not vee-validate's own `isSubmitting` — that flips true/false around
+// *validation* too, so a failed submit (the common case: the visitor just
+// hasn't filled something in yet) made the button flash its loading spinner
+// for a frame even though no request was ever sent. This only turns on
+// once validation has actually passed and the real network call starts.
+const isSending = ref(false);
 
 const contactMethodOptions = computed(() => [
   { value: "call", label: text("apply_form_contact_method_call", "Позвоните мне") },
@@ -149,6 +155,7 @@ const sourceOptions = computed(() => [
 const onSubmit = handleSubmit(async (values) => {
   status.value = "idle";
   submitError.value = "";
+  isSending.value = true;
   try {
     await api.submitApplication({
       name: values.name,
@@ -174,6 +181,8 @@ const onSubmit = handleSubmit(async (values) => {
     status.value = "error";
     submitError.value =
       (err as { message?: string } | undefined)?.message ?? "Не удалось отправить заявку";
+  } finally {
+    isSending.value = false;
   }
 });
 </script>
@@ -270,7 +279,7 @@ const onSubmit = handleSubmit(async (values) => {
         {{ submitError }}
       </p>
 
-      <UiButton type="submit" block :loading="isSubmitting" :disabled="isSubmitting">
+      <UiButton type="submit" block :loading="isSending" :disabled="isSending">
         {{
           context === "trial_lesson"
             ? text("apply_form_submit_trial", "Записаться на занятие")

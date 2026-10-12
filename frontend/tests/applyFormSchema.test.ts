@@ -83,4 +83,26 @@ describe("applyFormSchema", () => {
   it("doesn't require socialNetwork for a non-social source", () => {
     expect(applyFormSchema.safeParse(validPayload).success).toBe(true);
   });
+
+  it("flags a missing socialNetwork even while other required fields are also missing", () => {
+    // Regression test: contactMethod/source used to be a bare z.enum, which
+    // aborts Zod's whole-object parse on `undefined` and skips every
+    // superRefine below it — so on a visitor's very first failed submit
+    // (everything still blank except having picked "social" as the source),
+    // every other field's error showed up except socialNetwork's. It only
+    // appeared once contactMethod was filled in on a second attempt.
+    const result = applyFormSchema.safeParse({
+      name: "",
+      phone: "",
+      email: "",
+      consent: false,
+      source: "social",
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const paths = result.error.issues.map((issue) => issue.path[0]);
+      expect(paths).toContain("socialNetwork");
+      expect(paths).toContain("contactMethod");
+    }
+  });
 });

@@ -160,7 +160,7 @@ const combinedErrorMessage = computed(() => errorMessage.value || chipField?.err
         instead of a second field appearing below the select once closed. -->
         <div
           v-if="option.chips && expandedChipsFor === option.value"
-          class="flex flex-wrap gap-6 px-12 pb-8 pt-2"
+          class="flex flex-wrap gap-4 px-12 pb-8 pt-2"
         >
           <button
             v-for="chip in option.chips"

@@ -28,21 +28,45 @@ const baseFields = {
 /**
  * Every ApplyForm instance (home page trial lesson, course pages,
  * masterclass pages): name/phone/email/consent + both selects, all required.
+ *
+ * contactMethod/source are `.optional()` here — NOT `z.enum(..., {
+ * required_error })` — and "required" is instead enforced below via
+ * `superRefine`. A bare `z.enum` rejects `undefined` with an `invalid_type`
+ * issue, which makes Zod abort the *whole object's* parse the instant one
+ * fires; an aborted object parse skips every `superRefine` below it
+ * entirely, including the one that checks `socialNetwork`. So as long as
+ * contactMethod/source stayed required this way, leaving them (and
+ * socialNetwork) all unset at once — the normal state of a freshly opened
+ * form — meant the submit button's first click reported errors for every
+ * *other* field but silently dropped the socialNetwork one; it only
+ * appeared once contactMethod/source were already filled in on a second
+ * attempt. `.optional()` can never abort on `undefined`, so the object
+ * parse always reaches "dirty" at worst, and superRefine always runs.
  */
 export const applyFormSchema = z
   .object({
     ...baseFields,
-    contactMethod: z.enum(["call", "telegram", "whatsapp", "max"], {
-      required_error: "Пожалуйста, выберите способ связи",
-    }),
-    source: z.enum(["referral", "ads", "internet", "social", "maps"], {
-      required_error: "Пожалуйста, укажите, как вы о нас узнали",
-    }),
+    contactMethod: z.enum(["call", "telegram", "whatsapp", "max"]).optional(),
+    source: z.enum(["referral", "ads", "internet", "social", "maps"]).optional(),
     // Only shown (and required) once `source` is "social" — see
     // ApplyForm.vue's conditional UiSelect.
     socialNetwork: z.enum(["telegram", "vk", "pinterest", "instagram", "youtube"]).optional(),
   })
   .superRefine((data, ctx) => {
+    if (!data.contactMethod) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["contactMethod"],
+        message: "Пожалуйста, выберите способ связи",
+      });
+    }
+    if (!data.source) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["source"],
+        message: "Пожалуйста, укажите, как вы о нас узнали",
+      });
+    }
     if (data.source === "social" && !data.socialNetwork) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
