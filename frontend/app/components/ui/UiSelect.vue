@@ -166,15 +166,16 @@ const combinedErrorMessage = computed(() => errorMessage.value || chipField?.err
             v-for="chip in option.chips"
             :key="chip.value"
             type="button"
-            class="rounded-full border px-12 py-6 text-left font-body text-sm"
-            :class="
-              chipField?.value.value === chip.value
-                ? 'border-primary bg-primary/10 text-primary'
-                : 'border-transparent bg-surface text-ink hover:bg-surface/70'
-            "
+            class="flex items-center gap-8 rounded-[10px] px-12 py-8 text-left font-body text-body text-ink"
+            :class="chipField?.value.value === chip.value ? 'bg-surface' : 'hover:bg-surface/60'"
             @click="selectChip(option, chip)"
           >
             {{ chip.label }}
+            <Check
+              v-if="chipField?.value.value === chip.value"
+              class="size-[16px] shrink-0 text-primary"
+              aria-hidden="true"
+            />
           </button>
         </div>
       </div>
