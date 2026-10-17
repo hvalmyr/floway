@@ -62,10 +62,10 @@ pinterest_verification: "e134719b372d8ee15641e25428af3496"
 # floway_prod — единственная группа, которая рендерит и рестартует Caddy
 # (Caddyfile.j2, tasks/main.yml). floway_decor_prod этот шаг у себя пропускает.
 owns_shared_caddy: true
-# Второй сайт (flo-way.ru, decor-стек) — свой домен, свои backend/frontend
+# Второй сайт (flo-way.art, decor-стек) — свой домен, свои backend/frontend
 # контейнеры на общей сети caddy_net (см. docker-compose.decor.prod.yml).
 # backend_addr/frontend_addr — DNS-имена сервисов в сети caddy_net, не URL.
 caddy_extra_sites:
-  - domain: "flo-way.ru"
+  - domain: "flo-way.art"
     backend_addr: "backend-decor:8080"
     frontend_addr: "frontend-decor:3000"

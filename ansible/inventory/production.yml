@@ -18,7 +18,7 @@ floway_prod:
       ansible_user: deploy
       ansible_python_interpreter: /usr/bin/python3
 
-# decor-сайт (flo-way.ru) — второй независимый стек на ТОМ ЖЕ физическом
+# decor-сайт (flo-way.art) — второй независимый стек на ТОМ ЖЕ физическом
 # хосте (см. docs/decor-site-audit.md: ресурсов VPS хватает), другой
 # deploy_path и набор секретов (group_vars/floway_decor_prod/). Собственный
 # host-алиас (не floway-vps повторно) — с одним и тем же алиасом в обеих

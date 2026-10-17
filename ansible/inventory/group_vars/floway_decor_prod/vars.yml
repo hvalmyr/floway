@@ -24,10 +24,10 @@ swap_file_path: /swapfile
 # TLS/ACME сам по себе решает не Caddy этой группы (у decor своего Caddy
 # нет — см. owns_shared_caddy ниже), домен здесь используется только для
 # FLOWAY_DECOR_DOMAIN в .env (env.j2) и для DNS-подсказки ниже.
-# ВАЖНО: A/AAAA-запись flo-way.ru должна указывать на IP этой VPS ДО
+# ВАЖНО: A/AAAA-запись flo-way.art должна указывать на IP этой VPS ДО
 # первого запуска floway_prod'ного деплоя после того, как caddy_extra_sites
 # заполнен — иначе Caddy не пройдёт ACME HTTP-01 challenge для этого домена.
-floway_decor_domain: "flo-way.ru"
+floway_decor_domain: "flo-way.art"
 
 # --- Образы ---
 github_owner: "hvalmyr"

@@ -174,7 +174,7 @@ just deploy
 Ключ и пароль vault пишутся в раннере во временные файлы и живут только время
 джобы; `.vault_pass` удаляется по `trap ... EXIT`, даже если плейбук упал.
 
-### Второй сайт (decor, flo-way.ru)
+### Второй сайт (decor, flo-way.art)
 
 Джоба `deploy-decor` гоняет тот же `playbooks/deploy.yml` с
 `-e target_group=floway_decor_prod` на тот же VPS (тот же SSH-ключ/
@@ -188,8 +188,8 @@ known_hosts, тот же `ANSIBLE_VAULT_PASSWORD` — секреты репоз�
 — разные concurrency-группы, не блокируют друг друга).
 
 Ещё одно условие для настоящего запуска (уже после того как секреты
-заведены) — A/AAAA-запись `flo-way.ru` должна указывать на IP этой VPS,
-иначе Caddy не пройдёт ACME и смоук-проверка `https://flo-way.ru/healthz`
+заведены) — A/AAAA-запись `flo-way.art` должна указывать на IP этой VPS,
+иначе Caddy не пройдёт ACME и смоук-проверка `https://flo-way.art/healthz`
 упадёт.
 
 ## Что не входит в эти плейбуки (но стоит сделать по мере роста прод-нагрузки)

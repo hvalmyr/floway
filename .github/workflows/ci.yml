@@ -375,7 +375,7 @@ jobs:
           exit 1
 
   deploy-decor:
-    name: Deploy / decor (flo-way.ru)
+    name: Deploy / decor (flo-way.art)
     runs-on: ubuntu-latest
     needs:
       - backend-lint
@@ -394,10 +394,10 @@ jobs:
       cancel-in-progress: false
     environment:
       name: production-decor
-      url: https://flo-way.ru
+      url: https://flo-way.art
     env:
       IMAGE_TAG: ${{ inputs.image_tag || needs.docker-build.outputs.image_tag }}
-      FLOWAY_DOMAIN: flo-way.ru
+      FLOWAY_DOMAIN: flo-way.art
     steps:
       - uses: actions/checkout@v7
 
@@ -451,7 +451,7 @@ jobs:
             -e target_group=floway_decor_prod \
             -e image_tag="$IMAGE_TAG"
 
-      - name: Смоук-проверка flo-way.ru
+      - name: Смоук-проверка flo-way.art
         if: steps.check.outputs.ready == 'true'
         run: |
           for i in $(seq 1 10); do

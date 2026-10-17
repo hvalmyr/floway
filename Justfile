@@ -36,7 +36,7 @@ ansible-check:
 vault-edit:
     cd {{ansible_dir}} && ansible-vault edit --vault-password-file .vault_pass inventory/group_vars/floway_prod/vault.yml
 
-# --- decor-сайт (flo-way.ru) — тот же хост, отдельная inventory-группа ---
+# --- decor-сайт (flo-way.art) — тот же хост, отдельная inventory-группа ---
 
 # Деплой decor-сайта (образы должны быть уже собраны и запушены в GHCR)
 deploy-decor:
